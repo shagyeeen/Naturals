@@ -5,11 +5,34 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Mail, Lock, PhoneCall, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
+import { useRouter } from "next/navigation";
+import NextImage from "next/image";
+
 const roles = ["Customer", "Stylist", "Manager", "Franchise Owner", "Admin"];
 
 export default function LoginPage() {
+  const router = useRouter();
   const [selectedRole, setSelectedRole] = useState("Customer");
   const [loginMethod, setLoginMethod] = useState<"email" | "otp">("email");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    // Mock authentication delay
+    setTimeout(() => {
+      // Store role for access control
+      localStorage.setItem("userRole", selectedRole);
+      
+      // Direct to experience dashboard if Customer, otherwise general dashboard
+      if (selectedRole === "Customer") {
+        router.push("/dashboard/experience");
+      } else {
+        router.push("/dashboard");
+      }
+    }, 1200);
+  };
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-6 relative overflow-hidden">
@@ -30,12 +53,9 @@ export default function LoginPage() {
           
           <div className="relative z-10">
             <Link href="/" className="inline-flex items-center gap-2 group mb-12">
-              <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
-                <Sparkles className="text-white w-6 h-6 group-hover:rotate-12 transition-transform" />
+              <div className="relative w-40 h-12">
+                <NextImage src="/naturalslogo.png" alt="Logo" fill className="object-contain object-left brightness-0 invert" />
               </div>
-              <span className="font-bold text-xl tracking-tight">
-                Naturals AI
-              </span>
             </Link>
 
             <h1 className="text-4xl font-bold leading-tight mb-4">
@@ -53,9 +73,9 @@ export default function LoginPage() {
                 <button
                   key={role}
                   onClick={() => setSelectedRole(role)}
-                  className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                  className={`px-4 py-2 rounded-full text-sm font-semibold transition-all cursor-pointer ${
                     selectedRole === role 
-                      ? "bg-white text-deep-grape shadow-lg" 
+                      ? "bg-white text-deep-grape shadow-lg scale-105" 
                       : "bg-white/10 hover:bg-white/20 text-white"
                   }`}
                 >
@@ -69,36 +89,37 @@ export default function LoginPage() {
         {/* Right Side: Form */}
         <div className="bg-white/50 backdrop-blur-3xl p-8 md:p-12 flex flex-col justify-center relative">
           
-          <div className="md:hidden flex items-center justify-center gap-2 mb-8 text-deep-grape">
-            <Sparkles className="w-6 h-6 text-naturals-purple" />
-            <span className="font-bold text-xl">Naturals AI</span>
+          <div className="md:hidden flex items-center justify-center gap-2 mb-8">
+            <div className="relative w-32 h-10">
+              <NextImage src="/naturalslogo.png" alt="Logo" fill className="object-contain" />
+            </div>
           </div>
 
           <h2 className="text-3xl font-bold text-deep-grape mb-2">Sign In</h2>
-          <p className="text-deep-grape/60 mb-8">
-            Access your {selectedRole} dashboard
+          <p className="text-deep-grape/60 mb-8 font-medium">
+            Access your <span className="text-naturals-purple font-bold">{selectedRole}</span> dashboard
           </p>
 
-          <div className="flex bg-warm-grey p-1 rounded-xl mb-8">
+          <div className="flex bg-warm-grey p-1.5 rounded-2xl mb-8 border border-black/5 shadow-inner">
             <button
               onClick={() => setLoginMethod("email")}
-              className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors ${
+              className={`flex-1 py-3 px-4 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
                 loginMethod === "email" 
-                  ? "bg-white text-naturals-purple shadow-sm" 
-                  : "text-deep-grape/60 hover:text-deep-grape"
+                  ? "bg-white text-naturals-purple shadow-md scale-100" 
+                  : "text-deep-grape/40 hover:text-deep-grape hover:bg-white/50 scale-95"
               }`}
             >
-              Email & Password
+              <Mail className="w-4 h-4" /> Email
             </button>
             <button
               onClick={() => setLoginMethod("otp")}
-              className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors ${
+              className={`flex-1 py-3 px-4 text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
                 loginMethod === "otp" 
-                  ? "bg-white text-naturals-purple shadow-sm" 
-                  : "text-deep-grape/60 hover:text-deep-grape"
+                  ? "bg-white text-naturals-purple shadow-md scale-100" 
+                  : "text-deep-grape/40 hover:text-deep-grape hover:bg-white/50 scale-95"
               }`}
             >
-              Mobile OTP
+              <PhoneCall className="w-4 h-4" /> Mobile
             </button>
           </div>
 
@@ -110,7 +131,7 @@ export default function LoginPage() {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
               className="space-y-4"
-              onSubmit={(e) => { e.preventDefault(); /* Mock routing to dashboards */ window.location.href='/dashboard'; }}
+              onSubmit={handleLogin}
             >
               {loginMethod === "email" ? (
                 <>
@@ -133,7 +154,7 @@ export default function LoginPage() {
                     />
                   </div>
                   <div className="flex justify-end">
-                    <a href="#" className="text-sm font-semibold text-naturals-purple hover:text-lavender transition-colors">Forgot Password?</a>
+                    <button type="button" onClick={() => alert("Password reset link sent to email.")} className="text-sm font-semibold text-naturals-purple hover:text-lavender transition-colors cursor-pointer">Forgot Password?</button>
                   </div>
                 </>
               ) : (
@@ -150,9 +171,19 @@ export default function LoginPage() {
                 </>
               )}
 
-              <button type="submit" className="w-full h-14 rounded-xl bg-gradient-to-r from-naturals-purple to-lavender text-white font-bold text-lg shadow-lg hover:shadow-naturals-purple/30 transition-all flex items-center justify-center gap-2 group">
-                Continue to Dashboard
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <button 
+                type="submit" 
+                disabled={isLoading}
+                className="w-full h-14 rounded-xl bg-gradient-to-r from-naturals-purple to-lavender text-white font-bold text-lg shadow-lg hover:shadow-naturals-purple/30 transition-all flex items-center justify-center gap-2 group disabled:opacity-70 cursor-pointer"
+              >
+                {isLoading ? (
+                  <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    Continue to Dashboard
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
               </button>
             </motion.form>
           </AnimatePresence>
@@ -164,7 +195,7 @@ export default function LoginPage() {
               <div className="flex-grow border-t border-deep-grape/10"></div>
             </div>
 
-            <button className="w-full h-14 rounded-xl bg-white border border-warm-grey hover:bg-warm-grey transition-colors flex items-center justify-center gap-3 font-semibold text-deep-grape">
+            <button onClick={() => alert("Google Auth service initializing...")} className="w-full h-14 rounded-xl bg-white border border-warm-grey hover:bg-warm-grey transition-colors flex items-center justify-center gap-3 font-semibold text-deep-grape cursor-pointer">
               <svg className="w-6 h-6" viewBox="0 0 24 24">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />

@@ -6,25 +6,44 @@ import { ShieldCheck, ClipboardCheck, Video, Activity, Clock, AlertTriangle, Arr
 
 export default function SOPAuditSystem() {
   const [activeTab, setActiveTab] = useState<"workflow" | "audit">("audit");
+  const [currentStep, setCurrentStep] = useState(2);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+
+  const handleNextStep = () => {
+    if (currentStep < 5) {
+      setCurrentStep(prev => prev + 1);
+    } else {
+      alert("Service Workflow Completed and Logged to Central Hub.");
+      setCurrentStep(1);
+    }
+  };
+
+  const handleGenerateReport = () => {
+    setIsGeneratingReport(true);
+    setTimeout(() => {
+      alert("Audit Report for 'Adyar Branch - Cam 04' generated successfully.");
+      setIsGeneratingReport(false);
+    }, 1500);
+  };
 
   return (
     <div className="space-y-8">
       {/* Page Header */}
       <div className="flex justify-between items-end">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-500 text-xs font-bold mb-2 border border-blue-500/20">
-            <ShieldCheck className="w-3 h-3" /> Module 1: SOP Standardisation
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-naturals-purple/10 text-naturals-purple text-xs font-bold mb-2 border border-naturals-purple/20">
+            <ShieldCheck className="w-3 h-3" /> Protocol 01: SOP Standardisation
           </div>
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-indigo-500 mb-2 flex items-center gap-3">
-             AI SOP Audit Manager
+          <h1 className="text-3xl font-bold text-deep-grape mb-2 flex items-center gap-3 italic">
+             AI Compliance & Audit System
           </h1>
-          <p className="text-deep-grape/60">Real-time workflow enforcement and remote visual auditing.</p>
+          <p className="text-deep-grape/60">Real-time operational auditing and remote workflow calibration.</p>
         </div>
         
         <div className="glass flex gap-2 p-1.5 rounded-2xl bg-warm-grey/50 shadow-md border border-blue-500/10">
           <button
             onClick={() => setActiveTab("audit")}
-            className={`px-6 py-2 rounded-xl font-bold text-sm transition-all ${
+            className={`px-6 py-2 rounded-xl font-bold text-sm transition-all cursor-pointer ${
               activeTab === "audit" 
                 ? "bg-white text-blue-500 shadow-sm" 
                 : "text-deep-grape/60"
@@ -34,7 +53,7 @@ export default function SOPAuditSystem() {
           </button>
           <button
             onClick={() => setActiveTab("workflow")}
-            className={`px-6 py-2 rounded-xl font-bold text-sm transition-all ${
+            className={`px-6 py-2 rounded-xl font-bold text-sm transition-all cursor-pointer ${
               activeTab === "workflow" 
                 ? "bg-white text-blue-500 shadow-sm" 
                 : "text-deep-grape/60"
@@ -72,12 +91,12 @@ export default function SOPAuditSystem() {
                 <div className="grid sm:grid-cols-2 gap-4 flex-1">
                   
                   {/* Mock Video Feed 1 */}
-                  <div className="relative rounded-2xl overflow-hidden bg-black aspect-video group cursor-pointer border border-black/10 shadow-lg">
+                  <div onClick={() => alert("Expanding Adyar Live Stream...")} className="relative rounded-2xl overflow-hidden bg-black aspect-video group cursor-pointer border border-black/10 shadow-lg">
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10" />
                     <img src="https://images.unsplash.com/photo-1521590832167-7bfcbaa6362d?w=800&q=80" alt="Salon cam" className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700" />
                     <div className="absolute top-3 left-3 z-20 flex gap-2">
-                      <span className="px-2 py-1 bg-red-500 text-white text-[10px] font-bold rounded-md uppercase tracking-wider animate-pulse">Live</span>
-                      <span className="px-2 py-1 bg-black/50 backdrop-blur-md text-white text-[10px] font-bold rounded-md">Cam 04 • Adyar</span>
+                       <span className="px-2 py-1 bg-red-500 text-white text-[10px] font-bold rounded-md uppercase tracking-wider animate-pulse">Live</span>
+                       <span className="px-2 py-1 bg-black/50 backdrop-blur-md text-white text-[10px] font-bold rounded-md">Cam 04 • Adyar</span>
                     </div>
                     <div className="absolute bottom-4 left-4 z-20">
                       <p className="text-white font-bold text-sm">Service: Keratin Treatment</p>
@@ -90,7 +109,7 @@ export default function SOPAuditSystem() {
                   </div>
 
                   {/* Mock Video Feed 2 (Violation Alert) */}
-                  <div className="relative rounded-2xl overflow-hidden bg-black aspect-video group cursor-pointer border-2 border-orange-500/50 shadow-[0_0_20px_rgba(249,115,22,0.3)]">
+                  <div onClick={() => alert("Alert Logged: Patch Test Skyped at RS Puram. Manager notification sent.")} className="relative rounded-2xl overflow-hidden bg-black aspect-video group cursor-pointer border-2 border-orange-500/50 shadow-[0_0_20px_rgba(249,115,22,0.3)]">
                     <div className="absolute inset-0 bg-gradient-to-t from-orange-900/80 to-transparent z-10" />
                     <img src="https://images.unsplash.com/photo-1560066984-138dadb4c035?w=800&q=80" alt="Salon cam" className="w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-700 grayscale mix-blend-luminosity" />
                     <div className="absolute top-3 left-3 z-20 flex gap-2">
@@ -146,7 +165,13 @@ export default function SOPAuditSystem() {
                   </div>
                 </div>
 
-                <button className="w-full py-3 bg-blue-500/10 text-blue-500 font-bold text-sm rounded-xl hover:bg-blue-500 hover:text-white transition-colors z-10">Generate Audit Report</button>
+                <button 
+                  onClick={handleGenerateReport}
+                  disabled={isGeneratingReport}
+                  className="w-full py-3 bg-blue-500/10 text-blue-500 font-bold text-sm rounded-xl hover:bg-blue-500 hover:text-white transition-colors z-10 cursor-pointer disabled:opacity-50"
+                >
+                  {isGeneratingReport ? "Generating..." : "Generate Audit Report"}
+                </button>
 
                 {/* Decorative blob */}
                 <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-blue-500/10 blur-[60px] rounded-full pointer-events-none" />
@@ -191,42 +216,56 @@ export default function SOPAuditSystem() {
                      <div className="absolute left-[15px] top-4 bottom-4 w-0.5 bg-black/10 -z-10" />
                      
                      {[ 
-                       { step: 1, name: "Hair Diagnosis", status: "completed" },
-                       { step: 2, name: "Patch Test Verification", status: "active" },
-                       { step: 3, name: "Sectioning & Application", status: "pending" },
-                       { step: 4, name: "Processing Timer", status: "pending" },
-                       { step: 5, name: "Visual Check & Wash", status: "pending" },
-                     ].map((s, i) => (
-                       <div key={i} className={`flex gap-4 items-center ${s.status === 'completed' ? 'opacity-50' : s.status === 'pending' ? 'opacity-30' : ''}`}>
+                       { step: 1, name: "Hair Diagnosis" },
+                       { step: 2, name: "Patch Test Verification" },
+                       { step: 3, name: "Sectioning & Application" },
+                       { step: 4, name: "Processing Timer" },
+                       { step: 5, name: "Visual Check & Wash" },
+                     ].map((s) => (
+                       <div key={s.step} className={`flex gap-4 items-center ${s.step < currentStep ? 'opacity-50' : s.step > currentStep ? 'opacity-30' : ''}`}>
                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0 shadow-sm border-2 ${
-                           s.status === 'completed' ? 'bg-green-500 border-green-500 text-white' : 
-                           s.status === 'active' ? 'bg-white border-blue-500 text-blue-500 ring-4 ring-blue-500/20' : 
+                           s.step < currentStep ? 'bg-green-500 border-green-500 text-white' : 
+                           s.step === currentStep ? 'bg-white border-blue-500 text-blue-500 ring-4 ring-blue-500/20' : 
                            'bg-white border-gray-300 text-deep-grape'
                          }`}>
-                           {s.status === 'completed' ? <CheckCircle2 className="w-5 h-5" /> : s.step}
+                           {s.step < currentStep ? <CheckCircle2 className="w-5 h-5" /> : s.step}
                          </div>
-                         <p className={`font-bold ${s.status === 'active' ? 'text-blue-500 text-lg' : ''}`}>{s.name}</p>
+                         <p className={`font-bold ${s.step === currentStep ? 'text-blue-500 text-lg' : ''}`}>{s.name}</p>
                        </div>
                      ))}
                    </div>
 
                    {/* Active Step Action Panel */}
                    <div className="bg-warm-grey/50 border border-black/5 rounded-2xl p-6 flex flex-col shadow-inner">
-                     <h3 className="font-bold text-xl mb-2 text-blue-500">Step 2: Patch Test</h3>
+                     <h3 className="font-bold text-xl mb-2 text-blue-500">Step {currentStep}: {
+                        currentStep === 1 ? "Hair Diagnosis" :
+                        currentStep === 2 ? "Patch Test" :
+                        currentStep === 3 ? "Application" :
+                        currentStep === 4 ? "Processing" : "Post-Service Wash"
+                     }</h3>
                      <p className="text-sm opacity-70 mb-6 leading-relaxed">
-                       Verify if the customer has completed a 24-hour patch test. If not, you must perform a 15-minute rapid test behind the ear before proceeding. Look for redness, itching, or swelling.
+                        {currentStep === 1 && "Perform initial scalp and hair texture analysis. Document any pre-existing damage."}
+                        {currentStep === 2 && "Verify if the customer has completed a 24-hour patch test. If not, perform a rapid test."}
+                        {currentStep === 3 && "Follow the AI Stylist recipe exactly for mixing chemicals and application patterns."}
+                        {currentStep === 4 && "Ensure constant monitoring of hair condition. Use the timer for exact development."}
+                        {currentStep === 5 && "Thorough rinsing until water runs clear. Apply neutralizer as per manual."}
                      </p>
                      
-                     <div className="bg-orange-500/10 border border-orange-500/20 p-4 rounded-xl mb-6">
-                       <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-1 flex gap-2"><AlertTriangle className="w-4 h-4" /> AI Warning</p>
-                       <p className="text-sm text-orange-600 font-medium">Customer's Beauty Passport indicates sensitive skin on Last Visit.</p>
-                     </div>
+                     {currentStep === 2 && (
+                       <div className="bg-orange-500/10 border border-orange-500/20 p-4 rounded-xl mb-6">
+                         <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-1 flex gap-2"><AlertTriangle className="w-4 h-4" /> AI Warning</p>
+                         <p className="text-sm text-orange-600 font-medium">Customer's Beauty Passport indicates sensitive skin on Last Visit.</p>
+                       </div>
+                     )}
 
                      <div className="mt-auto space-y-3">
-                       <button className="w-full py-4 text-center bg-blue-500 text-white font-black text-sm uppercase tracking-widest rounded-xl shadow-[0_8px_20px_rgba(59,130,246,0.3)] hover:scale-[1.02] transition-transform">
-                         Confirm Patient Test Clear
+                       <button 
+                        onClick={handleNextStep}
+                        className="w-full py-4 text-center bg-blue-500 text-white font-black text-sm uppercase tracking-widest rounded-xl shadow-[0_8px_20px_rgba(59,130,246,0.3)] hover:scale-[1.02] transition-transform cursor-pointer"
+                       >
+                         {currentStep === 5 ? "Finish & Log Service" : `Confirm Step ${currentStep} Clear`}
                        </button>
-                       <button className="w-full py-4 text-center bg-transparent border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white font-black text-sm uppercase tracking-widest rounded-xl transition-colors">
+                       <button onClick={() => { alert("Manager alert triggered. Service paused."); setCurrentStep(1); }} className="w-full py-4 text-center bg-transparent border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white font-black text-sm uppercase tracking-widest rounded-xl transition-colors cursor-pointer">
                          Abort Service (Reaction)
                        </button>
                      </div>

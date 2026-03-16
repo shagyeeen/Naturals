@@ -3,39 +3,60 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
-import { TrendingUp, Users, Scissors, AlertTriangle, ArrowUpRight, ArrowDownRight, MapPin, Sparkles } from "lucide-react";
+import { TrendingUp, Users, Scissors, AlertTriangle, ArrowUpRight, ArrowDownRight, MapPin, Sparkles, Activity, ShieldCheck } from "lucide-react";
 
 // Mock Data
 const revenueData = [
-  { name: 'Jan', value: 4000, bookings: 2400 },
-  { name: 'Feb', value: 3000, bookings: 1398 },
-  { name: 'Mar', value: 2000, bookings: 4800 },
-  { name: 'Apr', value: 2780, bookings: 3908 },
-  { name: 'May', value: 8890, bookings: 4800 },
-  { name: 'Jun', value: 10090, bookings: 3800 },
-  { name: 'Jul', value: 12000, bookings: 4300 },
+  { name: 'Node 01', value: 4000, bookings: 2400 },
+  { name: 'Node 02', value: 3000, bookings: 1398 },
+  { name: 'Node 03', value: 2000, bookings: 4800 },
+  { name: 'Node 04', value: 2780, bookings: 3908 },
+  { name: 'Node 05', value: 8890, bookings: 4800 },
+  { name: 'Node 06', value: 10090, bookings: 3800 },
+  { name: 'Node 07', value: 12000, bookings: 4300 },
 ];
 
 export default function DashboardOverview() {
   const [timeRange, setTimeRange] = useState("Month");
+  const [isExporting, setIsExporting] = useState(false);
+  const [isLaunching, setIsLaunching] = useState(false);
+
+  const handleExport = () => {
+    setIsExporting(true);
+    setTimeout(() => {
+      alert(`Strategic Intelligence Report (${timeRange}) encrypted and transmitted to Command Center.`);
+      setIsExporting(false);
+    }, 1500);
+  };
+
+  const handleLaunchCampaign = () => {
+    setIsLaunching(true);
+    setTimeout(() => {
+      alert("Autonomous Training Modules Deployed to 25 Personnel Terminals across the Network.");
+      setIsLaunching(false);
+    }, 2000);
+  };
 
   return (
     <div className="space-y-8">
       
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div>
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-naturals-purple to-lavender mb-2">Salon Intelligence Overview</h1>
-          <p className="text-deep-grape/60">Real-time metrics and AI predictions for all Naturals branches.</p>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-naturals-purple/10 text-naturals-purple text-[10px] font-black uppercase tracking-[0.2em] mb-4 border border-naturals-purple/20">
+            <Activity className="w-3 h-3" /> Protocol 00: Central Command Overview
+          </div>
+          <h1 className="text-4xl font-black text-deep-grape mb-2 italic tracking-tighter">Salon Strategic Intelligence</h1>
+          <p className="text-deep-grape/40 font-bold uppercase text-xs tracking-widest text-left">Real-time operational metrics and autonomous predictive modeling across the franchise network.</p>
         </div>
         
-        <div className="glass flex items-center p-1 rounded-xl bg-warm-grey border border-naturals-purple/10 shadow-sm">
-          {["Week", "Month", "Quarter", "Year"].map((t) => (
+        <div className="flex items-center bg-warm-grey/50 p-1.5 rounded-2xl border border-black/5 shadow-inner">
+          {["P-Week", "P-Month", "P-Quarter", "P-Year"].map((t) => (
             <button
               key={t}
               onClick={() => setTimeRange(t)}
-              className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition-all ${
-                timeRange === t ? "bg-white text-naturals-purple shadow-sm" : "text-deep-grape/60 hover:text-naturals-purple"
+              className={`px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer ${
+                timeRange === t ? "bg-deep-grape text-white shadow-xl" : "text-deep-grape/40 hover:text-deep-grape"
               }`}
             >
               {t}
@@ -47,154 +68,157 @@ export default function DashboardOverview() {
       {/* Primary KPI Cards */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard 
-          title="Total Revenue" 
+          title="Gross Revenue Yield" 
           value="₹8.4M" 
           trend="+12.5%" 
           isPositive={true} 
-          icon={<TrendingUp className="text-naturals-purple w-6 h-6" />} 
+          icon={<TrendingUp className="text-naturals-purple w-5 h-5" />} 
         />
         <KPICard 
-          title="Avg. Service Quality Score" 
+          title="Protocol Compliance Index" 
           value="98.2%" 
           trend="+2.4%" 
           isPositive={true} 
-          icon={<AlertTriangle className="text-lavender w-6 h-6" />} 
+          icon={<ShieldCheck className="text-naturals-purple w-5 h-5" />} 
         />
         <KPICard 
-          title="Customer Retention" 
+          title="Client Retention Velocity" 
           value="84%" 
           trend="-1.2%" 
           isPositive={false} 
-          icon={<Users className="text-naturals-purple w-6 h-6" />} 
+          icon={<Users className="text-naturals-purple w-5 h-5" />} 
         />
         <KPICard 
-          title="SOP Compliance Rate" 
+          title="Operational Parity" 
           value="96.8%" 
           trend="+4.1%" 
           isPositive={true} 
-          icon={<Scissors className="text-lavender w-6 h-6" />} 
+          icon={<Activity className="text-naturals-purple w-5 h-5" />} 
         />
       </div>
 
       {/* Main Charts Area */}
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-3 gap-8">
         
         {/* Revenue Chart */}
-        <div className="lg:col-span-2 glass-card p-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-naturals-purple/5 border-white rounded-[100px] blur-[80px]" />
-          <div className="flex justify-between items-center mb-6 relative z-10">
-            <h2 className="text-xl font-bold">Revenue & Bookings Trend</h2>
-            <button className="text-sm font-semibold text-naturals-purple hover:text-lavender transition-colors">Export Report</button>
+        <div className="lg:col-span-2 glass-card p-10 bg-white border border-black/5 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-10 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity">
+            <TrendingUp className="w-64 h-64" />
           </div>
-          <div className="h-72 w-full relative z-10">
+          <div className="flex justify-between items-center mb-10 relative z-10 border-b border-black/5 pb-6">
+            <h2 className="text-xs font-black uppercase tracking-[0.25em] text-deep-grape/30">Yield & Throughput Trend Analysis</h2>
+            <button 
+              onClick={handleExport}
+              disabled={isExporting}
+              className="text-[10px] font-black uppercase tracking-widest text-naturals-purple hover:text-deep-grape transition-colors cursor-pointer disabled:opacity-50"
+            >
+              {isExporting ? "TRANSMITTING..." : "GENERATE AUDIT"}
+            </button>
+          </div>
+          <div className="h-80 w-full relative z-10">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={revenueData}>
                 <defs>
                   <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#8E3E96" stopOpacity={0.8}/>
+                    <stop offset="5%" stopColor="#8E3E96" stopOpacity={0.4}/>
                     <stop offset="95%" stopColor="#8E3E96" stopOpacity={0}/>
                   </linearGradient>
-                  <linearGradient id="colorBookings" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#C59ACD" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#C59ACD" stopOpacity={0}/>
-                  </linearGradient>
                 </defs>
-                <XAxis dataKey="name" stroke="#8E3E96" opacity={0.5} tickMargin={10} axisLine={false} tickLine={false} />
-                <YAxis stroke="#8E3E96" opacity={0.5} axisLine={false} tickLine={false} tickFormatter={(val) => `₹${val/1000}k`} />
+                <XAxis dataKey="name" stroke="#2F0137" opacity={0.2} tickMargin={20} axisLine={false} tickLine={false} fontSize={10} fontWeight={900} />
+                <YAxis stroke="#2F0137" opacity={0.2} axisLine={false} tickLine={false} fontSize={10} fontWeight={900} tickFormatter={(val) => `₹${val/1000}k`} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: '12px', border: '1px solid rgba(142,62,150,0.1)', color: '#2F0137' }}
-                  itemStyle={{ color: '#8E3E96' }}
+                  contentStyle={{ backgroundColor: '#2F0137', borderRadius: '12px', border: 'none', color: '#fff', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em' }}
+                  itemStyle={{ color: '#fff' }}
                 />
-                <Area type="monotone" dataKey="value" stroke="#8E3E96" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
-                <Area type="monotone" dataKey="bookings" stroke="#C59ACD" strokeWidth={2} fillOpacity={1} fill="url(#colorBookings)" />
+                <Area type="monotone" dataKey="value" stroke="#8E3E96" strokeWidth={4} fillOpacity={1} fill="url(#colorValue)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* AI Skill Gap Predictions */}
-        <div className="glass-card p-6 flex flex-col h-full relative overflow-hidden">
-          <div className="flex gap-2 items-center mb-6 z-10">
+        <div className="glass-card p-10 flex flex-col h-full relative overflow-hidden bg-deep-grape text-white shadow-2xl">
+          <div className="absolute top-0 right-0 p-10 bg-white/5 rounded-full blur-[80px] pointer-events-none" />
+          <div className="flex gap-4 items-center mb-10 z-10">
             <Sparkles className="w-5 h-5 text-naturals-purple" />
-            <h2 className="text-xl font-bold">AI Skill Gap Prediction</h2>
+            <h2 className="text-xs font-black uppercase tracking-[0.25em] text-white/40">Autonomous Skill Allocation</h2>
           </div>
           
-          <div className="flex-1 space-y-4 z-10">
-            <div className="p-4 rounded-xl bg-orange-500/10 border border-orange-500/20">
-              <p className="text-sm font-bold text-orange-600 mb-1 flex items-center justify-between">
-                <span>High Priority Training</span>
-                <span className="text-xs bg-orange-500/20 px-2 py-0.5 rounded-md">8 Branches</span>
-              </p>
-              <p className="text-xs text-orange-600/80">Deficiency in L2 Hair Coloring specialists predicted for Q4 Festival season.</p>
-            </div>
-            
-            <div className="p-4 rounded-xl bg-naturals-purple/10 border border-naturals-purple/20">
-              <p className="text-sm font-bold text-naturals-purple mb-1 flex items-center justify-between">
-                <span>Keratin Certification Needed</span>
-                <span className="text-xs bg-naturals-purple/20 px-2 py-0.5 rounded-md">12 Staff</span>
-              </p>
-              <p className="text-xs text-naturals-purple/80">Upcoming trend indicates 35% spike in Keratin requests in Chennai.</p>
-            </div>
-
-            <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
-              <p className="text-sm font-bold text-blue-600 mb-1 flex items-center justify-between">
-                <span>SOP Adherence Warning</span>
-                <span className="text-xs bg-blue-500/20 px-2 py-0.5 rounded-md">Coimbatore</span>
-              </p>
-              <p className="text-xs text-blue-600/80">Average patch-test wait time dropping below SOP mandated 24 hours.</p>
-            </div>
+          <div className="flex-1 space-y-6 z-10">
+            <PredictionItem 
+              type="CRITICAL" 
+              title="Capacity Bridge Missing" 
+              desc="Deficiency in L2 Coloration Specialists predicted for Node Cycle Q4."
+              count="08 Nodes"
+            />
+            <PredictionItem 
+              type="STRATEGIC" 
+              title="Calibration Required" 
+              desc="Spike in Molecular Restoration demand detected at Node: MAA."
+              count="12 Staff"
+              color="text-naturals-purple"
+            />
+            <PredictionItem 
+              type="AUDIT" 
+              title="Protocol Variance Detection" 
+              desc="Wait-time operational limits breached at Node: CJB."
+              count="Delta Trigger"
+              color="text-orange-400"
+            />
           </div>
-          <button className="mt-4 w-full py-3 rounded-xl bg-white border border-naturals-purple/10 font-bold hover:bg-warm-grey transition-colors z-10 text-sm">
-            Launch Training Campaign
+          <button 
+            onClick={handleLaunchCampaign}
+            disabled={isLaunching}
+            className="mt-10 w-full py-5 rounded-2xl bg-white text-deep-grape font-black text-[10px] uppercase tracking-[0.3em] hover:bg-naturals-purple hover:text-white transition-all z-10 cursor-pointer disabled:opacity-50 shadow-2xl"
+          >
+            {isLaunching ? "INITIALIZING..." : "DEPLOY ACADEMY PROTOCOL"}
           </button>
         </div>
       </div>
 
       {/* Franchise Comparison Heatmap / Grid */}
-      <div className="glass-card p-6">
-        <h2 className="text-xl font-bold mb-6">Regional Franchise Analytics</h2>
+      <div className="glass-card p-10 bg-white border border-black/5 shadow-sm overflow-hidden">
+        <h2 className="text-xs font-black uppercase tracking-[0.25em] text-deep-grape/30 mb-8 italic">Network Node Accountability Matrix</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-naturals-purple/5">
-                <th className="py-4 px-4 font-bold opacity-60">Branch Location</th>
-                <th className="py-4 px-4 font-bold opacity-60">Revenue MTD</th>
-                <th className="py-4 px-4 font-bold opacity-60">SOP Quality</th>
-                <th className="py-4 px-4 font-bold opacity-60">Staff Skill Index</th>
-                <th className="py-4 px-4 font-bold opacity-60">Customer Retention</th>
-                <th className="py-4 px-4 font-bold opacity-60">AI Health Score</th>
+              <tr className="border-b-2 border-warm-grey">
+                <th className="py-5 px-6 font-black text-[10px] uppercase tracking-widest text-deep-grape/40">Operational Node</th>
+                <th className="py-5 px-6 font-black text-[10px] uppercase tracking-widest text-deep-grape/40">Yield MTD</th>
+                <th className="py-5 px-6 font-black text-[10px] uppercase tracking-widest text-deep-grape/40">Protocol Index</th>
+                <th className="py-5 px-6 font-black text-[10px] uppercase tracking-widest text-deep-grape/40">Skill Authority</th>
+                <th className="py-5 px-6 font-black text-[10px] uppercase tracking-widest text-deep-grape/40">Retention Velocity</th>
+                <th className="py-5 px-6 font-black text-[10px] uppercase tracking-widest text-deep-grape/40 italic">Audit Score</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-black/5">
               {[
-                { name: "Chennai • Adyar", rev: "₹1.2M", sop: 99, skill: "Expert", retention: 88, score: 96 },
-                { name: "Coimbatore • RS Puram", rev: "₹980K", sop: 92, skill: "Advanced", retention: 81, score: 85 },
-                { name: "Madurai • KK Nagar", rev: "₹850K", sop: 95, skill: "Expert", retention: 85, score: 91 },
-                { name: "Trichy • Cantonment", rev: "₹620K", sop: 88, skill: "Intermediate", retention: 76, score: 78 },
+                { name: "Node: MAA • Alpha", rev: "₹1.2M", sop: 99, skill: "COMMAND", retention: 88, score: 96 },
+                { name: "Node: CJB • Beta", rev: "₹980K", sop: 92, skill: "ADVANCED", retention: 81, score: 85 },
+                { name: "Node: IXM • Gamma", rev: "₹850K", sop: 95, skill: "COMMAND", retention: 85, score: 91 },
+                { name: "Node: TRZ • Delta", rev: "₹620K", sop: 88, skill: "MEDIAL", retention: 76, score: 78 },
               ].map((branch, i) => (
-                <tr key={i} className="border-b border-naturals-purple/5 hover:bg-warm-grey/50 transition-colors">
-                  <td className="py-4 px-4 font-bold flex items-center gap-2"><MapPin className="w-4 h-4 text-naturals-purple" /> {branch.name}</td>
-                  <td className="py-4 px-4 font-medium">{branch.rev}</td>
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-2">
-                       <div className="w-full h-2 bg-black/5 rounded-full overflow-hidden w-24">
-                         <div className={`h-full rounded-full ${branch.sop > 95 ? 'bg-green-500' : branch.sop > 90 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{width: `${branch.sop}%`}} />
-                       </div>
-                       <span className="text-xs font-bold">{branch.sop}%</span>
-                    </div>
+                <tr key={i} className="hover:bg-warm-grey/30 transition-all group">
+                  <td className="py-5 px-6 font-black text-xs italic text-deep-grape flex items-center gap-3">
+                    <MapPin className="w-4 h-4 text-naturals-purple group-hover:scale-110 transition-transform" /> {branch.name}
                   </td>
-                  <td className="py-4 px-4">
-                    <span className={`px-2 py-1 rounded-md text-xs font-bold ${
-                      branch.skill === 'Expert' ? 'bg-naturals-purple/20 text-naturals-purple' : 
-                      branch.skill === 'Advanced' ? 'bg-lavender/20 text-lavender' : 
-                      'bg-orange-500/20 text-orange-500'
-                    }`}>
+                  <td className="py-5 px-6 font-black text-xs text-deep-grape/60 tracking-wider font-mono">{branch.rev}</td>
+                  <td className="py-5 px-6">
+                    <div className="flex items-center gap-4">
+                       <div className="w-32 h-1.5 bg-warm-grey rounded-full overflow-hidden shadow-inner">
+                         <div className={`h-full rounded-full ${branch.sop > 95 ? 'bg-green-500' : 'bg-orange-400'}`} style={{width: `${branch.sop}%`}} />
+                       </div>
+                       <span className="text-[10px] font-black italic">{branch.sop}%</span>
+                     </div>
+                  </td>
+                  <td className="py-5 px-6">
+                    <span className="px-3 py-1 bg-deep-grape text-white text-[9px] font-black uppercase tracking-widest rounded-lg italic">
                       {branch.skill}
                     </span>
                   </td>
-                  <td className="py-4 px-4 font-medium">{branch.retention}%</td>
-                  <td className="py-4 px-4">
-                    <div className="w-10 h-10 rounded-full border-2 border-naturals-purple flex items-center justify-center font-bold text-sm shadow-[0_0_10px_rgba(142,62,150,0.3)]">
+                  <td className="py-5 px-6 font-black text-xs text-deep-grape/60 italic">{branch.retention}%</td>
+                  <td className="py-5 px-6">
+                    <div className="w-12 h-12 rounded-xl border-4 border-deep-grape flex items-center justify-center font-black text-sm italic shadow-2xl bg-white text-deep-grape transform rotate-3 hover:rotate-0 transition-transform">
                       {branch.score}
                     </div>
                   </td>
@@ -212,23 +236,36 @@ export default function DashboardOverview() {
 function KPICard({ title, value, trend, isPositive, icon }: { title: string, value: string, trend: string, isPositive: boolean, icon: React.ReactNode }) {
   return (
     <motion.div 
-      whileHover={{ y: -4 }}
-      className="glass-card p-6 flex flex-col justify-between relative overflow-hidden group"
+      whileHover={{ y: -5 }}
+      className="glass-card p-10 border border-black/5 bg-white relative overflow-hidden group shadow-sm hover:shadow-2xl transition-all"
     >
-      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-naturals-purple/10 to-transparent blur-[40px] rounded-full group-hover:scale-150 transition-transform duration-500" />
-      <div className="flex justify-between items-start mb-4 relative z-10">
-        <div className="p-3 bg-white/50 rounded-xl shadow-sm border border-white/40">
+      <div className="absolute top-0 right-0 w-32 h-32 bg-naturals-purple opacity-[0.03] blur-[40px] rounded-full group-hover:opacity-[0.08] transition-opacity" />
+      <div className="flex justify-between items-start mb-6 relative z-10">
+        <div className="p-3.5 bg-warm-grey/50 rounded-2xl border border-black/5 group-hover:bg-deep-grape group-hover:text-white transition-all shadow-inner">
           {icon}
         </div>
-        <div className={`flex items-center gap-1 text-sm font-bold px-2 py-1 rounded-full ${isPositive ? "text-green-600 bg-green-50" : "text-red-600 bg-red-50"}`}>
-          {isPositive ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+        <div className={`flex items-center gap-1.5 text-[10px] font-black italic px-3 py-1 rounded-lg ${isPositive ? "text-green-600 bg-green-50" : "text-red-600 bg-red-50"}`}>
+          {isPositive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
           {trend}
         </div>
       </div>
       <div className="relative z-10">
-        <h3 className="text-deep-grape/60 font-medium mb-1">{title}</h3>
-        <p className="text-3xl font-black text-deep-grape">{value}</p>
+        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/30 mb-2">{title}</h3>
+        <p className="text-3xl font-black text-deep-grape italic tracking-tighter">{value}</p>
       </div>
     </motion.div>
+  );
+}
+
+function PredictionItem({ type, title, desc, count, color = "text-white" }: { type: string, title: string, desc: string, count: string, color?: string }) {
+  return (
+    <div className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group">
+      <div className="flex justify-between items-center mb-4">
+        <span className="text-[9px] font-black uppercase tracking-[0.3em] opacity-40">{type}</span>
+        <span className="text-[10px] font-black bg-naturals-purple px-3 py-1 rounded-lg italic">{count}</span>
+      </div>
+      <h4 className="font-black text-sm uppercase tracking-wider mb-2 italic tracking-tighter">{title}</h4>
+      <p className="text-[10px] font-bold text-white/50 leading-relaxed uppercase tracking-widest">{desc}</p>
+    </div>
   );
 }

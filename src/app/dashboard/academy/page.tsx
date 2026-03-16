@@ -1,31 +1,55 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { BookOpen, Video, Target, Trophy, PlayCircle, Lock, CheckCircle, ChevronRight, Star } from "lucide-react";
+import { BookOpen, Video, Target, Trophy, PlayCircle, Lock, CheckCircle, ChevronRight, Star, ShieldCheck, Activity } from "lucide-react";
 
 export default function TrainingAcademy() {
+  const [activeCourse, setActiveCourse] = useState("Keratin Mastery");
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const handleStartVideo = () => {
+    setIsPlaying(true);
+    alert(`Streaming Tutorial: ${activeCourse}. Session audit logged for Employee ID: ST-2401.`);
+    setTimeout(() => setIsPlaying(false), 2000);
+  };
+
+  const handleSimulateTest = () => {
+    alert("AI Skill Simulation Initializing... Analytical diagnostics scanning technique...");
+    setTimeout(() => {
+      alert("Simulation Result: 88% Compliance in 'Heat Protection Protocol'. Data synchronized with Performance Dashboard.");
+    }, 1500);
+  };
+
+  const handleCameraSetup = () => {
+    alert("Initializing Visual Assessment Interface for Manual Proficiency Audit...");
+    setTimeout(() => {
+      alert("Interface Synchronized. Objective assessment of 'Sectioning Precision' is now active.");
+    }, 1200);
+  };
+
   return (
     <div className="space-y-8">
       {/* Page Header */}
-      <div className="flex justify-between items-end bg-gradient-to-r from-teal-500/10 to-transparent p-6 rounded-3xl border border-teal-500/20 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/20 rounded-full blur-[80px] pointer-events-none" />
+      <div className="flex justify-between items-end bg-white p-8 rounded-[2rem] border border-black/5 relative overflow-hidden shadow-sm">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-naturals-purple/5 rounded-full blur-[80px] pointer-events-none" />
         
         <div className="relative z-10 w-full flex justify-between items-end">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 text-teal-600 text-xs font-bold mb-2">
-              <BookOpen className="w-3 h-3" /> Digital Academy
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-naturals-purple/10 text-naturals-purple text-[10px] font-black uppercase tracking-[0.2em] mb-4 border border-naturals-purple/20">
+              <ShieldCheck className="w-3 h-3" /> Protocol 08: Strategic Advancement
             </div>
-            <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-teal-500 to-green-500 mb-2 flex items-center gap-3">
-              Stylist Training & Certification
+            <h1 className="text-4xl font-black text-deep-grape mb-2 italic tracking-tighter">
+              Professional Protocol Accreditation
             </h1>
-            <p className="text-deep-grape/70 max-w-xl">Interactive modules, AI-graded skill tests, and real-time certification to upscale your franchise staff.</p>
+            <p className="text-deep-grape/40 font-bold uppercase text-xs tracking-widest max-w-xl">Advanced personnel benchmarking and autonomous skill assessment for regional franchise operational parity.</p>
           </div>
           
           <div className="text-right">
-            <p className="text-sm font-bold opacity-60 uppercase mb-1">Your Skill Level</p>
-            <div className="glass px-4 py-2 rounded-xl flex items-center gap-3 border border-teal-500/30 shadow-lg shadow-teal-500/20">
-               <Trophy className="w-6 h-6 text-yellow-500" />
-               <span className="font-black text-xl text-teal-600">L2 Advanced</span>
+            <p className="text-[9px] font-black opacity-30 uppercase tracking-[0.3em] mb-2">Personnel Grade</p>
+            <div className="bg-deep-grape px-6 py-3 rounded-2xl flex items-center gap-4 border border-white/10 shadow-2xl">
+               <Trophy className="w-6 h-6 text-naturals-purple" />
+               <span className="font-black text-xl text-white italic">L2_ADVANCED</span>
             </div>
           </div>
         </div>
@@ -34,84 +58,86 @@ export default function TrainingAcademy() {
       <div className="grid lg:grid-cols-3 gap-8">
         
         {/* Left Column: Learning Journey */}
-        <div className="lg:col-span-2 space-y-6 flex flex-col">
-          <h2 className="text-xl font-bold flex items-center gap-2"><Target className="w-5 h-5 text-teal-500" /> Skill Journey: L3 Master Certification</h2>
+        <div className="lg:col-span-2 space-y-8 flex flex-col">
+          <h2 className="text-xs font-black uppercase tracking-[0.3em] text-deep-grape/30 flex items-center gap-4">
+            <Activity className="w-5 h-5 text-naturals-purple" /> Progression Track: L3 Operational Authority
+          </h2>
           
           <div className="relative flex-1">
-             <div className="absolute left-6 top-6 bottom-6 w-1 bg-gradient-to-b from-teal-500 via-teal-500/50 to-warm-grey rounded-full" />
+             <div className="absolute left-[26px] top-4 bottom-4 w-1 bg-warm-grey/50 rounded-full" />
              
-             <div className="space-y-6 relative z-10">
+             <div className="space-y-8 relative z-10">
                {/* Completed Step */}
-               <div className="flex gap-4 group cursor-pointer hover:bg-white/50 p-2 rounded-2xl transition-colors">
-                  <div className="w-12 h-12 rounded-full bg-teal-500 border-[3px] border-white flex items-center justify-center text-white shrink-0 shadow-md">
-                    <CheckCircle className="w-6 h-6" />
+               <div className="flex gap-6 group cursor-pointer p-2 rounded-[2rem] transition-all">
+                  <div className="w-14 h-14 rounded-2xl bg-white border-2 border-green-500/30 flex items-center justify-center text-green-500 shrink-0 shadow-sm group-hover:bg-green-500 group-hover:text-white transition-all">
+                    <CheckCircle className="w-7 h-7" />
                   </div>
-                  <div className="flex-1 glass-card p-4 flex justify-between items-center opacity-70 group-hover:opacity-100 transition-opacity">
+                  <div className="flex-1 glass-card p-6 flex justify-between items-center bg-white border border-black/5 opacity-60 group-hover:opacity-100 transition-opacity">
                     <div>
-                      <h3 className="font-bold text-lg mb-1 line-through decoration-2 decoration-teal-500">Advanced Color Theory</h3>
-                      <p className="text-xs font-semibold">Score: 92% • Passed on Oct 12</p>
+                      <h3 className="font-black text-sm uppercase tracking-wider mb-1 text-deep-grape line-through decoration-naturals-purple decoration-2">Foundational Chromatic Theory</h3>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-deep-grape/40">Audit Score: 92% • Valid Through Q4 2026</p>
                     </div>
-                    <button className="text-teal-500 text-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity">Review</button>
+                    <button onClick={() => alert("Decrypting archived certification data...")} className="text-naturals-purple text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">Re-Audit</button>
                   </div>
                </div>
 
                {/* Active Step */}
-               <div className="flex gap-4 items-start group">
-                  <div className="w-12 h-12 rounded-full bg-white border-4 border-teal-500 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(20,184,166,0.5)] z-10 mt-2">
-                    <span className="w-4 h-4 rounded-full bg-teal-500 animate-pulse"></span>
+               <div className="flex gap-6 items-start group">
+                  <div className="w-14 h-14 rounded-2xl bg-naturals-purple flex items-center justify-center shrink-0 shadow-2xl z-10 mt-1">
+                    <div className="w-3 h-3 rounded-full bg-white animate-ping" />
                   </div>
-                  <div className="flex-1 p-6 rounded-2xl bg-gradient-to-r from-teal-500/10 to-transparent border border-teal-500/30 shadow-sm relative overflow-hidden">
-                    <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-teal-500/20 to-transparent flex items-center justify-end pr-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <ChevronRight className="w-8 h-8 text-teal-500" />
+                  <div className="flex-1 p-8 rounded-[2rem] bg-white border-2 border-naturals-purple/20 shadow-2xl relative overflow-hidden group-hover:border-naturals-purple/50 transition-all">
+                    <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-naturals-purple/10 to-transparent flex items-center justify-end pr-6 opacity-0 group-hover:opacity-100 transition-all">
+                      <ChevronRight className="w-8 h-8 text-naturals-purple" />
                     </div>
-                    <div className="flex gap-2 mb-3">
-                      <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-orange-500/20 text-orange-600 rounded">Trending Need</span>
-                      <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-blue-500/20 text-blue-600 rounded">Practical Test Required</span>
+                    <div className="flex gap-3 mb-6">
+                      <span className="px-3 py-1 text-[9px] font-black uppercase tracking-widest bg-orange-500 text-white rounded">Demand Spike</span>
+                      <span className="px-3 py-1 text-[9px] font-black uppercase tracking-widest bg-deep-grape text-white rounded">Proficiency Test Pending</span>
                     </div>
-                    <h3 className="font-bold text-xl mb-2 text-teal-600">Keratin Smoothing Mastery</h3>
-                    <p className="text-sm opacity-80 mb-6 max-w-sm">Learn the exact chemical application techniques, heat protection strategies, and AI damage assessment for Keratin treatments.</p>
+                    <h3 className="font-black text-xl mb-3 text-deep-grape italic tracking-tighter">Structural Molecular Restoration</h3>
+                    <p className="text-xs font-bold text-deep-grape/50 mb-8 max-w-sm leading-relaxed uppercase tracking-wider">Mastery of high-density chemical bonding, thermal mitigation strategies, and autonomous diagnostic mapping.</p>
                     
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-white/60 p-3 rounded-xl border border-black/5 flex items-center gap-3 hover:-translate-y-1 transition-transform cursor-pointer shadow-sm">
-                        <div className="w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center shrink-0">
+                      <div onClick={handleStartVideo} className="bg-warm-grey/30 p-4 rounded-2xl border border-black/5 flex items-center gap-4 hover:-translate-y-1 transition-all cursor-pointer group/item">
+                        <div className="w-10 h-10 rounded-xl bg-deep-grape text-white flex items-center justify-center shrink-0 group-hover/item:bg-naturals-purple transition-colors shadow-lg">
                           <PlayCircle className="w-5 h-5 ml-0.5" />
                         </div>
                         <div>
-                          <p className="font-bold text-sm leading-tight">Video Tutorial</p>
-                          <p className="text-[10px] opacity-60">42 mins</p>
+                          <p className="font-black text-[10px] uppercase tracking-widest leading-none mb-1">Methodology Vid</p>
+                          <p className="text-[9px] font-bold opacity-40">42 Minutes</p>
                         </div>
                       </div>
                       
-                      <div className="bg-white/60 p-3 rounded-xl border border-black/5 flex items-center gap-3 hover:-translate-y-1 transition-transform cursor-pointer shadow-sm">
-                        <div className="w-10 h-10 rounded-full bg-yellow-500 text-white flex items-center justify-center shrink-0">
-                          <Star className="w-5 h-5" />
+                      <div onClick={handleSimulateTest} className="bg-warm-grey/30 p-4 rounded-2xl border border-black/5 flex items-center gap-4 hover:-translate-y-1 transition-all cursor-pointer group/item">
+                        <div className="w-10 h-10 rounded-xl bg-deep-grape text-white flex items-center justify-center shrink-0 group-hover/item:bg-naturals-purple transition-colors shadow-lg">
+                          <Target className="w-5 h-5" />
                         </div>
                         <div>
-                          <p className="font-bold text-sm leading-tight text-yellow-600">Simulate Test</p>
-                          <p className="text-[10px] opacity-60">AI Evaluated</p>
+                          <p className="font-black text-[10px] uppercase tracking-widest leading-none mb-1">Skill Simulation</p>
+                          <p className="text-[9px] font-bold opacity-40">AI-Graded</p>
                         </div>
                       </div>
                     </div>
                     
-                    <div className="mt-6">
-                      <div className="flex justify-between text-xs font-bold opacity-60 mb-1">
-                        <span>Module Progress</span> <span>45%</span>
+                    <div className="mt-8">
+                      <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-2 opacity-30">
+                        <span>Module Integration Progress</span> <span>45%</span>
                       </div>
-                      <div className="w-full h-2 bg-black/10 rounded-full overflow-hidden">
-                        <div className="h-full bg-teal-500 rounded-full" style={{ width: '45%' }} />
+                      <div className="w-full h-1.5 bg-warm-grey rounded-full overflow-hidden">
+                        <div className="h-full bg-naturals-purple rounded-full shadow-[0_0_10px_rgba(142,62,150,0.5)]" style={{ width: '45%' }} />
                       </div>
                     </div>
                   </div>
                </div>
 
                {/* Locked Step */}
-               <div className="flex gap-4 mt-6 opacity-40">
-                  <div className="w-12 h-12 rounded-full bg-warm-grey border-2 border-dashed border-black/20 flex items-center justify-center shrink-0 z-10">
-                    <Lock className="w-5 h-5" />
+               <div className="flex gap-6 mt-4 opacity-30 grayscale">
+                  <div className="w-14 h-14 rounded-2xl bg-warm-grey border-2 border-dashed border-black/20 flex items-center justify-center shrink-0 z-10">
+                    <Lock className="w-6 h-6" />
                   </div>
-                  <div className="flex-1 p-6 rounded-2xl border border-black/10 border-dashed bg-white/10">
-                    <h3 className="font-bold text-lg mb-1">Color Correction Dynamics</h3>
-                    <p className="text-xs font-semibold">Requires passing Keratin Mastery to unlock.</p>
+                  <div className="flex-1 p-6 rounded-[2rem] border-2 border-black/10 border-dashed bg-white">
+                    <h3 className="font-black text-sm uppercase tracking-widest mb-1 text-deep-grape">Complex Chromatic Correction</h3>
+                    <p className="text-[10px] font-bold uppercase tracking-widest">Protocol Lock: Awaiting Structural Mastery completion.</p>
                   </div>
                </div>
              </div>
@@ -119,41 +145,46 @@ export default function TrainingAcademy() {
         </div>
 
         {/* Right Column: AI Live Tests & Badges */}
-        <div className="space-y-6">
-          <div className="glass-card p-6 border-yellow-500/20">
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-              <Star className="w-5 h-5 text-yellow-500" /> Earned Certifications
+        <div className="space-y-8">
+          <div className="glass-card p-10 bg-white border border-black/5 shadow-xl">
+            <h2 className="text-xs font-black uppercase tracking-[0.25em] text-deep-grape/30 mb-10 flex items-center gap-4 font-black">
+              <Star className="w-5 h-5 text-naturals-purple" /> Verified Accreditations
             </h2>
             <div className="grid grid-cols-2 gap-4">
                {[
-                 { n: 'Basic Cuts', c: 'bg-[#8E3E96] text-white', icon: '✂️' },
-                 { n: 'SOP Expert', c: 'bg-blue-500 text-white', icon: '🛡️' },
-                 { n: 'Client Care', c: 'bg-pink-500 text-white', icon: '❤️' },
-                 { n: 'Hygiene', c: 'bg-green-500 text-white', icon: '✨' },
+                 { n: 'Precision Cutting', c: 'bg-deep-grape text-white', icon: '✂️' },
+                 { n: 'SOP Auditor', c: 'bg-deep-grape text-naturals-purple', icon: '🛡️' },
+                 { n: 'CX Optimization', c: 'bg-deep-grape text-white', icon: '❤️' },
+                 { n: 'Sterility Protocols', c: 'bg-deep-grape text-white', icon: '✨' },
                ].map((badge, i) => (
-                 <div key={i} className="flex flex-col items-center justify-center p-4 bg-white/50 rounded-xl border border-black/5 text-center group cursor-pointer hover:shadow-lg transition-all">
-                   <div className={`w-12 h-12 rounded-full ${badge.c} flex items-center justify-center text-xl mb-2 shadow-md group-hover:scale-110 transition-transform`}>
-                     {badge.icon}
-                   </div>
-                   <p className="text-xs font-bold uppercase tracking-wide">{badge.n}</p>
+                 <div key={i} onClick={() => alert(`Accreditation ID: NAT-ACC-${1000 + i}. Compliance Certified.`)} className="flex flex-col items-center justify-center p-6 bg-warm-grey/30 rounded-[2rem] border border-black/5 text-center group cursor-pointer hover:bg-white hover:shadow-2xl transition-all">
+                    <div className="mb-4 transform group-hover:scale-110 transition-transform">
+                      <div className={`w-14 h-14 rounded-2xl ${badge.c} flex items-center justify-center text-xl shadow-lg font-black`}>
+                        {badge.icon}
+                      </div>
+                    </div>
+                    <p className="text-[9px] font-black uppercase tracking-[0.2em] leading-tight text-deep-grape">{badge.n}</p>
                  </div>
                ))}
             </div>
-            <button className="w-full mt-6 py-3 text-sm font-bold rounded-xl border-2 border-dashed border-black/20 hover:bg-black/5 transition-colors">
-              View Franchise Ranking
+            <button onClick={() => alert("Synchronizing Personnel Ledger across 500+ Nodes...")} className="w-full mt-10 py-4 text-[10px] font-black uppercase tracking-[0.25em] bg-warm-grey/50 rounded-xl hover:bg-deep-grape hover:text-white transition-all cursor-pointer">
+              Franchise Authority Rank
             </button>
           </div>
 
-          <div className="glass-card p-6 bg-gradient-to-b from-indigo-500/10 to-transparent">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-indigo-500">
-              <Video className="w-5 h-5" /> Live Skill Assessment
+          <div className="glass-card p-10 bg-deep-grape text-white relative overflow-hidden shadow-2xl rounded-[2rem]">
+            <div className="absolute inset-0 bg-naturals-purple/20 blur-[80px] pointer-events-none" />
+            <h2 className="text-xs font-black uppercase tracking-[0.25em] text-white/40 mb-10 flex items-center gap-4 relative z-10">
+              <Video className="w-5 h-5 text-naturals-purple" /> Proficiency Audit
             </h2>
-            <p className="text-sm opacity-80 mb-6">Connect your iPad camera to perform a physical technique assessment (e.g. foil wrapping). The AI will evaluate your speed and precision automatically.</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-white/50 mb-10 leading-relaxed relative z-10">Initialize visual monitoring interface for technical proficiency assessment. AI will audit movement precision, ergonomics, and speed.</p>
             
-            <div className="aspect-video bg-black rounded-xl overflow-hidden relative mb-4 shadow-inner border border-black/10 group cursor-pointer">
-              <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-black/40 group-hover:bg-black/20 transition-colors">
-                <PlayCircle className="w-12 h-12 text-white/80 group-hover:scale-110 transition-transform mb-2" />
-                <span className="text-white font-bold text-sm tracking-widest uppercase">Start Camera Setup</span>
+            <div onClick={handleCameraSetup} className="aspect-video bg-black/40 rounded-[2rem] overflow-hidden relative mb-4 border-4 border-white/5 group cursor-pointer shadow-inner">
+              <div className="absolute inset-0 flex flex-col items-center justify-center z-10 bg-black/60 group-hover:bg-black/20 transition-all">
+                <div className="w-16 h-16 rounded-full bg-naturals-purple flex items-center justify-center shadow-2xl mb-4 transform group-hover:scale-110 transition-transform">
+                  <PlayCircle className="w-8 h-8 text-white ml-1" />
+                </div>
+                <span className="text-white font-black text-[10px] tracking-[0.4em] uppercase">INITIALIZE INTERFACE</span>
               </div>
             </div>
           </div>

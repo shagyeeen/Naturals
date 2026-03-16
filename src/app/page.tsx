@@ -1,8 +1,30 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Sparkles, Activity, ShieldCheck, Target, TrendingUp, Scissors, CheckCircle, Brain, LineChart, MessageSquareHeart } from "lucide-react";
+import { 
+  Sparkles, 
+  Activity, 
+  ShieldCheck, 
+  Target, 
+  TrendingUp, 
+  Scissors, 
+  CheckCircle, 
+  Brain, 
+  LineChart, 
+  MessageSquareHeart,
+  ChevronRight,
+  Info,
+  Calendar,
+  Lock,
+  Globe,
+  Award,
+  Book,
+  Users,
+  LayoutDashboard
+} from "lucide-react";
+import Link from "next/link";
 import Navbar from "@/components/Navbar";
+import Image from "next/image";
 
 export default function LandingPage() {
   return (
@@ -10,243 +32,400 @@ export default function LandingPage() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 px-6 overflow-hidden">
-        {/* Decorative Gradients */}
-        <div className="absolute top-0 right-[-100px] w-96 h-96 bg-naturals-purple/30 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute -bottom-32 left-[-100px] w-96 h-96 bg-lavender/30 rounded-full blur-[100px] pointer-events-none" />
+      <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 px-6 overflow-hidden bg-[#fafafa]">
+        {/* Decorative Elements */}
+        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-naturals-purple/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-lavender/10 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2" />
 
         <div className="max-w-7xl mx-auto flex flex-col items-center text-center relative z-10">
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-8 border border-naturals-purple/20 text-naturals-purple font-medium text-sm"
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white border border-black/5 mb-8 shadow-sm text-deep-grape font-bold text-xs uppercase tracking-widest"
           >
-            <Sparkles className="w-4 h-4" />
-            <span>Naturals × StartupTN AI Beauty Ecosystem</span>
+            <div className="relative w-4 h-4">
+              <Image src="/naturalslogo.png" alt="Logo" fill className="object-contain" />
+            </div>
+            <span>Naturals × StartupTN AI Ecosystem</span>
           </motion.div>
 
           <motion.h1
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-5xl md:text-7xl font-bold tracking-tight mb-6 max-w-4xl leading-[1.1]"
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="text-6xl md:text-8xl font-black tracking-tight mb-8 max-w-5xl leading-[1.05] text-deep-grape italic"
           >
-            AI-Powered Beauty Ecosystem <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-naturals-purple to-lavender">
-              For the Future of Salon Intelligence
-            </span>
+            The Next Era of <br />
+            <span className="text-naturals-purple not-italic">Salon Intelligence.</span>
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="text-lg md:text-xl text-deep-grape/70 max-w-2xl mb-12"
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="text-xl md:text-2xl text-deep-grape/70 max-w-3xl mb-14 leading-relaxed"
           >
-            Solve real-world salon challenges with hyper-personalized beauty insights, predictive trend intelligence, and seamless SOP-driven operations.
+            Transforming salon operations through hyper-personalized beauty insights, 
+            autonomous SOP audits, and predictive trend intelligence.
           </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-            className="flex flex-col sm:flex-row gap-4"
+            transition={{ duration: 0.5, delay: 0.5 }}
+            className="flex flex-col sm:flex-row gap-6"
           >
-            <button className="px-8 py-4 rounded-full bg-gradient-to-r from-naturals-purple to-lavender text-white font-bold text-lg shadow-[0_0_20px_rgba(142,62,150,0.4)] hover:shadow-[0_0_30px_rgba(142,62,150,0.6)] transition-all">
+            <Link href="/login" className="px-10 py-5 rounded-full bg-deep-grape text-white font-black text-xl hover:bg-naturals-purple transition-all shadow-2xl flex items-center justify-center uppercase tracking-tighter">
               Launch Platform
-            </button>
-            <button className="px-8 py-4 rounded-full glass-card hover:bg-naturals-purple/5 font-bold text-lg transition-all flex items-center justify-center gap-2">
-              Book a Demo <Activity className="w-5 h-5" />
-            </button>
+            </Link>
+            <Link href="/dashboard/experience" className="px-10 py-5 rounded-full bg-white border border-black/10 text-deep-grape font-black text-xl hover:bg-black/5 transition-all flex items-center justify-center gap-3 uppercase tracking-tighter">
+              Book Experience <ChevronRight className="w-6 h-6" />
+            </Link>
           </motion.div>
         </div>
+      </section>
+      {/* Detailed Command Manual Section */}
+      <section id="instructions" className="py-32 bg-white relative">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg bg-naturals-purple/10 text-naturals-purple text-xs font-black uppercase tracking-widest mb-6">
+               <Info className="w-4 h-4" /> Operational Guide
+            </div>
+            <h2 className="text-5xl md:text-7xl font-black mb-6 italic tracking-tighter">Strategic Command Manual</h2>
+            <p className="text-xl text-deep-grape/60 max-w-3xl mx-auto font-medium">
+              Follow these precise coordinates to master the Naturals AI ecosystem from initial deployment to multi-node network scale.
+            </p>
+          </div>
 
-        {/* Dashboard Preview Mockup */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.8 }}
-          className="mt-20 max-w-6xl mx-auto relative z-10"
-        >
-          <div className="glass-card p-2 md:p-4 rounded-[2rem] border border-naturals-purple/10 shadow-2xl relative overflow-hidden group">
-            <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent pointer-events-none" />
-            <div className="bg-white rounded-[1.5rem] w-full aspect-video overflow-hidden border border-black/5 flex flex-col">
-               {/* Mock Header */}
-               <div className="h-12 border-b border-black/5 flex items-center px-4 justify-between bg-warm-grey/30">
-                 <div className="flex gap-2">
-                   <div className="w-3 h-3 rounded-full bg-red-400" />
-                   <div className="w-3 h-3 rounded-full bg-yellow-400" />
-                   <div className="w-3 h-3 rounded-full bg-green-400" />
-                 </div>
-                 <div className="flex gap-4 opacity-50 text-xs">
-                   <span>Overview</span> <span>Analytics</span> <span>Settings</span>
-                 </div>
-               </div>
-               
-               {/* Mock Content */}
-               <div className="flex-1 p-6 grid grid-cols-3 gap-6">
-                 <div className="col-span-2 space-y-6">
-                   <div className="h-32 bg-gradient-to-r from-naturals-purple/10 to-transparent rounded-xl border border-naturals-purple/20 p-4">
-                     <p className="font-bold mb-2">Service Quality Score</p>
-                     <div className="text-4xl font-black text-naturals-purple">98.4%</div>
-                   </div>
-                   <div className="h-48 glass-card border-dashed"></div>
-                 </div>
-                 <div className="space-y-6">
-                   <div className="h-24 bg-lavender/10 rounded-xl border border-lavender/30"></div>
-                   <div className="h-24 bg-lavender/10 rounded-xl border border-lavender/30"></div>
-                   <div className="h-24 bg-lavender/10 rounded-xl border border-lavender/30"></div>
-                 </div>
-               </div>
+          <div className="grid lg:grid-cols-4 gap-8">
+            {/* Phase 1: Deployment - 1/4 width */}
+            <div className="space-y-8 lg:col-span-1">
+              <div className="flex items-center gap-4 h-12">
+                <div className="w-12 h-12 rounded-2xl bg-deep-grape text-white flex items-center justify-center font-black text-xl italic shadow-lg shrink-0">01</div>
+                <h3 className="text-xl font-black uppercase italic tracking-tighter text-deep-grape">Onboarding</h3>
+              </div>
+              <div className="glass-card p-6 border border-black/5 bg-white shadow-xl h-[calc(100%-80px)]">
+                <div className="space-y-6">
+                  <div className="flex gap-3 items-start">
+                    <CheckCircle className="w-3.5 h-3.5 text-naturals-purple mt-0.5 shrink-0" />
+                    <div>
+                      <p className="font-black text-[11px] uppercase tracking-wider mb-1 text-deep-grape">Launch Platform</p>
+                      <p className="text-[11px] text-deep-grape/60 leading-relaxed font-bold uppercase">Click "Launch Platform" on the top right to initialize the Secure Gateway.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 items-start">
+                    <CheckCircle className="w-3.5 h-3.5 text-naturals-purple mt-0.5 shrink-0" />
+                    <div>
+                      <p className="font-black text-[11px] uppercase tracking-wider mb-1 text-deep-grape">Role Selection</p>
+                      <p className="text-[11px] text-deep-grape/60 leading-relaxed font-bold uppercase">Assign your identity (Customer, Stylist, Manager, etc.) to unlock tailored command consoles.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 items-start">
+                    <CheckCircle className="w-3.5 h-3.5 text-naturals-purple mt-0.5 shrink-0" />
+                    <div>
+                      <p className="font-black text-[11px] uppercase tracking-wider mb-1 text-deep-grape">Authentication</p>
+                      <p className="text-[11px] text-deep-grape/60 leading-relaxed font-bold uppercase">Complete secure login via Email/OTP to establish your encrypted session.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Phase 2: Role Features - 3/4 width */}
+            <div className="space-y-8 lg:col-span-3">
+              <div className="flex items-center gap-4 h-12">
+                <div className="w-12 h-12 rounded-2xl bg-naturals-purple text-white flex items-center justify-center font-black text-xl italic shadow-lg shrink-0">02</div>
+                <h3 className="text-xl font-black uppercase italic tracking-tighter text-deep-grape">Role-Specific Protocols</h3>
+              </div>
+              
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Role 1: Customer */}
+                <div className="glass-card p-6 border border-black/5 bg-white shadow-xl hover:shadow-2xl transition-all h-full">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2.5 bg-naturals-purple/10 rounded-xl text-naturals-purple"><Users className="w-5 h-5" /></div>
+                    <h4 className="font-black text-sm uppercase tracking-wider italic text-deep-grape">Customer</h4>
+                  </div>
+                  <ul className="space-y-4">
+                    <li className="flex gap-3 items-start">
+                      <CheckCircle className="w-3.5 h-3.5 text-naturals-purple mt-0.5 shrink-0" />
+                      <p className="text-[11px] font-bold text-deep-grape/70 leading-relaxed uppercase"><span className="text-deep-grape font-black">Personal Diagnostic:</span> View hair/skin biometrics in "Personal Experience".</p>
+                    </li>
+                    <li className="flex gap-3 items-start">
+                      <CheckCircle className="w-3.5 h-3.5 text-naturals-purple mt-0.5 shrink-0" />
+                      <p className="text-[11px] font-bold text-deep-grape/70 leading-relaxed uppercase"><span className="text-deep-grape font-black">AI Booking:</span> Get slots tailored to your diagnostic profile.</p>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Role 2: Stylist */}
+                <div className="glass-card p-6 border border-black/5 bg-white shadow-xl hover:shadow-2xl transition-all h-full">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2.5 bg-naturals-purple/10 rounded-xl text-naturals-purple"><Scissors className="w-5 h-5" /></div>
+                    <h4 className="font-black text-sm uppercase tracking-wider italic text-deep-grape">Stylist</h4>
+                  </div>
+                  <ul className="space-y-4">
+                    <li className="flex gap-3 items-start">
+                      <CheckCircle className="w-3.5 h-3.5 text-naturals-purple mt-0.5 shrink-0" />
+                      <p className="text-[11px] font-bold text-deep-grape/70 leading-relaxed uppercase"><span className="text-deep-grape font-black">AI Copilot:</span> Get molecular precision guidance during chemical procedures.</p>
+                    </li>
+                    <li className="flex gap-3 items-start">
+                      <CheckCircle className="w-3.5 h-3.5 text-naturals-purple mt-0.5 shrink-0" />
+                      <p className="text-[11px] font-bold text-deep-grape/70 leading-relaxed uppercase"><span className="text-deep-grape font-black">SOP Audits:</span> Execute digital technical audits for brand parity.</p>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Role 3: Manager */}
+                <div className="glass-card p-6 border border-black/5 bg-white shadow-xl hover:shadow-2xl transition-all h-full">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2.5 bg-naturals-purple/10 rounded-xl text-naturals-purple"><ShieldCheck className="w-5 h-5" /></div>
+                    <h4 className="font-black text-sm uppercase tracking-wider italic text-deep-grape">Manager</h4>
+                  </div>
+                  <ul className="space-y-4">
+                    <li className="flex gap-3 items-start">
+                      <CheckCircle className="w-3.5 h-3.5 text-naturals-purple mt-0.5 shrink-0" />
+                      <p className="text-[11px] font-bold text-deep-grape/70 leading-relaxed uppercase"><span className="text-deep-grape font-black">Branch Control:</span> Oversee branch compliance and staff skill matrices.</p>
+                    </li>
+                    <li className="flex gap-3 items-start">
+                      <CheckCircle className="w-3.5 h-3.5 text-naturals-purple mt-0.5 shrink-0" />
+                      <p className="text-[11px] font-bold text-deep-grape/70 leading-relaxed uppercase"><span className="text-deep-grape font-black">Training Loop:</span> Trigger academy modules based on performance gaps.</p>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Role 4: Franchise Owner */}
+                <div className="glass-card p-6 border border-black/5 bg-white shadow-xl hover:shadow-2xl transition-all h-full">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2.5 bg-naturals-purple/10 rounded-xl text-naturals-purple"><LineChart className="w-5 h-5" /></div>
+                    <h4 className="font-black text-sm uppercase tracking-wider italic text-deep-grape">Franchise Owner</h4>
+                  </div>
+                  <ul className="space-y-4">
+                    <li className="flex gap-3 items-start">
+                      <CheckCircle className="w-3.5 h-3.5 text-naturals-purple mt-0.5 shrink-0" />
+                      <p className="text-[11px] font-bold text-deep-grape/70 leading-relaxed uppercase"><span className="text-deep-grape font-black">Yield View:</span> Monitor multi-node revenue and regional benchmarks.</p>
+                    </li>
+                    <li className="flex gap-3 items-start">
+                      <CheckCircle className="w-3.5 h-3.5 text-naturals-purple mt-0.5 shrink-0" />
+                      <p className="text-[11px] font-bold text-deep-grape/70 leading-relaxed uppercase"><span className="text-deep-grape font-black">Trend Engine:</span> Automate procurement based on forecast demand.</p>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Role 5: Admin */}
+                <div className="glass-card p-6 border border-black/5 bg-white shadow-xl hover:shadow-2xl transition-all h-full lg:col-span-2">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2.5 bg-naturals-purple/10 rounded-xl text-naturals-purple"><Lock className="w-5 h-5" /></div>
+                    <h4 className="font-black text-sm uppercase tracking-wider italic text-deep-grape">Global Admin</h4>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-3">
+                       <p className="font-black text-[10px] uppercase tracking-widest text-naturals-purple border-b border-black/5 pb-1">Platform Control</p>
+                       <p className="text-[11px] font-bold text-deep-grape/70 leading-relaxed uppercase">Configure global AI weights and brand SOP parameters for the entire ecosystem.</p>
+                    </div>
+                    <div className="space-y-3">
+                       <p className="font-black text-[10px] uppercase tracking-widest text-naturals-purple border-b border-black/5 pb-1">Data Operations</p>
+                       <p className="text-[11px] font-bold text-deep-grape/70 leading-relaxed uppercase">Master audit logs, encrypted database control, and multi-node authorization overrides.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </motion.div>
+          
+          {/* Phase 3: Final Master Instructions */}
+          <div className="mt-20 p-12 bg-warm-grey/40 rounded-[3rem] border border-black/5">
+            <div className="flex flex-col md:flex-row items-center gap-12">
+               <div className="w-12 h-12 rounded-2xl bg-naturals-purple text-white flex items-center justify-center font-black text-xl italic shrink-0 shadow-lg">03</div>
+               <div className="flex-1">
+                 <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-4">System Master Cycle</h3>
+                 <p className="text-sm font-bold text-deep-grape/50 uppercase tracking-widest leading-relaxed">
+                   The website operates on a <span className="text-naturals-purple">Feedback-Execution Loop</span>. Every customer diagnostic feeds into the stylist copilot, which in turn updates the regional trend engine, allowing managers to optimize the entire node network. Navigate through the sidebar in the dashboard to switch between these interconnected protocols.
+                 </p>
+               </div>
+               <Link href="/login" className="px-10 py-5 bg-deep-grape text-white rounded-full font-black text-lg uppercase tracking-widest hover:bg-naturals-purple transition-all shadow-2xl shrink-0">
+                  Begin Cycle
+               </Link>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* AI Modules Section */}
-      <section id="features" className="py-24 bg-warm-grey/30 relative">
+      <section id="features" className="py-24 bg-warm-grey/20 relative">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">6 AI-Powered Intelligence Modules</h2>
-            <p className="text-deep-grape/60">Built to revolutionize every aspect of salon operations and customer experience.</p>
+          <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
+            <div className="max-w-2xl">
+              <h2 className="text-4xl md:text-5xl font-black mb-4 uppercase italic">Intelligence Modules</h2>
+              <p className="text-xl text-deep-grape/60">Powering operations from technical audits to trend prediction.</p>
+            </div>
+            <Link href="/login" className="px-8 py-3 bg-naturals-purple text-white font-bold rounded-xl text-sm uppercase tracking-widest hover:bg-deep-grape transition-colors">
+              Access All Modules
+            </Link>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <ModuleCard 
-              icon={<ShieldCheck className="w-8 h-8 text-naturals-purple shrink-0" />}
+            <FeatureItem 
+              icon={<ShieldCheck className="w-10 h-10 text-naturals-purple" />}
               title="Standardisation SOP Engine"
-              desc="Digital SOPs with AI audits ensuring consistent service quality across all franchise branches."
+              desc="Digital SOPs with real-time AI audits to ensure consistency across 500+ clinics."
+              href="/dashboard/sop"
             />
-            <ModuleCard 
-              icon={<Brain className="w-8 h-8 text-lavender shrink-0" />}
+            <FeatureItem 
+              icon={<Brain className="w-10 h-10 text-naturals-purple" />}
               title="Staff Skill Assist AI"
-              desc="AI Copilot to guide semi-skilled stylists with step-by-step chemical and processing instructions."
+              desc="On-field AI Copilot guiding stylists with chemical precision and step-by-step processing."
+              href="/dashboard/stylist"
             />
-            <ModuleCard 
-              icon={<Target className="w-8 h-8 text-naturals-purple shrink-0" />}
+            <FeatureItem 
+              icon={<Target className="w-10 h-10 text-naturals-purple" />}
               title="Digital Beauty Passport"
-              desc="Hyper-personalized long-term beauty journey and tracking based on continuous skin & hair diagnosis."
+              desc="Persistent hair and skin health records backed by AI visual diagnosis for personalization."
+              href="/dashboard/passport"
             />
-            <ModuleCard 
-              icon={<TrendingUp className="w-8 h-8 text-lavender shrink-0" />}
-              title="Trend Prediction Intelligence"
-              desc="Analyze social media & climate data to recommend trending styling inventory and regional demands."
+            <FeatureItem 
+              icon={<TrendingUp className="w-10 h-10 text-naturals-purple" />}
+              title="Trend Prediction AI"
+              desc="Analyzing local demand and social shifts to automate inventory and service prep."
+              href="/dashboard/trends"
             />
-            <ModuleCard 
-              icon={<MessageSquareHeart className="w-8 h-8 text-naturals-purple shrink-0" />}
-              title="Immersive Consultations"
-              desc="AR Hairstyle Try-On and an AI consultant chatbot for 24/7 personalized customer interaction."
+            <FeatureItem 
+              icon={<Sparkles className="w-10 h-10 text-naturals-purple" />}
+              title="Hyper-Personal Experience"
+              desc="Dynamic service adaptation based on client history, lifestyle, and local climate."
+              href="/dashboard/experience"
             />
-            <ModuleCard 
-              icon={<LineChart className="w-8 h-8 text-lavender shrink-0" />}
-              title="Salon Data Intelligence"
-              desc="Deep franchise analytics to track revenue predictability, staff efficiency, and predict customer churn."
+            <FeatureItem 
+              icon={<LineChart className="w-10 h-10 text-naturals-purple" />}
+              title="Salon Business Intelligence"
+              desc="Turning fragmented branch data into actionable revenue and skill gap forecasts."
+              href="/dashboard"
             />
           </div>
         </div>
       </section>
 
-      {/* Deep Dive Feature - Beauty Passport */}
-      <section className="py-24 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
-          <div>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-4 text-naturals-purple text-sm font-semibold">
-               <Target className="w-4 h-4" /> Beauty Passport
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">A Hyper-Personalized Beauty Journey for Every Customer</h2>
-            <ul className="space-y-4 mb-8">
-              {[
-                "Continuously evolving digital skin & hair records",
-                "Advanced AI visual diagnosis detecting damage and risks",
-                "Long-term personalized treatment roadmaps",
-                "Lifestyle and regional climate impact analysis"
-              ].map((item, i) => (
-                <li key={i} className="flex gap-3 items-start">
-                  <CheckCircle className="w-6 h-6 text-naturals-purple shrink-0" />
-                  <span className="text-lg text-deep-grape/80">{item}</span>
-                </li>
-              ))}
-            </ul>
-            <button className="flex items-center gap-2 text-naturals-purple font-bold hover:gap-4 transition-all">
-              Explore Passport Features <Activity className="w-5 h-5" />
-            </button>
-          </div>
-          
+      {/* Corporate Section - Goal Orientation */}
+      <section className="py-32 bg-white">
+        <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-32 items-center">
           <div className="relative">
-            <div className="absolute -inset-4 bg-gradient-to-tr from-naturals-purple/20 to-lavender/20 blur-3xl rounded-full" />
-            <div className="glass-card p-6 relative z-10 aspect-[4/5] flex flex-col justify-center gap-4">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-naturals-purple to-lavender p-1">
-                  <div className="w-full h-full rounded-full bg-white flex items-center justify-center font-bold text-xl">SM</div>
+             <div className="absolute -inset-10 bg-naturals-purple/5 blur-[120px] rounded-full" />
+             <div className="relative z-10 glass-card p-10 rounded-[3rem] border-black/5 shadow-2xl">
+                <div className="flex justify-between items-start mb-12">
+                   <div>
+                      <p className="text-[10px] font-black uppercase opacity-40 mb-2 tracking-[0.2em]">Operational Dashboard</p>
+                      <h3 className="text-3xl font-black">Branch Efficiency</h3>
+                   </div>
+                   <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center">
+                      <TrendingUp className="text-green-600 w-6 h-6" />
+                   </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-xl">Subhash M</h3>
-                  <p className="text-sm opacity-60">Status: Gold Member | LTV: High</p>
+                <div className="space-y-6">
+                   <div className="h-2 bg-black/5 rounded-full overflow-hidden">
+                      <motion.div initial={{ width: 0 }} whileInView={{ width: '82%' }} className="h-full bg-naturals-purple" />
+                   </div>
+                   <div className="grid grid-cols-2 gap-8">
+                      <div>
+                         <p className="text-2xl font-black">82%</p>
+                         <p className="text-[10px] font-bold uppercase opacity-40">SOP Compliance</p>
+                      </div>
+                      <div>
+                         <p className="text-2xl font-black">+14%</p>
+                         <p className="text-[10px] font-bold uppercase opacity-40">Revenue Growth</p>
+                      </div>
+                   </div>
                 </div>
-              </div>
-              
-              <div className="space-y-3">
-                <div className="p-4 rounded-xl bg-warm-grey/50 border border-naturals-purple/10">
-                  <p className="text-sm font-semibold mb-1">Current Hair Health Score</p>
-                  <div className="w-full h-2 bg-black/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-green-500 w-[78%]" />
-                  </div>
-                  <p className="text-xs text-right mt-1 font-mono">78 / 100</p>
+                <div className="mt-12 flex gap-3">
+                   <div className="w-10 h-10 rounded-full bg-warm-grey border border-black/5" />
+                   <div className="w-10 h-10 rounded-full bg-warm-grey border border-black/5" />
+                   <div className="w-10 h-10 rounded-full bg-warm-grey border border-black/5" />
+                   <div className="flex-1" />
+                   <button className="px-6 py-2 bg-black text-white rounded-full text-xs font-bold uppercase tracking-widest">Connect Branch</button>
                 </div>
-
-                <div className="p-4 rounded-xl bg-warm-grey/50 border border-naturals-purple/10">
-                  <p className="text-sm font-semibold mb-2">AI Diagnosis - Root Issue</p>
-                  <div className="flex gap-2 flex-wrap">
-                    <span className="px-2 py-1 text-xs rounded-md bg-red-500/10 text-red-500 font-medium">Split Ends Focus</span>
-                    <span className="px-2 py-1 text-xs rounded-md bg-naturals-purple/10 text-naturals-purple font-medium">Moisture Depleted</span>
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-xl bg-gradient-to-r from-naturals-purple/10 to-lavender/10 border border-naturals-purple/30">
-                  <p className="text-sm font-semibold mb-1 flex justify-between">
-                    <span>Next Treatment Plan</span>
-                    <span className="text-naturals-purple">Month 2</span>
-                  </p>
-                  <p className="text-xs opacity-80">Keratin Infusion + Deep Conditioning Therapy</p>
-                </div>
-              </div>
+             </div>
+          </div>
+          <div>
+            <h2 className="text-5xl font-black mb-10 leading-tight">Scale Consistency Across Boundaries</h2>
+            <p className="text-lg text-deep-grape/60 mb-12 leading-relaxed">
+              Our Salon Intelligence System bridges the gap between raw branch data and executive decision-making. 
+              Map staff skills to service quality, predict future gaps, and build structured growth pathways.
+            </p>
+            <div className="grid gap-6">
+               {[
+                 { t: "Revenue Predictability", d: "Forecast branch income based on local beauty trends." },
+                 { t: "Skill Gap Analysis", d: "Automatically identify training needs for franchise expansion." },
+                 { t: "Automated Compliance", d: "Zero-latency SOP monitoring through AI audits." }
+               ].map((item, i) => (
+                 <div key={i} className="flex gap-5 group">
+                    <div className="w-14 h-14 rounded-2xl bg-warm-grey border border-black/5 flex items-center justify-center shrink-0 group-hover:bg-naturals-purple/10 transition-colors">
+                       <CheckCircle className="w-7 h-7 text-naturals-purple" />
+                    </div>
+                    <div>
+                       <p className="font-black text-lg mb-1">{item.t}</p>
+                       <p className="text-sm opacity-60 leading-relaxed font-medium">{item.d}</p>
+                    </div>
+                 </div>
+               ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-24 bg-gradient-to-br from-[#120915] to-[#2F0137] text-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
-        <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
-          <h2 className="text-5xl font-bold mb-6">Ready to Experience Salon Intelligence?</h2>
-          <p className="text-xl opacity-80 mb-10 max-w-2xl mx-auto">
-            Join the elite network of intelligent salons. Transform customer satisfaction and skyrocket business predictability.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="px-8 py-4 rounded-full bg-white text-deep-grape font-bold text-lg shadow-[0_0_20px_rgba(255,255,255,0.4)] hover:scale-105 transition-all">
-              Log in to Dashboard
-            </button>
-            <button className="px-8 py-4 rounded-full border border-white/30 backdrop-blur-md hover:bg-white/10 font-bold text-lg transition-all">
-              Request Franchise Access
-            </button>
-          </div>
+      {/* Professional Call to Action */}
+      <section className="py-24 px-6">
+        <div className="max-w-7xl mx-auto rounded-[4rem] bg-deep-grape text-white p-12 md:p-24 relative overflow-hidden text-center">
+           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-naturals-purple/20 rounded-full blur-[120px] -mr-64 -mt-64" />
+           <div className="max-w-3xl mx-auto relative z-10">
+              <h2 className="text-5xl md:text-7xl font-black mb-10 italic">Intelligence is the <br /> New Standard.</h2>
+              <p className="text-xl opacity-60 mb-14 font-medium leading-relaxed">
+                Join the StartupTN × Naturals ecosystem. Built for developers, designers, and innovators 
+                to redefine the future of salon chains through scalable AI solutions.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-6 justify-center">
+                 <Link href="/login" className="px-10 py-5 bg-white text-deep-grape rounded-full font-black text-xl uppercase shadow-2xl transition-all hover:scale-105 active:scale-95">
+                    Enter Platform
+                 </Link>
+                 <Link href="/dashboard/experience" className="px-10 py-5 border border-white/20 bg-white/5 backdrop-blur-md rounded-full font-black text-xl uppercase shadow-lg transition-all hover:bg-white/10">
+                    Book Consultation
+                 </Link>
+              </div>
+           </div>
         </div>
       </section>
 
+      <footer className="py-20 bg-white border-t border-black/5">
+         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-10">
+            <div className="flex items-center gap-4">
+               <div className="relative w-48 h-12 opacity-80 hover:opacity-100 transition-opacity">
+                  <Image src="/naturalslogo.png" alt="Logo" fill className="object-contain object-left" />
+               </div>
+            </div>
+            <div className="flex gap-12 text-sm font-bold uppercase tracking-widest opacity-40">
+               <span className="hover:opacity-100 transition-opacity cursor-pointer">Privacy Policy</span>
+               <span className="hover:opacity-100 transition-opacity cursor-pointer">Terms of Service</span>
+               <span className="hover:opacity-100 transition-opacity cursor-pointer">Franchise Support</span>
+            </div>
+            <p className="text-xs font-bold opacity-20 tracking-widest text-center md:text-right uppercase">© 2026 Naturals Intelligence Platform</p>
+         </div>
+      </footer>
     </div>
   );
 }
 
-function ModuleCard({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) {
+function FeatureItem({ icon, title, desc, href }: { icon: React.ReactNode, title: string, desc: string, href: string }) {
   return (
-    <div className="glass-card p-8 group hover:-translate-y-2 transition-transform duration-300 bg-white">
-      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-warm-grey to-white border border-naturals-purple/10 flex items-center justify-center mb-6 shadow-inner">
-        {icon}
+    <Link href={href} className="group p-10 rounded-[2.5rem] bg-white border border-black/5 shadow-sm hover:shadow-2xl transition-all hover:-translate-y-2 flex flex-col h-full relative overflow-hidden">
+      <div className="w-20 h-20 rounded-[1.5rem] bg-warm-grey border border-black/5 flex items-center justify-center mb-10 group-hover:bg-naturals-purple transition-all duration-500 shadow-inner group-hover:scale-90 overflow-hidden relative">
+        <div className="absolute inset-0 bg-white group-hover:bg-naturals-purple transition-colors" />
+        <div className="relative z-10 group-hover:text-white transition-colors">
+          {icon}
+        </div>
       </div>
-      <h3 className="text-xl font-bold mb-3">{title}</h3>
-      <p className="text-deep-grape/70 flex-1 leading-relaxed">{desc}</p>
-    </div>
+      <h3 className="text-2xl font-black mb-4 uppercase tracking-tighter italic">{title}</h3>
+      <p className="text-deep-grape/60 mb-10 leading-relaxed font-medium">{desc}</p>
+      <div className="mt-auto flex items-center gap-2 text-naturals-purple font-black text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all -translate-x-4 group-hover:translate-x-0">
+        Enter Module <ChevronRight className="w-4 h-4" />
+      </div>
+    </Link>
   );
 }
