@@ -18,7 +18,7 @@ export default function BeautyPassport() {
   const handleScanFace = () => {
     setIsScanning(true);
     setTimeout(() => {
-      alert("Biometric Authentication Successful. Subject: Aaradhya V. • Access Granted.");
+      alert("Style Session Synchronization Successful. Subject: Aaradhya V. • Access Granted.");
       setIsScanning(false);
     }, 2000);
   };
@@ -30,10 +30,10 @@ export default function BeautyPassport() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-naturals-purple/10 text-naturals-purple text-[10px] font-black uppercase tracking-[0.2em] mb-2 border border-naturals-purple/20">
-            <ShieldCheck className="w-3 h-3" /> Protocol 03: Biometric Audit Vault
+            <ShieldCheck className="w-3 h-3" /> Protocol 03: AR Styling & History Vault
           </div>
-          <h1 className="text-3xl font-black text-deep-grape mb-2 italic tracking-tighter">Unified Client Biometrics</h1>
-          <p className="text-deep-grape/40 font-bold uppercase text-xs tracking-widest text-left">High-fidelity diagnostic archival and long-term biological trend mapping.</p>
+          <h1 className="text-3xl font-black text-deep-grape mb-2 italic tracking-tighter">Unified Styling Archives</h1>
+          <p className="text-deep-grape/40 font-bold uppercase text-xs tracking-widest text-left">AR Hair Colouring & Hair Cutted archival for precise service alignment.</p>
         </div>
         
         <div className="flex gap-4">

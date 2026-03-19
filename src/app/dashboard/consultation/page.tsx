@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Activity, MessageSquareHeart, Camera, CalendarClock, Bot, Send, Search, Sparkles, ShieldCheck, Cpu } from "lucide-react";
+import ARHairTryOn from "@/components/VirtualHairTryOn/ARHairTryOn";
 
 export default function AIConsultation() {
   const [activeTab, setActiveTab] = useState<"ar" | "chat" | "booking">("ar");
   const [messages, setMessages] = useState([
-    { role: "bot", text: "Neural Interface Synchronized. I am processing your Biometric Vault data. You are eligible for Follicle Restoration next cycle. Shall we initiate a diagnostic scan?" }
+    { role: "bot", text: "Neural Interface Synchronized. I am processing your AR Styling Archive. You are eligible for a new AR Hair Colouring session. Shall we explore a new Hair Cutted simulation?" }
   ]);
   const [inputText, setInputText] = useState("");
   const [selectedColor, setSelectedColor] = useState("#C59ACD");
@@ -51,75 +52,9 @@ export default function AIConsultation() {
         {activeTab === "ar" && (
           <motion.div 
             initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} 
-            className="w-full h-full glass-card p-10 grid md:grid-cols-3 gap-10 relative overflow-hidden bg-white border border-black/5 shadow-sm"
+            className="w-full h-full"
           >
-            {/* The "Mirror" View */}
-            <div className="md:col-span-2 relative rounded-[3rem] bg-black overflow-hidden flex flex-col justify-end shadow-2xl border-8 border-white group">
-               <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=1200&q=80" alt="Subject Feed" className="absolute inset-0 w-full h-full object-cover opacity-80 grayscale group-hover:grayscale-0 transition-all duration-1000 group-hover:scale-105" />
-               <div className="absolute inset-0 bg-gradient-to-t from-deep-grape/90 via-transparent to-deep-grape/20" />
-
-               {/* Virtual Bounding Box - Mockup */}
-               <div className="absolute inset-x-40 inset-y-24 border-2 border-dashed border-white/20 rounded-[6rem] flex items-center justify-center pointer-events-none group-hover:border-naturals-purple/50 transition-all">
-                 <div className="absolute top-0 w-16 h-1 bg-naturals-purple shadow-[0_0_20px_#8E3E96]"></div>
-                 <div className="text-[10px] font-black text-white/20 uppercase tracking-[0.5em] mt-32">Target Alignment Zone</div>
-               </div>
-
-               <div className="relative z-10 p-10 flex justify-between items-end">
-                 <div>
-                   <div className="flex items-center gap-3 mb-2">
-                     <span className="w-3 h-3 rounded-full bg-red-600 animate-pulse" />
-                     <p className="text-white font-black text-xs uppercase tracking-widest">Live Metadata Feed</p>
-                   </div>
-                   <p className="text-naturals-purple font-black text-sm uppercase tracking-widest italic">Applying: <span className="text-white">{selectedStyle}</span> • <span className="p-1 px-2 bg-white/10 backdrop-blur-md rounded border border-white/20" style={{ color: selectedColor }}>{selectedColor}</span> Chroma</p>
-                 </div>
-                 <button onClick={() => alert("Capture verified. Entry logged to Biometric Vault.")} className="w-20 h-20 rounded-[2rem] bg-white text-deep-grape flex items-center justify-center shadow-2xl hover:scale-110 transition-all cursor-pointer overflow-hidden relative group/btn">
-                    <div className="absolute inset-0 bg-naturals-purple opacity-0 group-hover/btn:opacity-100 transition-opacity" />
-                    <Camera className="w-8 h-8 z-10 group-hover/btn:text-white transition-colors" />
-                 </button>
-               </div>
-            </div>
-
-            {/* Controls Palette */}
-            <div className="space-y-10 flex flex-col">
-              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape flex items-center gap-4">
-                <Cpu className="text-naturals-purple w-5 h-5" /> Synthesis Parameters
-              </h2>
-
-              <div className="space-y-8 flex-1">
-                <div>
-                  <p className="text-[10px] font-black opacity-30 uppercase tracking-[0.3em] mb-6">Chromatic Frequency Selection</p>
-                  <div className="grid grid-cols-4 gap-4">
-                    {['#C59ACD', '#8E3E96', '#FFD700', '#CD7F32', '#8B4513', '#4A0E4E', '#FFB6C1', '#000000'].map((color) => (
-                      <button 
-                        key={color} 
-                        onClick={() => setSelectedColor(color)}
-                        className={`w-full aspect-square rounded-2xl border-4 transition-all shadow-xl transform hover:scale-110 cursor-pointer ${selectedColor === color ? 'border-naturals-purple scale-110' : 'border-transparent'}`} 
-                        style={{ backgroundColor: color }} 
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                <div className="pt-10 border-t border-black/5">
-                  <p className="text-[10px] font-black opacity-30 uppercase tracking-[0.3em] mb-6">Structural Architecture</p>
-                  <div className="space-y-3">
-                    {['Layered Bob', 'Curtain Bangs', 'Long Waves', 'Pixie Cut'].map((style) => (
-                      <button 
-                        key={style} 
-                        onClick={() => setSelectedStyle(style)}
-                        className={`w-full py-4 px-6 rounded-2xl font-black text-[10px] uppercase tracking-widest flex justify-between items-center transition-all border shadow-sm cursor-pointer ${selectedStyle === style ? 'bg-deep-grape text-white border-transparent shadow-2xl' : 'bg-white text-deep-grape border-black/5 hover:border-naturals-purple/30'}`}
-                      >
-                        {style} <span className="text-[8px] opacity-40">{selectedStyle === style ? 'ACTIVE' : 'INITIALIZE'}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <button onClick={() => alert("Simulation Archival Protocol Initiated.")} className="w-full py-5 bg-naturals-purple text-white font-black text-xs tracking-[0.3em] uppercase rounded-2xl shadow-2xl shadow-naturals-purple/20 hover:scale-[1.02] transition-all mt-auto cursor-pointer">
-                Archive to Biometric Vault
-              </button>
-            </div>
+            <ARHairTryOn />
           </motion.div>
         )}
 

@@ -150,7 +150,7 @@ export default function StylistCopilot() {
 
                <div className="mt-10 flex gap-4 relative z-10">
                  <button onClick={() => recipe && alert("Operational Audit Active. Timer synchronized.")} className="flex-1 py-4 bg-warm-grey/50 text-deep-grape font-black text-[10px] uppercase tracking-[0.2em] rounded-xl hover:bg-deep-grape hover:text-white transition-all disabled:opacity-30 cursor-pointer" disabled={!recipe}>ACTIVATE TIMER</button>
-                 <button onClick={() => recipe && alert("Transaction Logged to Client Biometric Vault.")} className="flex-1 py-4 bg-naturals-purple text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-xl shadow-xl shadow-naturals-purple/20 hover:scale-[1.05] transition-all disabled:opacity-30 cursor-pointer" disabled={!recipe}>AUDIT LOG</button>
+                 <button onClick={() => recipe && alert("Transaction Logged to Client AR Styling Vault.")} className="flex-1 py-4 bg-naturals-purple text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-xl shadow-xl shadow-naturals-purple/20 hover:scale-[1.05] transition-all disabled:opacity-30 cursor-pointer" disabled={!recipe}>AUDIT LOG</button>
                </div>
             </div>
           </motion.div>

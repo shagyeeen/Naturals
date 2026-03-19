@@ -149,7 +149,7 @@ export default function LandingPage() {
                   <ul className="space-y-4">
                     <li className="flex gap-3 items-start">
                       <CheckCircle className="w-3.5 h-3.5 text-naturals-purple mt-0.5 shrink-0" />
-                      <p className="text-[11px] font-bold text-deep-grape/70 leading-relaxed uppercase"><span className="text-deep-grape font-black">Personal Diagnostic:</span> View hair/skin biometrics in "Personal Experience".</p>
+                      <p className="text-[11px] font-bold text-deep-grape/70 leading-relaxed uppercase"><span className="text-deep-grape font-black">Personal Diagnostic:</span> View AR Hair Colouring & Hair Cutted history in the styling vault.</p>
                     </li>
                     <li className="flex gap-3 items-start">
                       <CheckCircle className="w-3.5 h-3.5 text-naturals-purple mt-0.5 shrink-0" />
