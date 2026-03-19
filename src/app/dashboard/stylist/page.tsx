@@ -1,15 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Scissors, Sparkles, UploadCloud, Beaker, PlayCircle, ShieldAlert, Cpu, Activity } from "lucide-react";
+import {
+  Scissors, Sparkles, UploadCloud, Beaker,
+  ShieldAlert, Cpu, Activity, Calendar,
+  Clock, User
+} from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth";
 
 export default function StylistCopilot() {
-  const [selectedTab, setSelectedTab] = useState<"copilot" | "analyzer" | "training">("copilot");
+  const { user, profile } = useAuth();
+  const [selectedTab, setSelectedTab] = useState<"copilot" | "analyzer" | "appointments">("appointments");
   const [hairCondition, setHairCondition] = useState("Level 3 Damage - Chemically Treated/Dry");
   const [targetLook, setTargetLook] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [recipe, setRecipe] = useState<any>(null);
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAppointments();
+  }, [user]);
+
+  const fetchAppointments = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from('appointments')
+      .select('*, customer:customers(full_name), service:services(name, duration_minutes)')
+      .order('appointment_date', { ascending: true });
+    
+    if (data) setAppointments(data);
+    setLoading(false);
+  };
 
   const handleGenerateRecipe = () => {
     if (!targetLook) {
@@ -42,6 +66,7 @@ export default function StylistCopilot() {
 
       {/* Navigation Tabs */}
       <div className="flex gap-2 p-1.5 rounded-2xl w-fit mb-8 bg-warm-grey/50 border border-black/5 shadow-inner">
+        <TabButton id="appointments" label="Duty Roster" active={selectedTab} set={setSelectedTab} icon={<Calendar className="w-4 h-4" />} />
         <TabButton id="copilot" label="Synthesis Assistant" active={selectedTab} set={setSelectedTab} icon={<Beaker className="w-4 h-4" />} />
         <TabButton id="analyzer" label="Diagnostic Mapping" active={selectedTab} set={setSelectedTab} icon={<UploadCloud className="w-4 h-4" />} />
       </div>
@@ -156,21 +181,54 @@ export default function StylistCopilot() {
           </motion.div>
         )}
 
-        {selectedTab === "analyzer" && (
+        {selectedTab === "appointments" && (
           <motion.div 
-            key="analyzer"
+            key="appointments"
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="glass-card p-20 text-center border border-black/5 bg-white shadow-2xl rounded-[3rem]"
+            className="space-y-6"
           >
-            <div className="w-28 h-28 mx-auto rounded-[2rem] bg-warm-grey/50 flex items-center justify-center mb-10 border-2 border-dashed border-black/10 shadow-inner">
-               <UploadCloud className="w-12 h-12 text-naturals-purple" />
-            </div>
-             <h2 className="text-3xl font-black text-deep-grape mb-4 italic tracking-tighter">High-Fidelity Follicle Diagnostics</h2>
-             <p className="text-xs font-bold text-deep-grape/40 mb-10 max-w-lg mx-auto uppercase tracking-widest leading-relaxed">Integrated AI protocols for multi-spectral analysis of structural integrity, hydration variance, and biological porosity indices. Connect authorized hardware to initiate.</p>
-             <button className="px-12 py-5 bg-deep-grape text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] shadow-2xl hover:bg-naturals-purple transition-all cursor-pointer">
-               INITIALIZE CAMERA INTERFACE
-             </button>
+            {loading ? (
+              <div className="flex items-center justify-center p-20">
+                <div className="w-10 h-10 border-4 border-naturals-purple border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : appointments.length > 0 ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {appointments.map((appt) => (
+                  <div key={appt.id} className="glass-card p-8 bg-white border-l-8 border-naturals-purple shadow-xl hover:scale-[1.02] transition-transform">
+                    <div className="flex justify-between items-start mb-6">
+                      <div>
+                        <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-[0.2em] mb-1">Upcoming Protocol</p>
+                        <h4 className="font-black text-lg text-deep-grape italic leading-tight">{appt.service?.name || "Premium Procedure"}</h4>
+                      </div>
+                      <span className="px-3 py-1 bg-green-500 text-white text-[9px] font-black rounded-lg uppercase tracking-widest">CONFIRMED</span>
+                    </div>
+                    
+                    <div className="space-y-4 mb-8">
+                       <div className="flex items-center gap-3 text-[10px] font-black text-deep-grape/60 uppercase tracking-widest italic">
+                          <User className="w-4 h-4 text-naturals-purple" /> {appt.customer?.full_name || "Private Client"}
+                       </div>
+                       <div className="flex items-center gap-3 text-[10px] font-black text-deep-grape group">
+                          <Clock className="w-4 h-4 text-naturals-purple group-hover:animate-pulse" /> 
+                          {new Date(appt.appointment_date).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })} at {appt.start_time.slice(0, 5)}
+                       </div>
+                       <div className="flex items-center gap-3 text-[10px] font-black text-deep-grape/40 uppercase tracking-widest">
+                          <Scissors className="w-4 h-4" /> Duration: {appt.service?.duration_minutes || 60} mins
+                       </div>
+                    </div>
+
+                    <button className="w-full py-4 bg-warm-grey text-deep-grape font-black text-[10px] uppercase tracking-[0.25em] rounded-xl hover:bg-deep-grape hover:text-white transition-all cursor-pointer">
+                       ACTIVATE COPILOT
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-20 text-center glass-card bg-white border border-black/5 opacity-40">
+                <p className="font-black text-[10px] uppercase tracking-[0.3em] italic mb-2">Registry Silent</p>
+                <p className="text-[10px] font-black opacity-40">No upcoming deployments detected for this analyst profile.</p>
+              </div>
+            )}
           </motion.div>
         )}
 

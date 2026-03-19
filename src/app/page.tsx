@@ -28,14 +28,15 @@ import Image from "next/image";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white text-deep-grape overflow-x-hidden selection:bg-naturals-purple selection:text-white">
+    <div className="min-h-screen text-deep-grape overflow-x-hidden selection:bg-naturals-purple selection:text-white">
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 px-6 overflow-hidden bg-[#fafafa]">
+      <section className="relative pt-24 pb-12 md:pt-32 md:pb-16 px-6 overflow-hidden">
         {/* Decorative Elements */}
-        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-naturals-purple/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-lavender/10 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2" />
+        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-naturals-purple/10 rounded-full blur-[160px] -translate-y-1/2 translate-x-1/2 animate-pulse" />
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-lavender/20 rounded-full blur-[140px] translate-y-1/2 -translate-x-1/2" />
+        <div className="absolute top-1/4 left-1/4 w-[300px] h-[300px] bg-naturals-purple/5 rounded-full blur-[80px]" />
 
         <div className="max-w-7xl mx-auto flex flex-col items-center text-center relative z-10">
           <motion.div
@@ -54,17 +55,18 @@ export default function LandingPage() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-6xl md:text-8xl font-black tracking-tight mb-8 max-w-5xl leading-[1.05] text-deep-grape italic"
+            className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight mb-6 max-w-6xl leading-[1] text-deep-grape italic"
+            data-aos="fade-up"
           >
             The Next Era of <br />
-            <span className="text-naturals-purple not-italic">Salon Intelligence.</span>
+            <span className="text-naturals-purple not-italic drop-shadow-2xl">Salon Intelligence.</span>
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="text-xl md:text-2xl text-deep-grape/70 max-w-3xl mb-14 leading-relaxed"
+            className="text-lg md:text-xl text-deep-grape/70 max-w-2xl mb-10 leading-relaxed font-semibold uppercase tracking-widest opacity-40 px-4"
           >
             Transforming salon operations through hyper-personalized beauty insights, 
             autonomous SOP audits, and predictive trend intelligence.
@@ -86,26 +88,26 @@ export default function LandingPage() {
         </div>
       </section>
       {/* Detailed Command Manual Section */}
-      <section id="instructions" className="py-32 bg-white relative">
+      <section id="instructions" className="py-20 relative">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-20">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg bg-naturals-purple/10 text-naturals-purple text-xs font-black uppercase tracking-widest mb-6">
+          <div className="text-center mb-12" data-aos="fade-up">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg bg-naturals-purple/10 text-naturals-purple text-xs font-black uppercase tracking-widest mb-4 border border-naturals-purple/10">
                <Info className="w-4 h-4" /> Operational Guide
             </div>
-            <h2 className="text-5xl md:text-7xl font-black mb-6 italic tracking-tighter">Strategic Command Manual</h2>
-            <p className="text-xl text-deep-grape/60 max-w-3xl mx-auto font-medium">
-              Follow these precise coordinates to master the Naturals AI ecosystem from initial deployment to multi-node network scale.
+            <h2 className="text-4xl md:text-6xl font-black mb-4 italic tracking-tighter">Strategic Command Manual</h2>
+            <p className="text-lg text-deep-grape/60 max-w-2xl mx-auto font-bold uppercase tracking-widest opacity-40">
+              Master the Naturals AI ecosystem from initial deployment to node network scale.
             </p>
           </div>
 
           <div className="grid lg:grid-cols-4 gap-8">
             {/* Phase 1: Deployment - 1/4 width */}
-            <div className="space-y-8 lg:col-span-1">
+            <div className="space-y-8 lg:col-span-1" data-aos="fade-right" data-aos-delay="100">
               <div className="flex items-center gap-4 h-12">
                 <div className="w-12 h-12 rounded-2xl bg-deep-grape text-white flex items-center justify-center font-black text-xl italic shadow-lg shrink-0">01</div>
                 <h3 className="text-xl font-black uppercase italic tracking-tighter text-deep-grape">Onboarding</h3>
               </div>
-              <div className="glass-card p-6 border border-black/5 bg-white shadow-xl h-[calc(100%-80px)]">
+              <div className="liquid-glass p-8 border border-naturals-purple/10 shadow-2xl h-[calc(100%-80px)]">
                 <div className="space-y-6">
                   <div className="flex gap-3 items-start">
                     <CheckCircle className="w-3.5 h-3.5 text-naturals-purple mt-0.5 shrink-0" />
@@ -134,14 +136,14 @@ export default function LandingPage() {
 
             {/* Phase 2: Role Features - 3/4 width */}
             <div className="space-y-8 lg:col-span-3">
-              <div className="flex items-center gap-4 h-12">
+              <div className="flex items-center gap-4 h-12" data-aos="fade-down" data-aos-delay="200">
                 <div className="w-12 h-12 rounded-2xl bg-naturals-purple text-white flex items-center justify-center font-black text-xl italic shadow-lg shrink-0">02</div>
                 <h3 className="text-xl font-black uppercase italic tracking-tighter text-deep-grape">Role-Specific Protocols</h3>
               </div>
               
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* Role 1: Customer */}
-                <div className="glass-card p-6 border border-black/5 bg-white shadow-xl hover:shadow-2xl transition-all h-full">
+                <div className="glass-card p-6 border border-naturals-purple/10 bg-white/40 shadow-xl hover:shadow-2xl transition-all h-full" data-aos="fade-up" data-aos-delay="300">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="p-2.5 bg-naturals-purple/10 rounded-xl text-naturals-purple"><Users className="w-5 h-5" /></div>
                     <h4 className="font-black text-sm uppercase tracking-wider italic text-deep-grape">Customer</h4>
@@ -159,7 +161,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Role 2: Stylist */}
-                <div className="glass-card p-6 border border-black/5 bg-white shadow-xl hover:shadow-2xl transition-all h-full">
+                <div className="glass-card p-6 border border-naturals-purple/10 bg-white/40 shadow-xl hover:shadow-2xl transition-all h-full" data-aos="fade-up" data-aos-delay="400">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="p-2.5 bg-naturals-purple/10 rounded-xl text-naturals-purple"><Scissors className="w-5 h-5" /></div>
                     <h4 className="font-black text-sm uppercase tracking-wider italic text-deep-grape">Stylist</h4>
@@ -177,7 +179,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Role 3: Manager */}
-                <div className="glass-card p-6 border border-black/5 bg-white shadow-xl hover:shadow-2xl transition-all h-full">
+                <div className="glass-card p-6 border border-naturals-purple/10 bg-white/40 shadow-xl hover:shadow-2xl transition-all h-full" data-aos="fade-up" data-aos-delay="500">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="p-2.5 bg-naturals-purple/10 rounded-xl text-naturals-purple"><ShieldCheck className="w-5 h-5" /></div>
                     <h4 className="font-black text-sm uppercase tracking-wider italic text-deep-grape">Manager</h4>
@@ -195,7 +197,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Role 4: Franchise Owner */}
-                <div className="glass-card p-6 border border-black/5 bg-white shadow-xl hover:shadow-2xl transition-all h-full">
+                <div className="glass-card p-6 border border-naturals-purple/10 bg-white/40 shadow-xl hover:shadow-2xl transition-all h-full" data-aos="fade-up" data-aos-delay="600">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="p-2.5 bg-naturals-purple/10 rounded-xl text-naturals-purple"><LineChart className="w-5 h-5" /></div>
                     <h4 className="font-black text-sm uppercase tracking-wider italic text-deep-grape">Franchise Owner</h4>
@@ -213,7 +215,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Role 5: Admin */}
-                <div className="glass-card p-6 border border-black/5 bg-white shadow-xl hover:shadow-2xl transition-all h-full lg:col-span-2">
+                <div className="glass-card p-6 border border-naturals-purple/10 bg-white/40 shadow-xl hover:shadow-2xl transition-all h-full lg:col-span-2" data-aos="fade-up" data-aos-delay="700">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="p-2.5 bg-naturals-purple/10 rounded-xl text-naturals-purple"><Lock className="w-5 h-5" /></div>
                     <h4 className="font-black text-sm uppercase tracking-wider italic text-deep-grape">Global Admin</h4>
@@ -234,7 +236,7 @@ export default function LandingPage() {
           </div>
           
           {/* Phase 3: Final Master Instructions */}
-          <div className="mt-20 p-12 bg-warm-grey/40 rounded-[3rem] border border-black/5">
+          <div className="mt-20 p-12 bg-warm-grey/40 rounded-[3rem] border border-black/5" data-aos="fade-up">
             <div className="flex flex-col md:flex-row items-center gap-12">
                <div className="w-12 h-12 rounded-2xl bg-naturals-purple text-white flex items-center justify-center font-black text-xl italic shrink-0 shadow-lg">03</div>
                <div className="flex-1">
@@ -252,15 +254,15 @@ export default function LandingPage() {
       </section>
 
       {/* AI Modules Section */}
-      <section id="features" className="py-24 bg-warm-grey/20 relative">
+      <section id="features" className="py-20 bg-naturals-purple/5 relative">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8" data-aos="fade-up">
             <div className="max-w-2xl">
-              <h2 className="text-4xl md:text-5xl font-black mb-4 uppercase italic">Intelligence Modules</h2>
-              <p className="text-xl text-deep-grape/60">Powering operations from technical audits to trend prediction.</p>
+              <h2 className="text-4xl md:text-7xl font-black mb-4 uppercase italic tracking-tighter">Intelligence <br/><span className="text-naturals-purple">Modules</span></h2>
+              <p className="text-xl text-deep-grape/60 font-bold uppercase tracking-widest opacity-40">Powering operations from audits to prediction.</p>
             </div>
-            <Link href="/login" className="px-8 py-3 bg-naturals-purple text-white font-bold rounded-xl text-sm uppercase tracking-widest hover:bg-deep-grape transition-colors">
-              Access All Modules
+            <Link href="/login" className="px-12 py-5 bg-naturals-purple text-white font-black rounded-2xl text-xs uppercase tracking-widest hover:bg-deep-grape transition-all shadow-xl hover:-translate-y-1">
+              Access Ecosystem
             </Link>
           </div>
 
@@ -306,11 +308,11 @@ export default function LandingPage() {
       </section>
 
       {/* Corporate Section - Goal Orientation */}
-      <section className="py-32 bg-white">
+      <section className="py-20 relative">
         <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-32 items-center">
           <div className="relative">
              <div className="absolute -inset-10 bg-naturals-purple/5 blur-[120px] rounded-full" />
-             <div className="relative z-10 glass-card p-10 rounded-[3rem] border-black/5 shadow-2xl">
+             <div className="relative z-10 liquid-glass p-12 rounded-[3.5rem] border-naturals-purple/20 shadow-2xl" data-aos="flip-left">
                 <div className="flex justify-between items-start mb-12">
                    <div>
                       <p className="text-[10px] font-black uppercase opacity-40 mb-2 tracking-[0.2em]">Operational Dashboard</p>
@@ -345,8 +347,8 @@ export default function LandingPage() {
              </div>
           </div>
           <div>
-            <h2 className="text-5xl font-black mb-10 leading-tight">Scale Consistency Across Boundaries</h2>
-            <p className="text-lg text-deep-grape/60 mb-12 leading-relaxed">
+            <h2 className="text-5xl font-black mb-10 leading-tight italic tracking-tighter" data-aos="fade-left">Scale Consistency <br/> Across Boundaries</h2>
+            <p className="text-lg text-deep-grape/60 mb-12 leading-relaxed font-bold uppercase tracking-widest opacity-40" data-aos="fade-left" data-aos-delay="100">
               Our Salon Intelligence System bridges the gap between raw branch data and executive decision-making. 
               Map staff skills to service quality, predict future gaps, and build structured growth pathways.
             </p>
@@ -414,7 +416,11 @@ export default function LandingPage() {
 
 function FeatureItem({ icon, title, desc, href }: { icon: React.ReactNode, title: string, desc: string, href: string }) {
   return (
-    <Link href={href} className="group p-10 rounded-[2.5rem] bg-white border border-black/5 shadow-sm hover:shadow-2xl transition-all hover:-translate-y-2 flex flex-col h-full relative overflow-hidden">
+    <Link 
+      href={href} 
+      data-aos="zoom-in"
+      className="group p-10 rounded-[3rem] liquid-glass hover:shadow-2xl transition-all hover:-translate-y-2 flex flex-col h-full relative overflow-hidden"
+    >
       <div className="w-20 h-20 rounded-[1.5rem] bg-warm-grey border border-black/5 flex items-center justify-center mb-10 group-hover:bg-naturals-purple transition-all duration-500 shadow-inner group-hover:scale-90 overflow-hidden relative">
         <div className="absolute inset-0 bg-white group-hover:bg-naturals-purple transition-colors" />
         <div className="relative z-10 group-hover:text-white transition-colors">

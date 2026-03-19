@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Activity, MessageSquareHeart, Camera, CalendarClock, Bot, Send, Search, Sparkles, ShieldCheck, Cpu } from "lucide-react";
-import ARHairTryOn from "@/components/VirtualHairTryOn/ARHairTryOn";
+import { Activity, Camera, CalendarClock, Bot, Send, Sparkles, ShieldCheck } from "lucide-react";
+import ThreeDHairTryOn from "@/components/VirtualHairTryOn/ThreeDHairTryOn";
 
 export default function AIConsultation() {
   const [activeTab, setActiveTab] = useState<"ar" | "chat" | "booking">("ar");
@@ -11,8 +11,6 @@ export default function AIConsultation() {
     { role: "bot", text: "Neural Interface Synchronized. I am processing your AR Styling Archive. You are eligible for a new AR Hair Colouring session. Shall we explore a new Hair Cutted simulation?" }
   ]);
   const [inputText, setInputText] = useState("");
-  const [selectedColor, setSelectedColor] = useState("#C59ACD");
-  const [selectedStyle, setSelectedStyle] = useState("Long Waves");
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +52,7 @@ export default function AIConsultation() {
             initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} 
             className="w-full h-full"
           >
-            <ARHairTryOn />
+            <ThreeDHairTryOn />
           </motion.div>
         )}
 
@@ -149,7 +147,7 @@ export default function AIConsultation() {
   );
 }
 
-function TabButton({ id, label, icon, active, set }: { id: any, label: string, icon: React.ReactNode, active: string, set: any }) {
+function TabButton({ id, label, icon, active, set }: { id: "ar" | "chat" | "booking", label: string, icon: React.ReactNode, active: string, set: (id: "ar" | "chat" | "booking") => void }) {
   const isActive = active === id;
   return (
     <button

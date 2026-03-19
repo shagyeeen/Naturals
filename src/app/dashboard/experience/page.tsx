@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase, Stylist } from "@/lib/supabase";
 import { 
   Sparkles, Heart, Star, Calendar, Clock, 
   MapPin, User, ChevronRight, Zap, Target,
@@ -44,8 +45,21 @@ const recommendedServices = [
 export default function PersonalExperience() {
   const [activeView, setActiveView] = useState<"overview" | "booking" | "history">("overview");
   const [selectedCategory, setSelectedCategory] = useState("Haircare");
-  const [selectedStylist, setSelectedStylist] = useState("Priya");
+  const [stylists, setStylists] = useState<Stylist[]>([]);
+  const [selectedStylist, setSelectedStylist] = useState("");
   const [isBookingConfirmed, setIsBookingConfirmed] = useState(false);
+
+  useEffect(() => {
+    fetchStylists();
+  }, []);
+
+  const fetchStylists = async () => {
+    const { data } = await supabase.from('stylists').select('*').eq('is_active', true);
+    if (data && data.length > 0) {
+      setStylists(data);
+      setSelectedStylist(data[0].full_name);
+    }
+  };
 
   const handleConfirmBooking = () => {
     setIsBookingConfirmed(true);
@@ -257,26 +271,23 @@ export default function PersonalExperience() {
 
                   <div>
                     <label className="block text-[10px] font-black mb-4 uppercase tracking-[0.25em] opacity-40">Assigned Analyst</label>
-                    <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide">
-                      {[
-                        { name: "Priya", img: "https://i.pravatar.cc/150?u=priya" },
-                        { name: "Alex", img: "https://i.pravatar.cc/150?u=alex" },
-                        { name: "Meera", img: "https://i.pravatar.cc/150?u=meera" },
-                        { name: "Rahul", img: "https://i.pravatar.cc/150?u=rahul" }
-                      ].map(s => (
-                        <div 
-                          key={s.name} 
-                          onClick={() => setSelectedStylist(s.name)}
-                          className={`flex flex-col items-center gap-3 min-w-[80px] cursor-pointer group`}
-                        >
-                          <img 
-                            src={s.img} 
-                            alt={s.name} 
-                            className={`w-16 h-16 rounded-2xl p-0.5 border-2 transition-all ${selectedStylist === s.name ? 'border-naturals-purple scale-110 shadow-xl' : 'border-transparent grayscale group-hover:grayscale-0 group-hover:border-naturals-purple/20'}`} 
-                          />
-                          <span className={`text-[10px] font-black uppercase tracking-widest ${selectedStylist === s.name ? 'text-naturals-purple' : 'text-deep-grape/40'}`}>{s.name}</span>
-                        </div>
-                      ))}
+                    <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide min-h-[100px]">
+                      {stylists.length > 0 ? (
+                        stylists.map(s => (
+                          <div 
+                            key={s.id} 
+                            onClick={() => setSelectedStylist(s.full_name)}
+                            className={`flex flex-col items-center gap-3 min-w-[80px] cursor-pointer group`}
+                          >
+                            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-black transition-all shadow-lg ${selectedStylist === s.full_name ? 'bg-naturals-purple text-white rotate-3 scale-110' : 'bg-warm-grey text-deep-grape/20 group-hover:bg-naturals-purple/20'}`}>
+                              {s.full_name.charAt(0)}
+                            </div>
+                            <span className={`text-[10px] font-black uppercase tracking-widest text-center ${selectedStylist === s.full_name ? 'text-naturals-purple' : 'text-deep-grape/40'}`}>{s.full_name.split(' ')[0]}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-[10px] font-black text-deep-grape/20 uppercase tracking-widest italic pt-4">No analysts currently deployed to this node.</p>
+                      )}
                     </div>
                   </div>
                 </div>

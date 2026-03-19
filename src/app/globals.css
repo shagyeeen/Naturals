@@ -1,33 +1,92 @@
 @import "tailwindcss";
 
 :root {
-  --background: #FFFFFF;
+  --background: #FDF9FF; 
   --foreground: #2F0137;
+  --naturals-purple: #8E3E96;
+  --lavender: #C59ACD;
+  --deep-grape: #2F0137;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-naturals-purple: #8E3E96;
-  --color-lavender: #C59ACD;
-  --color-deep-grape: #2F0137;
-  --color-warm-grey: #F8F7F5;
+  --color-naturals-purple: var(--naturals-purple);
+  --color-lavender: var(--lavender);
+  --color-deep-grape: var(--deep-grape);
+  --color-warm-grey: #FAF5FF;
   --color-stark-white: #FFFFFF;
   --font-sans: var(--font-outfit);
 }
 
-
 body {
-  background: var(--background);
+  margin: 0;
+  padding: 0;
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  /* HQ Liquid Background Gradient */
+  background: linear-gradient(-45deg, #FDF9FF, #F9F1FF, #FFFFFF, #FDF9FF);
+  background-size: 400% 400%;
+  animation: liquid-hq 20s ease infinite;
+  overflow-x: hidden;
 }
 
-.glass {
-  @apply backdrop-blur-xl bg-white/70 border border-naturals-purple/10 shadow-[0_8px_32px_rgba(142,62,150,0.08)];
+@keyframes liquid-hq {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Liquid Glass Effect - Ultra Smooth with Spectral Highlights */
+.liquid-glass {
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(25px) saturate(200%);
+  -webkit-backdrop-filter: blur(25px) saturate(200%);
+  border: 1px solid rgba(142, 62, 150, 0.15);
+  box-shadow: 
+    0 8px 32px 0 rgba(142, 62, 150, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+  background-clip: padding-box;
+}
+
+.liquid-glass-dark {
+  background: rgba(47, 1, 55, 0.85);
+  backdrop-filter: blur(15px) saturate(150%);
+  border: 1px solid rgba(142, 62, 150, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
 }
 
 .glass-card {
-  @apply backdrop-blur-xl bg-white/90 border border-naturals-purple/10 shadow-[0_20px_50px_rgba(47,1,55,0.05)] rounded-2xl;
+  /* Premium Liquid Glass Card surface */
+  @apply backdrop-blur-2xl bg-white/50 border border-naturals-purple/10 shadow-[0_40px_80px_rgba(47,1,55,0.06)] rounded-[3rem];
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.glass-card:hover {
+  @apply bg-white/70 border-naturals-purple/20 shadow-2xl scale-[1.01];
+}
+
+/* Custom scrollbar to match the theme */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #FDF9FF;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #C59ACD 0%, #8E3E96 100%);
+  border-radius: 10px;
+  border: 2px solid #FDF9FF;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #8E3E96;
+}
+
+/* AOS Styles integration */
+[data-aos] {
+  pointer-events: none;
+}
+[data-aos].aos-animate {
+  pointer-events: auto;
+}

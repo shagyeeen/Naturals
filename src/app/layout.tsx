@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
+import { Providers } from "@/components/Providers";
+import { ClearCache } from "@/components/ClearCache";
+import { AOSInitializer } from "@/components/AOSInitializer";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -20,7 +23,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${outfit.variable} antialiased min-h-screen flex flex-col`}>
-        {children}
+        <AOSInitializer />
+        <ClearCache />
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

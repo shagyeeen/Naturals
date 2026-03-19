@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAuth } from "@/lib/auth";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,45 +16,36 @@ import {
   BookOpen, 
   Search, 
   Bell, 
-  Settings, 
   LogOut,
-  ChevronLeft,
   Menu,
   Activity
 } from "lucide-react";
+import { Tooltip } from "@/components/Tooltip";
 import Image from "next/image";
 
 const sidebarLinks = [
-  { name: "Overview", href: "/dashboard", icon: LayoutDashboard, roles: ["Manager", "Franchise Owner", "Admin"] },
-  { name: "Personal Experience", href: "/dashboard/experience", icon: Sparkles, roles: ["Customer", "Stylist", "Franchise Owner", "Admin"] },
-  { name: "SOP Audit", href: "/dashboard/sop", icon: ShieldCheck, roles: ["Manager", "Stylist", "Franchise Owner", "Admin"] },
-  { name: "Beauty Passport", href: "/dashboard/passport", icon: Target, roles: ["Customer", "Manager", "Franchise Owner", "Admin"] },
-  { name: "AI Stylist Copilot", href: "/dashboard/stylist", icon: Scissors, roles: ["Stylist", "Franchise Owner", "Admin"] },
-  { name: "Trend Engine", href: "/dashboard/trends", icon: LineChart, roles: ["Manager", "Franchise Owner", "Admin"] },
-  { name: "Consultation", href: "/dashboard/consultation", icon: Activity, roles: ["Customer", "Stylist", "Manager", "Franchise Owner", "Admin"] },
-  { name: "Academy", href: "/dashboard/academy", icon: BookOpen, roles: ["Stylist", "Manager", "Franchise Owner", "Admin"] },
+  { name: "Overview", href: "/dashboard", icon: LayoutDashboard, roles: ["manager", "franchise_owner", "admin"] },
+  { name: "Personal Experience", href: "/dashboard/experience", icon: Sparkles, roles: ["customer", "stylist", "franchise_owner"] },
+  { name: "SOP Audit", href: "/dashboard/sop", icon: ShieldCheck, roles: ["manager", "stylist", "franchise_owner", "admin"] },
+  { name: "Beauty Passport", href: "/dashboard/passport", icon: Target, roles: ["customer", "manager", "franchise_owner"] },
+  { name: "AI Stylist Copilot", href: "/dashboard/stylist", icon: Scissors, roles: ["stylist", "franchise_owner", "admin"] },
+  { name: "Trend Engine", href: "/dashboard/trends", icon: LineChart, roles: ["manager", "franchise_owner", "admin"] },
+  { name: "Consultation", href: "/dashboard/consultation", icon: Activity, roles: ["customer", "stylist", "manager", "franchise_owner"] },
+  { name: "Academy", href: "/dashboard/academy", icon: BookOpen, roles: ["stylist", "manager", "franchise_owner", "admin"] },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { user, profile, loading, signOut, isAdmin, isManager, isFranchiseOwner, isStylist } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
-    const role = localStorage.getItem("userRole");
-    if (!role) {
+    if (!loading && !user) {
       router.push("/login");
-    } else {
-      setUserRole(role);
     }
-  }, [router]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("userRole");
-    router.push("/login");
-  };
+  }, [user, loading, router]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,9 +55,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   };
 
+  const userRole = profile?.role || "customer";
+
   const filteredLinks = sidebarLinks.filter(link => 
-    userRole ? link.roles.includes(userRole) : false
+    link.roles.includes(userRole)
   );
+
+  if (loading) return null;
 
   return (
     <div className="min-h-screen bg-white text-deep-grape flex overflow-hidden selection:bg-naturals-purple selection:text-white">
@@ -82,6 +78,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 src="/naturalslogo.png" 
                 alt="Naturals Logo" 
                 fill 
+                sizes="192px"
                 className={`object-contain ${isSidebarOpen ? 'object-left' : 'object-center'}`}
                 priority
               />
@@ -93,22 +90,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {filteredLinks.map((link) => {
             const isActive = pathname === link.href;
             return (
-              <Link
-                key={link.name}
-                href={link.href}
-                className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all group relative overflow-hidden ${
-                  isActive 
-                    ? "bg-naturals-purple text-white shadow-xl shadow-naturals-purple/20" 
-                    : "text-deep-grape/60 hover:bg-warm-grey hover:text-deep-grape"
-                }`}
-                title={link.name}
-              >
-                <link.icon className={`w-5 h-5 shrink-0 ${isActive ? "text-white" : "group-hover:text-naturals-purple transition-colors"}`} />
-                {isSidebarOpen && <span className="whitespace-nowrap text-[11px] font-black uppercase tracking-widest">{link.name}</span>}
-                {isActive && isSidebarOpen && (
-                  <motion.div layoutId="active-indicator" className="absolute right-2 w-1.5 h-1.5 bg-white rounded-full" />
-                )}
-              </Link>
+              <Tooltip key={link.name} content={link.name}>
+                <Link
+                  href={link.href}
+                  className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all group relative overflow-hidden ${
+                    isActive 
+                      ? "bg-naturals-purple text-white shadow-xl shadow-naturals-purple/20" 
+                      : "text-deep-grape/60 hover:bg-warm-grey hover:text-deep-grape"
+                  }`}
+                >
+                  <link.icon className={`w-5 h-5 shrink-0 ${isActive ? "text-white" : "group-hover:text-naturals-purple transition-colors"}`} />
+                  {isSidebarOpen && <span className="whitespace-nowrap text-[11px] font-black uppercase tracking-widest">{link.name}</span>}
+                  {isActive && isSidebarOpen && (
+                    <motion.div layoutId="active-indicator" className="absolute right-2 w-1.5 h-1.5 bg-white rounded-full" />
+                  )}
+                </Link>
+              </Tooltip>
             )
           })}
         </div>
@@ -119,13 +116,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-30 mb-1">Authenticated As</p>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <p className="text-xs font-black text-naturals-purple italic">{userRole}</p>
+                <p className="text-xs font-black text-naturals-purple italic">{userRole.replace('_', ' ').toUpperCase()}</p>
               </div>
             </div>
           )}
           
           <button 
-            onClick={handleLogout}
+            onClick={signOut}
             className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 transition-all cursor-pointer group"
           >
             <LogOut className="w-5 h-5 shrink-0 group-hover:scale-110 transition-transform" />
@@ -172,7 +169,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="flex items-center gap-4 pl-6 border-l border-black/5">
               <div className="text-right hidden sm:block">
                 <p className="text-[10px] font-black uppercase tracking-widest opacity-30 leading-none mb-1">HQ Command</p>
-                <p className="text-[11px] font-black text-deep-grape italic">OPERATOR_01</p>
+                <p className="text-[11px] font-black text-deep-grape italic">{profile?.full_name?.toUpperCase() || "OPERATOR_01"}</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-deep-grape flex items-center justify-center font-black text-white shadow-lg text-[10px] italic">
                 {userRole?.substring(0, 2).toUpperCase() || "NA"}

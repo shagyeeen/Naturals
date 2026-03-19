@@ -1,103 +1,71 @@
-# Naturals AI Beauty Intelligence Platform
+# Naturals AI Beauty Intelligence Platform 🛡️💎
 
-The Naturals AI Beauty Intelligence Platform is a comprehensive enterprise SaaS solution designed to revolutionize salon operations and customer personalization through advanced artificial intelligence. The platform addresses critical challenges in the salon industry, including service consistency, staff skill gaps, and hyper-localized trend prediction.
+The **Naturals AI Beauty Intelligence Platform** is a high-end, autonomous enterprise SaaS designed to synchronize salon operations and customer personalization through advanced intelligence. It transforms the beauty journey into a data-driven, premium experience.
 
-## Core Modules
+## 🏺 Elite Core Modules
 
-### 1. AI SOP Engine
-Autonomous workflow enforcement using live branch monitors. The system detects protocol violations in real-time, ensuring consistent service quality across all franchise locations.
+### 1. Beauty Passport & Identity Sync 🛡️
+A digital diagnostic vault for every customer. 
+- **Passport Sync**: Bridges physical identity with secure digital accounts using brand-aligned IDs (`NAT-SHA-2026-XXXX`).
+- **Identity Recovery**: Intelligent "Claim Passport" flow to link existing beauty registries with new secure credentials.
 
-### 2. Staff Skill Assist
-An AI Stylist Copilot that provides real-time guidance and complex chemical formulation assistance. This module bridges the skill gap for semi-skilled stylists, ensuring professional results for advanced services.
+### 2. Autonomous Booking Command Center ⚔️
+A real-time resource allocation engine.
+- **Dynamic Roster**: Pulls the elite specialist registry (e.g., Suresh Kumar, Tharikasini) and service catalogs directly from the **Supabase Vault**.
+- **Bandwidth Engine**: Intelligently identifies available time slots (`get_available_slots`) to optimize analyst bandwidth and ensure zero-friction booking.
 
-### 3. Beauty Passport
-A digital diagnostic profile for every customer. It tracks long-term beauty journeys, environmental exposure, and hair/skin health scores to provide hyper-personalized service recommendations.
+### 3. Stylist Copilot & Duty Roster ✂️
+Empowering personnel with AI-guided proficiency.
+- **Duty Roster**: Real-time operational stream mapping upcoming procedures (Keratin, Coloring, etc.) directly to the specialist's dashboard.
+- **Synthesis Assistant**: Precision chemical formulation and protocol guidance (Level 3-5 damage diagnostics).
 
-### 4. Trend Intelligence
-Regional predictive analytics that combine social listening with local data. The engine forecasts breakout trends and automates regional inventory stocking to prevent stockouts of high-demand products.
+### 4. AI SOP Engine & Trend Intelligence 🧪
+- **Autonomous Audit**: Live protocol enforcement through action recognition.
+- **Predictive Trends**: Regional predictive analytics combining social listening with local inventory data.
 
-### 5. Customer Experience Tools
-Immersive tools including an AR Virtual Try-On mirror and an AI Beauty Bot. These tools enhance the consultation process and provide automated, personalized beauty advice.
-
-### 6. Training Academy
-A digital certification platform with AI-graded skill tests. It ensures staff proficiency through interactive modules and live technique assessments via visual AI.
-
-## Technical Architecture
-
-The platform is built on a modern, high-performance stack designed for scalability and real-time processing.
+## 🗺️ System Architecture
 
 ```mermaid
 graph TD
-    A[Global Salon Network] --> B[AI SOP Engine]
-    A --> C[Customer Experience]
+    A[Elite Salon Network] --> B[AI SOP Engine]
+    A --> C[Passport Identity Sync]
     B --> D[Central Intelligence Hub]
     C --> D
-    D --> E[Trend Prediction Model]
-    D --> F[Beauty Passport Database]
-    E --> G[Inventory Management]
-    F --> H[Personalized Marketing]
-    G --> I[Supplied Chain Optimization]
-    H --> J[Customer Retention]
+    D --> E[Bandwidth Engine]
+    D --> F[Beauty Passport Vault]
+    E --> G[Duty Roster (Stylist Dashboard)]
+    F --> H[Personalized Experience]
 ```
 
-## Workflows
+## 🏺 Technology Stack
 
-### Customer Beauty Journey
-The Customer Beauty Passport facilitates a continuous feedback loop between diagnostics and results.
+- **Core Framework**: Next.js 15+ (App Router)
+- **Security & Data**: Supabase (Auth, RLS, Real-time)
+- **Elite Aesthetic**: Tailwind CSS & Framer Motion
+- **Diagnostics**: MediaPipe & AI Visual Recognition
+- **Branding**: Premium Light Theme with Naturals Purple
 
-```mermaid
-graph LR
-    Start[Customer Entry] --> Scan[AI Face/Hair Scan]
-    Scan --> Diagnostic[Health Score Generation]
-    Diagnostic --> Passport[Update Beauty Passport]
-    Passport --> Recommend[Predictive Recommendation]
-    Recommend --> Service[AI-Guided Service]
-    Service --> Tracking[Post-Service Monitoring]
-    Tracking --> Diagnostic
-```
+## 🚀 Getting Started
 
-### AI SOP Audit Workflow
-Real-time monitoring and enforcement of standard operating procedures.
-
-```mermaid
-graph TD
-    Monitor[Live Camera Feed] --> Detection[AI Action Recognition]
-    Detection --> Validation{Protocol Match?}
-    Validation -- Yes --> Log[Record Adherence]
-    Validation -- No --> Alert[Immediate Manager Alert]
-    Alert --> SOP[Stylist Tablet Warning]
-    SOP --> Correction[Manual Intervention]
-    Correction --> Log
-```
-
-## Technology Stack
-
-- **Framework**: Next.js 15+ (App Router)
-- **Styling**: Tailwind CSS
-- **Animations**: Framer Motion
-- **Data Visualization**: Recharts
-- **Icons**: Lucide React
-- **Theme**: Premium Light Aesthetic
-
-## Getting Started
-
-### Prerequisites
-- Node.js 18.x or higher
-- npm or yarn
-
-### Installation
-
-1. Install dependencies:
+1. **Install Dependencies**:
    ```bash
    npm install
    ```
 
-2. Run the development server:
+2. **Registry Hub Configuration**:
+   Create a `.env.local` with your **Supabase** credentials:
+   ```bash
+   NEXT_PUBLIC_SUPABASE_URL=your_project_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+   ```
+
+3. **Digital Roster Activation**:
+   Run the registry pulse in your Supabase SQL Editor to unlock the styling roster and bandwidth engine (see `docs/sql` for scripts).
+
+4. **Initialize Execution**:
    ```bash
    npm run dev
    ```
 
-3. Build for production:
-   ```bash
-   npm run build
-   ```
+---
+**Precision Beauty Intelligence • Powered by Naturals AI** 🛡️✨🏛️
