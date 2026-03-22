@@ -1,0 +1,8 @@
+node_modules
+.next
+tmp/
+supabase/
+dist/
+build/
+*.config.js
+*.config.ts
