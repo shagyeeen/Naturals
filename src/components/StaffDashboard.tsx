@@ -16,6 +16,7 @@ interface FormData {
   notes: string;
   franchiseName?: string;
   franchiseAddress?: string;
+  franchiseOwnerId: string;
   preferences: { [key: string]: string | string[] };
   profilePhotoUrl?: string;
   profilePhotoFile?: File | null;
@@ -106,6 +107,7 @@ export default function StaffDashboard() {
     notes: '',
     franchiseName: '',
     franchiseAddress: '',
+    franchiseOwnerId: '',
     preferences: {},
     profilePhotoUrl: '',
     profilePhotoFile: null
@@ -156,12 +158,12 @@ export default function StaffDashboard() {
     setFormData({ 
       fullName: '', phone: '', email: '', dateOfBirth: '', gender: '', 
       experienceYears: '', specializations: '', notes: '', 
-      franchiseName: '', franchiseAddress: '', preferences: {}
+      franchiseName: '', franchiseAddress: '', franchiseOwnerId: '', preferences: {}
     });
     setShowModal(true);
   };
 
-  const handleEdit = (type: 'customer' | 'stylist', data: any) => {
+  const handleEdit = (type: 'customer' | 'stylist' | 'manager' | 'franchise', data: any) => {
     setModalType('edit');
     setEditingId(data.id);
     
@@ -183,6 +185,7 @@ export default function StaffDashboard() {
       notes: data.notes || '',
       franchiseName: data.franchise_name || '',
       franchiseAddress: data.franchise_address || '',
+      franchiseOwnerId: data.franchise_owner_id || '',
       preferences: data.ai_hairstyle_analysis?.questionnaire_results || {},
       profilePhotoUrl: data.profile_photo_url || '',
       profilePhotoFile: null
@@ -227,6 +230,7 @@ export default function StaffDashboard() {
     
     setIsSubmitting(true);
     let table = '';
+    let payload: any = {};
     let profileUrl = formData.profilePhotoUrl;
 
     // Handle Image Upload
@@ -235,7 +239,7 @@ export default function StaffDashboard() {
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `profiles/${fileName}`;
 
-      const { error: uploadError, data: uploadData } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, formData.profilePhotoFile);
 
@@ -247,85 +251,63 @@ export default function StaffDashboard() {
       }
     }
 
-    let payload: any = {
-      full_name: formData.fullName,
-      phone: formData.phone,
-      email: formData.email || null,
-    };
 
     const formatDate = (dob: string) => {
-      if (dob.length === 10) {
+      if (dob && dob.length === 10) {
         const [d, m, y] = dob.split('-').map(Number);
         return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       }
       return null;
     };
 
-    if (modalType === 'edit') {
-      table = activeTab === 'customers' ? 'customers' : 'stylists';
-      if (table === 'customers') {
-        payload = {
-          ...payload,
-          gender: formData.gender || null,
-          date_of_birth: formatDate(formData.dateOfBirth),
-          profile_photo_url: profileUrl || null,
-          notes: formData.notes,
-          ai_hairstyle_analysis: {
-            questionnaire_results: formData.preferences,
-            staff_added_preferences: formData.notes
-          }
-        };
-      } else {
-        payload = {
-          ...payload,
-          gender: formData.gender || null,
-          date_of_birth: formatDate(formData.dateOfBirth),
-          profile_photo_url: profileUrl || null,
-          experience_years: parseInt(formData.experienceYears) || 0,
-          specializations: formData.specializations.split(',').map(s => s.trim()).filter(Boolean)
-        };
-      }
-    }
+    const basePayload = {
+      full_name: formData.fullName,
+      phone: formData.phone,
+      email: formData.email || null,
+      date_of_birth: formatDate(formData.dateOfBirth),
+    };
 
-    if (modalType === 'add-customer') {
+
+
+    if (modalType === 'add-customer' || (modalType === 'edit' && activeTab === 'customers')) {
       table = 'customers';
-      const customerCode = `NAT-SHA-2026-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-      payload = { 
-        ...payload, 
-        customer_code: customerCode,
+      payload = {
+        ...basePayload,
         gender: formData.gender || null,
-        date_of_birth: formatDate(formData.dateOfBirth),
         profile_photo_url: profileUrl || null,
-        notes: formData.notes, 
+        notes: formData.notes,
         ai_hairstyle_analysis: {
           questionnaire_results: formData.preferences,
           staff_added_preferences: formData.notes
-        },
-        is_premium: false 
+        }
       };
-    } else if (modalType === 'add-stylist') {
+      if (modalType === 'add-customer') {
+        payload.customer_code = `NAT-SHA-2026-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+        payload.is_premium = false;
+      }
+    } else if (modalType === 'add-stylist' || (modalType === 'edit' && activeTab === 'stylists')) {
       table = 'stylists';
-      payload = { 
-        ...payload, 
+      payload = {
+        ...basePayload,
         gender: formData.gender || null,
-        date_of_birth: formatDate(formData.dateOfBirth),
         profile_photo_url: profileUrl || null,
         experience_years: parseInt(formData.experienceYears) || 0,
         specializations: formData.specializations.split(',').map(s => s.trim()).filter(Boolean)
       };
-    } else if (modalType === 'add-manager') {
+    } else if (modalType === 'add-manager' || (modalType === 'edit' && activeTab === 'managers')) {
       table = 'managers';
-      payload = { 
-        ...payload, 
-        date_of_birth: formatDate(formData.dateOfBirth) 
+      payload = {
+        ...basePayload,
+        franchise_owner_id: formData.franchiseOwnerId || null,
+        profile_photo_url: profileUrl || null
       };
-    } else if (modalType === 'add-franchise') {
+    } else if (modalType === 'add-franchise' || (modalType === 'edit' && activeTab === 'franchise')) {
       table = 'franchise_owners';
-      payload = { 
-        ...payload, 
-        date_of_birth: formatDate(formData.dateOfBirth),
-        franchise_name: formData.franchiseName, 
-        franchise_address: formData.franchiseAddress 
+      payload = {
+        ...basePayload,
+        franchise_name: formData.franchiseName || null,
+        franchise_address: formData.franchiseAddress || null,
+        profile_photo_url: profileUrl || null
       };
     }
 
@@ -437,7 +419,7 @@ export default function StaffDashboard() {
         {(['customers', 'stylists', 'managers', 'franchise', 'appointments'] as const).map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab as any)}
+            onClick={() => setActiveTab(tab)}
             className={`px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${
               activeTab === tab ? 'bg-white text-deep-grape shadow-md' : 'text-deep-grape/40 hover:text-deep-grape'
             }`}
@@ -562,7 +544,7 @@ export default function StaffDashboard() {
                   className="px-2 py-0.5 bg-naturals-purple/5 text-naturals-purple rounded-md text-[9px] font-black uppercase hover:bg-naturals-purple hover:text-white transition-all"
                 >{m.branch_name || 'Assign Branch'}</button>
                 <div className="flex items-center gap-1">
-                  <button onClick={() => handleEdit('stylist', m)} className="p-2 hover:bg-naturals-purple/10 rounded-xl transition-all group">
+                  <button onClick={() => handleEdit('manager', m)} className="p-2 hover:bg-naturals-purple/10 rounded-xl transition-all group">
                     <Edit className="w-4 h-4 text-naturals-purple/60 group-hover:text-naturals-purple" />
                   </button>
                   <button onClick={() => handleDelete('manager', m.id)} className="p-2 hover:bg-red-50 rounded-xl transition-all group">
@@ -598,7 +580,7 @@ export default function StaffDashboard() {
                   className="px-2 py-0.5 bg-deep-grape/5 text-deep-grape rounded-md text-[9px] font-black uppercase hover:bg-deep-grape hover:text-white transition-all"
                 >{fo.branch_name || 'Assign Branch'}</button>
                 <div className="flex items-center gap-1">
-                  <button onClick={() => handleEdit('stylist', fo)} className="p-2 hover:bg-naturals-purple/10 rounded-xl transition-all group">
+                  <button onClick={() => handleEdit('franchise', fo)} className="p-2 hover:bg-naturals-purple/10 rounded-xl transition-all group">
                     <Edit className="w-4 h-4 text-naturals-purple/60 group-hover:text-naturals-purple" />
                   </button>
                   <button onClick={() => handleDelete('franchise', fo.id)} className="p-2 hover:bg-red-50 rounded-xl transition-all group">
@@ -935,7 +917,7 @@ export default function StaffDashboard() {
               )}
 
 
-              {modalType === 'add-franchise' && (
+              {(modalType === 'add-franchise' || (modalType === 'edit' && activeTab === 'franchise')) && (
                 <div className="space-y-4 pt-2">
                   <div className="space-y-1">
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Franchise Name</label>
@@ -958,7 +940,30 @@ export default function StaffDashboard() {
                 </div>
               )}
 
-              {modalType === 'add-stylist' && (
+              {(modalType === 'add-manager' || (modalType === 'edit' && activeTab === 'managers')) && (
+                <div className="space-y-4 pt-2">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Associated Franchise Owner</label>
+                    <div className="relative group/sel">
+                        <select 
+                            className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none appearance-none cursor-pointer"
+                            value={formData.franchiseOwnerId}
+                            onChange={(e) => setFormData({ ...formData, franchiseOwnerId: e.target.value })}
+                        >
+                            <option value="">Independent / None</option>
+                            {franchiseOwners.map(fo => (
+                                <option key={fo.id} value={fo.id}>{fo.full_name} ({fo.franchise_name || 'No Name'})</option>
+                            ))}
+                        </select>
+                        <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-naturals-purple/40 group-hover/sel:text-naturals-purple transition-colors">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" /></svg>
+                        </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {(modalType === 'add-stylist' || (modalType === 'edit' && activeTab === 'stylists')) && (
                 <div className="space-y-4 pt-2">
                   <div className="space-y-1">
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Specializations</label>

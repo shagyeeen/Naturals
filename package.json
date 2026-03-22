@@ -28,7 +28,6 @@
     "react-email": "^5.2.10",
     "react-popper": "^2.3.0",
     "recharts": "^3.8.0",
-    "resend": "^6.9.4",
     "tailwind-merge": "^3.5.0",
     "three": "^0.183.2"
   },
