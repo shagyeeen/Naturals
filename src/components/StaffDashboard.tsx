@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { supabase, Customer, Stylist, Manager, Appointment } from "@/lib/supabase";
+import { supabase, Customer, Stylist, Manager, FranchiseOwner, Appointment } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { UserPlus, Search, Edit, Trash2, Eye, X, Briefcase, Users, UserCheck, Scissors, Calendar } from "lucide-react";
 
@@ -87,8 +87,8 @@ export default function StaffDashboard() {
   const [activeTab, setActiveTab] = useState<'customers' | 'stylists' | 'managers' | 'franchise' | 'appointments'>('stylists');
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [stylists, setStylists] = useState<Stylist[]>([]);
-  const [managers, setManagers] = useState<any[]>([]);
-  const [franchiseOwners, setFranchiseOwners] = useState<any[]>([]);
+  const [managers, setManagers] = useState<Manager[]>([]);
+  const [franchiseOwners, setFranchiseOwners] = useState<FranchiseOwner[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [branchAssign, setBranchAssign] = useState<{id: string, table: string, current: string} | null>(null);
   const [branchInput, setBranchInput] = useState('');
@@ -116,14 +116,6 @@ export default function StaffDashboard() {
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    fetchCustomers();
-    fetchAppointments();
-    fetchStylists();
-    fetchManagers();
-    fetchFranchiseOwners();
-  }, []);
-
   const fetchCustomers = async () => {
     const { data } = await supabase.from('customers').select('*').order('created_at', { ascending: false });
     if (data) setCustomers(data);
@@ -141,7 +133,7 @@ export default function StaffDashboard() {
 
   const fetchFranchiseOwners = async () => {
     const { data } = await supabase.from('franchise_owners').select('*').order('full_name');
-    if (data) setFranchiseOwners(data);
+    if (data) setFranchiseOwners(data as unknown as FranchiseOwner[]);
   }
 
   const fetchAppointments = async () => {
@@ -149,8 +141,16 @@ export default function StaffDashboard() {
       .from('appointments')
       .select('*, customer:customers(*), stylist:stylists(*), service:services(*)')
       .order('appointment_date', { ascending: false });
-    if (data) setAppointments(data);
+    if (data) setAppointments(data as any);
   };
+
+  useEffect(() => {
+    fetchCustomers();
+    fetchAppointments();
+    fetchStylists();
+    fetchManagers();
+    fetchFranchiseOwners();
+  }, []);
 
   const handleOpenModal = (type: ModalType, id?: string) => {
     setModalType(type);

@@ -34,6 +34,7 @@ export interface Customer {
   preferred_salon_id?: string
   notes?: string
   is_premium: boolean
+  branch_name?: string
   created_at: string
   updated_at: string
 }
@@ -47,6 +48,7 @@ export interface FranchiseOwner {
   date_of_birth?: string
   franchise_name?: string
   franchise_address?: string
+  branch_name?: string
   created_at: string
   updated_at: string
 }
@@ -59,6 +61,7 @@ export interface Manager {
   phone: string
   email?: string
   date_of_birth?: string
+  branch_name?: string
   created_at: string
   updated_at: string
 }
