@@ -10,32 +10,32 @@ import {
 } from "lucide-react";
 
 const beautyGoals = [
-  { id: "skin", title: "Dermal Health Index", progress: 65, status: "Protocol Optimized", icon: <Star className="w-5 h-5 text-naturals-purple" /> },
-  { id: "hair", title: "Follicle Strength Metric", progress: 40, status: "Calibration Required", icon: <Zap className="w-5 h-5 text-naturals-purple" /> },
-  { id: "nails", title: "Keratin Integrity", progress: 90, status: "Peak Performance", icon: <Activity className="w-5 h-5 text-naturals-purple" /> }
+  { id: "skin", title: "Skin Clarity", progress: 65, status: "On Track", icon: <Star className="w-5 h-5 text-naturals-purple" /> },
+  { id: "hair", title: "Hair Health", progress: 40, status: "Needs Attention", icon: <Zap className="w-5 h-5 text-naturals-purple" /> },
+  { id: "nails", title: "Hair Smoothness", progress: 90, status: "Excellent", icon: <Activity className="w-5 h-5 text-naturals-purple" /> }
 ];
 
 const recommendedServices = [
   {
     id: 1,
-    name: "AI Dermal Diagnostic",
-    description: "Multi-spectral analysis and targeted formulation delivery.",
+    name: "Advanced Facial Care",
+    description: "Deep cleansing and hydration based on your skin type.",
     price: "₹2,499",
     duration: "60 mins",
     image: "https://images.unsplash.com/photo-1570172619244-92151a1d8a9d?w=400&q=80"
   },
   {
     id: 2,
-    name: "Structural Keratin Bonding",
-    description: "Molecular re-alignment based on hair porosity mapping.",
+    name: "Keratin Smoothing Treatment",
+    description: "Frizz control and long-lasting smoothness for your hair.",
     price: "₹4,999",
     duration: "180 mins",
     image: "https://images.unsplash.com/photo-1560869713-7d0a29430863?w=400&q=80"
   },
   {
     id: 3,
-    name: "Precision Calibration",
-    description: "Style maintenance utilizing previous ergonomic logs.",
+    name: "Precision Haircut",
+    description: "A tailored haircut designed for your face shape and style preferences.",
     price: "₹899",
     duration: "30 mins",
     image: "https://images.unsplash.com/photo-1522337360788-8b13df772ad5?w=400&q=80"
@@ -64,7 +64,7 @@ export default function PersonalExperience() {
   const handleConfirmBooking = () => {
     setIsBookingConfirmed(true);
     setTimeout(() => {
-      alert(`Deployment Successful: ${selectedCategory} service scheduled with Analyst ${selectedStylist}.`);
+      alert(`Booking Successful: ${selectedCategory} service scheduled with Stylist ${selectedStylist}.`);
       setIsBookingConfirmed(false);
       setActiveView("overview");
     }, 1000);
@@ -76,18 +76,18 @@ export default function PersonalExperience() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-naturals-purple/10 text-naturals-purple text-[10px] font-black uppercase tracking-[0.2em] mb-2 border border-naturals-purple/20">
-            <Activity className="w-3 h-3" /> Protocol 05: Personalised Intelligence
+            <Activity className="w-3 h-3" /> Based on your Questionnaire
           </div>
           <h1 className="text-4xl font-black text-deep-grape mb-2 italic tracking-tighter">
-            Personal Diagnostic Interface
+            My Beauty Profile
           </h1>
-          <p className="text-deep-grape/40 font-bold uppercase text-xs tracking-widest">Autonomous analytics tailored to your unique biological profile.</p>
+          <p className="text-deep-grape/40 font-bold uppercase text-xs tracking-widest">Personalized recommendations based on your recent salon visits.</p>
         </div>
         
         <div className="flex items-center gap-2 bg-warm-grey/50 p-1.5 rounded-2xl border border-naturals-purple/5">
-          <NavButton active={activeView === "overview"} onClick={() => setActiveView("overview")} label="System Overview" />
-          <NavButton active={activeView === "booking"} onClick={() => setActiveView("booking")} label="Resource Allocation" />
-          <NavButton active={activeView === "history"} onClick={() => setActiveView("history")} label="Operational Logs" />
+          <NavButton active={activeView === "overview"} onClick={() => setActiveView("overview")} label="Overview" />
+          <NavButton active={activeView === "booking"} onClick={() => setActiveView("booking")} label="Book Service" />
+          <NavButton active={activeView === "history"} onClick={() => setActiveView("history")} label="Past Visits" />
         </div>
       </div>
 
@@ -111,18 +111,18 @@ export default function PersonalExperience() {
                 <div className="relative z-10 space-y-6">
                   <div className="flex items-center gap-3">
                     <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    <span className="px-4 py-1 rounded-full bg-white/10 backdrop-blur-md text-[10px] font-black border border-white/20 uppercase tracking-[0.3em]">Environment Analysis</span>
+                    <span className="px-4 py-1 rounded-full bg-white/10 backdrop-blur-md text-[10px] font-black border border-white/20 uppercase tracking-[0.3em]">Latest Analysis</span>
                   </div>
                   <h2 className="text-5xl font-black leading-tight tracking-tighter italic">
-                    Humidity Threshold <br />
-                    Breached: <span className="text-naturals-purple">78%</span>.
+                    Primary Concern: <br />
+                    <span className="text-naturals-purple">Frizz Control</span>.
                   </h2>
                   <p className="text-white/60 max-w-md text-sm font-bold leading-relaxed uppercase tracking-wider">
-                    Biological sensors indicate hair follicle expansion risk. Deployment of Anti-Frizz Protocol is mandatory for shine preservation.
+                    Based on your questionnaire, you selected Frizz Control as a primary concern. We strongly recommend a Keratin Smoothing treatment.
                   </p>
                   <div className="flex gap-4 pt-4">
-                    <button onClick={() => alert("Deployment Request Logged.")} className="px-8 py-4 bg-white text-deep-grape font-black text-xs uppercase tracking-widest rounded-xl shadow-xl hover:scale-105 transition-transform cursor-pointer">Execute Protocol</button>
-                    <button onClick={() => alert("Alternative formulations scanning...")} className="px-8 py-4 bg-white/10 backdrop-blur text-white font-black text-xs uppercase tracking-widest rounded-xl border border-white/20 hover:bg-white/20 transition-colors cursor-pointer">Secondary Options</button>
+                    <button onClick={() => { setSelectedCategory("Haircare"); setActiveView("booking"); }} className="px-8 py-4 bg-white text-deep-grape font-black text-xs uppercase tracking-widest rounded-xl shadow-xl hover:scale-105 transition-transform cursor-pointer">Book Treatment</button>
+                    <button onClick={() => alert("Loading alternatives...")} className="px-8 py-4 bg-white/10 backdrop-blur text-white font-black text-xs uppercase tracking-widest rounded-xl border border-white/20 hover:bg-white/20 transition-colors cursor-pointer">View Alternatives</button>
                   </div>
                 </div>
               </div>
@@ -158,9 +158,10 @@ export default function PersonalExperience() {
                           <span className="flex items-center gap-1.5"><Target className="w-3.5 h-3.5" /> 98% Match</span>
                         </div>
                         <button 
+                          onClick={() => { setSelectedCategory(service.name); setActiveView("booking"); }}
                           className="w-full py-3 rounded-xl border-2 border-naturals-purple text-naturals-purple font-black text-[10px] uppercase tracking-[0.2em] hover:bg-naturals-purple hover:text-white transition-all"
                         >
-                          Initialize Request
+                          Book Now
                         </button>
                       </div>
                     </motion.div>
@@ -174,7 +175,7 @@ export default function PersonalExperience() {
               {/* Beauty Score Card */}
               <div className="glass-card p-8 border border-black/5 bg-white relative overflow-hidden">
                 <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/30 mb-8 flex items-center gap-3">
-                  <Target className="w-4 h-4" /> Biological Goal Tracking
+                  <Target className="w-4 h-4" /> Recommended Goals Progress
                 </h3>
                 
                 <div className="space-y-10">
@@ -200,23 +201,23 @@ export default function PersonalExperience() {
                   ))}
                 </div>
 
-                <button onClick={() => alert("Re-analyzing bio-metrics...")} className="w-full mt-10 py-4 bg-warm-grey/50 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-naturals-purple hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer">
-                  Sync Bio-Metrics <ChevronRight className="w-4 h-4" />
+                <button onClick={() => alert("Updating Questionnaire Preferences...")} className="w-full mt-10 py-4 bg-warm-grey/50 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-naturals-purple hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer">
+                  Update Preferences <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
 
               {/* Quick Actions */}
               <div className="grid grid-cols-2 gap-4">
-                <QuickActionButton onClick={() => alert("Initializing Neural Mirror...")} icon={<ImageIcon className="w-6 h-6" />} label="Visual Mirror" sub="AR Diagnostics" />
-                <QuickActionButton onClick={() => alert("Querying Central Passport Logs...")} icon={<History className="w-6 h-6" />} label="Passport" sub="Audit Trail" />
+                <QuickActionButton onClick={() => alert("Opening Style Gallery...")} icon={<ImageIcon className="w-6 h-6" />} label="Style Gallery" sub="Try On Looks" />
+                <QuickActionButton onClick={() => alert("Opening Beauty Passport...")} icon={<History className="w-6 h-6" />} label="Passport" sub="Visit History" />
               </div>
 
               {/* Next Appointment Snippet */}
               <div className="glass-card p-8 border-t-8 border-naturals-purple bg-white shadow-xl">
                 <div className="flex justify-between items-start mb-6">
                   <div>
-                    <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-[0.2em] mb-1">Upcoming Reservation</p>
-                    <h4 className="font-black text-lg text-deep-grape italic">Structural Follicle Treatment</h4>
+                    <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-[0.2em] mb-1">Upcoming Appointment</p>
+                    <h4 className="font-black text-lg text-deep-grape italic">Hair Coloring & Styling</h4>
                   </div>
                   <div className="w-12 h-12 rounded-xl bg-deep-grape text-white flex items-center justify-center font-black text-xs italic">
                     24<br/>MAR
@@ -224,16 +225,16 @@ export default function PersonalExperience() {
                 </div>
                 <div className="space-y-4 mb-8">
                   <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-deep-grape/60">
-                    <Clock className="w-4 h-4 text-naturals-purple" /> 10:30 Standard Time
+                    <Clock className="w-4 h-4 text-naturals-purple" /> 10:30 AM
                   </div>
                   <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-deep-grape/60">
-                    <MapPin className="w-4 h-4 text-naturals-purple" /> Node: Chennai Alpha
+                    <MapPin className="w-4 h-4 text-naturals-purple" /> Branch: Naturals Chennai
                   </div>
                   <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-deep-grape/60">
-                    <User className="w-4 h-4 text-naturals-purple" /> Analyst: Priya S.
+                    <User className="w-4 h-4 text-naturals-purple" /> Stylist: Priya S.
                   </div>
                 </div>
-                <button onClick={() => alert("Opening Resource Management Console...")} className="w-full py-4 bg-naturals-purple text-white font-black text-[10px] uppercase tracking-[0.25em] rounded-xl shadow-xl shadow-naturals-purple/20 hover:scale-105 transition-transform cursor-pointer">Modify Allocation</button>
+                <button onClick={() => alert("Opening Booking Management...")} className="w-full py-4 bg-naturals-purple text-white font-black text-[10px] uppercase tracking-[0.25em] rounded-xl shadow-xl shadow-naturals-purple/20 hover:scale-105 transition-transform cursor-pointer">Manage Booking</button>
               </div>
             </div>
           </motion.div>
@@ -249,13 +250,13 @@ export default function PersonalExperience() {
             <div className="glass-card overflow-hidden grid md:grid-cols-2 shadow-2xl border border-black/5 bg-white">
               <div className="p-10 md:p-14 space-y-10 bg-[#fafafa]">
                 <div>
-                  <h2 className="text-3xl font-black text-deep-grape mb-2 tracking-tighter italic">Resource Allocation</h2>
-                  <p className="text-deep-grape/40 font-bold uppercase text-xs tracking-widest">Optimizing stylist bandwidth for upcoming procedures.</p>
+                  <h2 className="text-3xl font-black text-deep-grape mb-2 tracking-tighter italic">Book a Service</h2>
+                  <p className="text-deep-grape/40 font-bold uppercase text-xs tracking-widest">Select a category and stylist for your next appointment.</p>
                 </div>
 
                 <div className="space-y-8">
                   <div>
-                    <label className="block text-[10px] font-black mb-4 uppercase tracking-[0.25em] opacity-40">Procedure Category</label>
+                    <label className="block text-[10px] font-black mb-4 uppercase tracking-[0.25em] opacity-40">Service Category</label>
                     <div className="grid grid-cols-2 gap-4">
                       {["Haircare", "Skincare", "Makeup", "Bridal"].map(cat => (
                         <button 
@@ -270,7 +271,7 @@ export default function PersonalExperience() {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black mb-4 uppercase tracking-[0.25em] opacity-40">Assigned Analyst</label>
+                    <label className="block text-[10px] font-black mb-4 uppercase tracking-[0.25em] opacity-40">Select Stylist</label>
                     <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide min-h-[100px]">
                       {stylists.length > 0 ? (
                         stylists.map(s => (
@@ -286,7 +287,7 @@ export default function PersonalExperience() {
                           </div>
                         ))
                       ) : (
-                        <p className="text-[10px] font-black text-deep-grape/20 uppercase tracking-widest italic pt-4">No analysts currently deployed to this node.</p>
+                        <p className="text-[10px] font-black text-deep-grape/20 uppercase tracking-widest italic pt-4">No stylists currently available.</p>
                       )}
                     </div>
                   </div>
@@ -299,10 +300,10 @@ export default function PersonalExperience() {
                      <Activity className="w-32 h-32" />
                    </div>
                    <div className="flex items-center gap-2 text-naturals-purple font-black text-[10px] uppercase tracking-[0.3em] mb-6 relative z-10">
-                     <Sparkles className="w-4 h-4" /> Optimization engine
+                     <Sparkles className="w-4 h-4" /> Booking Summary
                    </div>
                    <h3 className="text-2xl font-black mb-3 italic tracking-tighter relative z-10">Slot Identified</h3>
-                   <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-8 leading-relaxed relative z-10">Autonomous scheduler has balanced bandwidth and stylist specialty for maximum efficiency.</p>
+                   <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-8 leading-relaxed relative z-10">We've matched you with the best available time slot for your service.</p>
                    
                    <div className="space-y-4 relative z-10">
                      <div className="flex items-center justify-between p-5 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10">
@@ -326,10 +327,10 @@ export default function PersonalExperience() {
                   disabled={isBookingConfirmed}
                   className="w-full py-5 bg-naturals-purple text-white font-black text-xs uppercase tracking-[0.35em] rounded-2xl shadow-2xl shadow-naturals-purple/20 hover:scale-[1.02] transition-transform disabled:opacity-50 cursor-pointer"
                  >
-                   {isBookingConfirmed ? "PROCESSING..." : "CONFIRM DEPLOYMENT"}
+                   {isBookingConfirmed ? "PROCESSING..." : "CONFIRM BOOKING"}
                  </button>
                  <p className="text-center text-[9px] font-black text-deep-grape/20 uppercase tracking-widest mt-8">
-                    Data transmission encrypted. <br/> Operational logs will be updated.
+                    Your booking details are securely encrypted. <br/> Visit history will be updated after the service.
                  </p>
               </div>
             </div>
@@ -347,9 +348,9 @@ export default function PersonalExperience() {
                 <div className="w-24 h-24 bg-warm-grey rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner">
                   <History className="w-12 h-12 text-deep-grape/10" />
                 </div>
-                <h3 className="text-2xl font-black text-deep-grape mb-4 italic tracking-tighter">System Audit Trail</h3>
-                <p className="text-xs font-bold text-deep-grape/40 mb-10 uppercase tracking-widest leading-relaxed">Encrypted diagnostic history and previous transformation logs are currently restricted. Manual validation required.</p>
-                <button onClick={() => alert("Decrypting biological logs...")} className="px-10 py-4 bg-deep-grape text-white font-black text-[10px] uppercase tracking-[0.3em] rounded-xl shadow-2xl transition-all hover:scale-105 cursor-pointer">Decrypt Operational Logs</button>
+                <h3 className="text-2xl font-black text-deep-grape mb-4 italic tracking-tighter">Visit History</h3>
+                <p className="text-xs font-bold text-deep-grape/40 mb-10 uppercase tracking-widest leading-relaxed">Your past salon visits and service details are securely stored here for your privacy.</p>
+                <button onClick={() => alert("Loading visit history...")} className="px-10 py-4 bg-deep-grape text-white font-black text-[10px] uppercase tracking-[0.3em] rounded-xl shadow-2xl transition-all hover:scale-105 cursor-pointer">View Full History</button>
              </div>
            </motion.div>
         )}

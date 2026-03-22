@@ -17,7 +17,9 @@ export default function DashboardPage() {
     isManager, 
     isFranchiseOwner, 
     isStylist, 
-    isCustomer 
+    isCustomer,
+    customerProfile,
+    signOut
   } = useAuth();
   const router = useRouter();
 
@@ -40,29 +42,27 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-naturals-purple">Welcome back</p>
-          <h1 className="text-3xl font-black text-deep-grape italic tracking-tight">
-            {!profile ? "Initializing Experience..." : 
-             isCustomer ? "Customer Dashboard" : 
-             isStylist ? "Stylist Dashboard" : 
-             isManager ? "Manager Dashboard" : "Dashboard"}
-          </h1>
-        </div>
-      </div>
-
-      {!profile && (
-        <div className="p-10 text-center bg-white rounded-[2.5rem] shadow-2xl border border-black/5">
-          <Loader2 className="w-8 h-8 animate-spin text-naturals-purple mx-auto mb-4" />
-          <p className="text-deep-grape font-black text-xs uppercase tracking-widest">
-            Syncing your beauty profile...
-          </p>
+      {(isAdmin || isManager || isFranchiseOwner || isStylist || customerProfile || profile) && (
+        <div className="flex justify-between items-center">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-naturals-purple">Welcome back</p>
+            <h1 className="text-3xl font-black text-deep-grape italic tracking-tight">
+              {isAdmin ? "Command Dashboard" :
+               isCustomer ? "Customer Dashboard" : 
+               isStylist ? "Stylist Dashboard" : 
+               isManager ? "Management Center" : "Dashboard"}
+            </h1>
+          </div>
         </div>
       )}
 
-      {profile && isCustomer && <CustomerDashboard />}
-      {profile && (isAdmin || isManager || isFranchiseOwner || isStylist) && <StaffDashboard />}
+
+
+      {isAdmin || isManager || isFranchiseOwner || isStylist ? (
+        <StaffDashboard />
+      ) : (
+        customerProfile && <CustomerDashboard />
+      )}
     </div>
   );
 }

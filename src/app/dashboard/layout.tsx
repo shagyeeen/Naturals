@@ -18,24 +18,26 @@ import {
   Bell, 
   LogOut,
   Menu,
-  Activity
+  Activity,
+  Calendar
 } from "lucide-react";
 import { Tooltip } from "@/components/Tooltip";
 import Image from "next/image";
 
 const sidebarLinks = [
-  { name: "Overview", href: "/dashboard", icon: LayoutDashboard, roles: ["manager", "franchise_owner", "admin"] },
-  { name: "Personal Experience", href: "/dashboard/experience", icon: Sparkles, roles: ["customer", "stylist", "franchise_owner"] },
-  { name: "SOP Audit", href: "/dashboard/sop", icon: ShieldCheck, roles: ["manager", "stylist", "franchise_owner", "admin"] },
-  { name: "Beauty Passport", href: "/dashboard/passport", icon: Target, roles: ["customer", "manager", "franchise_owner"] },
-  { name: "AI Stylist Copilot", href: "/dashboard/stylist", icon: Scissors, roles: ["stylist", "franchise_owner", "admin"] },
-  { name: "Trend Engine", href: "/dashboard/trends", icon: LineChart, roles: ["manager", "franchise_owner", "admin"] },
-  { name: "Consultation", href: "/dashboard/consultation", icon: Activity, roles: ["customer", "stylist", "manager", "franchise_owner"] },
-  { name: "Academy", href: "/dashboard/academy", icon: BookOpen, roles: ["stylist", "manager", "franchise_owner", "admin"] },
+  { name: "Overview", href: "/dashboard", icon: LayoutDashboard, roles: ["admin"] },
+  { name: "Book Appointment", href: "/dashboard", icon: Calendar, roles: ["customer"] },
+  { name: "Personal Experience", href: "/dashboard/experience", icon: Sparkles, roles: ["customer", "stylist"] },
+  { name: "SOP Audit", href: "/dashboard/sop", icon: ShieldCheck, roles: ["admin"] },
+  { name: "Beauty Passport", href: "/dashboard/passport", icon: Target, roles: ["customer"] },
+  { name: "AI Stylist Copilot", href: "/dashboard/stylist", icon: Scissors, roles: ["stylist", "admin"] },
+  { name: "Trend Engine", href: "/dashboard/trends", icon: LineChart, roles: ["admin"] },
+  { name: "Consultation", href: "/dashboard/consultation", icon: Activity, roles: ["customer", "stylist"] },
+  { name: "Academy", href: "/dashboard/academy", icon: BookOpen, roles: ["admin"] },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, profile, loading, signOut, isAdmin, isManager, isFranchiseOwner, isStylist } = useAuth();
+  const { user, profile, customerProfile, loading, signOut, isAdmin, isManager, isFranchiseOwner, isStylist } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const [isSidebarOpen, setSidebarOpen] = useState(true);
@@ -55,13 +57,51 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   };
 
-  const userRole = profile?.role || "customer";
+  // Use the verified role flags from the auth context
+  const userRole = isAdmin ? "admin" : (profile?.role || "customer");
 
-  const filteredLinks = sidebarLinks.filter(link => 
-    link.roles.includes(userRole)
-  );
+  const filteredLinks = sidebarLinks.filter(link => {
+    if (userRole === "customer" && !customerProfile) return false;
+    return link.roles.includes(userRole);
+  });
 
   if (loading) return null;
+
+  if (userRole === "customer" && !customerProfile) {
+    return (
+      <div className="min-h-screen bg-[#fafafa] flex flex-col items-center justify-center p-6 relative overflow-hidden">
+        <div className="absolute top-0 w-full h-96 bg-naturals-purple/5 blur-[100px] pointer-events-none" />
+        
+        <div className="absolute top-12 left-1/2 -translate-x-1/2">
+           <div className="relative w-48 h-12">
+             <Image 
+              src="/naturalslogo.png" 
+              alt="Naturals Logo" 
+              fill 
+              sizes="192px"
+              className="object-contain"
+              priority
+            />
+          </div>
+        </div>
+        
+        <div className="p-12 text-center bg-white/80 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl border border-black/5 max-w-lg mx-auto w-full relative z-10 animate-in fade-in slide-in-from-bottom-10 duration-700 ease-out">
+          <Users className="w-16 h-16 text-naturals-purple/30 mx-auto mb-6" />
+          <h2 className="text-2xl font-black text-deep-grape uppercase tracking-tighter mb-3">Customer Not Registered</h2>
+          <p className="text-xs font-bold text-deep-grape/40 mb-10 uppercase tracking-widest leading-relaxed">
+            We couldn't find your beauty profile. <br />
+            Please contact your salon to activate your account.
+          </p>
+          <button 
+            onClick={() => signOut()}
+            className="px-10 py-4 bg-naturals-purple text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-[0_8px_30px_rgb(20,20,20,0.12)] shadow-naturals-purple/20 hover:scale-[1.02] transition-all w-full sm:w-auto"
+          >
+            Sign Out
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white text-deep-grape flex overflow-hidden selection:bg-naturals-purple selection:text-white">
@@ -90,29 +130,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {filteredLinks.map((link) => {
             const isActive = pathname === link.href;
             return (
-              <Tooltip key={link.name} content={link.name}>
-                <Link
-                  href={link.href}
-                  className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all group relative overflow-hidden ${
-                    isActive 
-                      ? "bg-naturals-purple text-white shadow-xl shadow-naturals-purple/20" 
-                      : "text-deep-grape/60 hover:bg-warm-grey hover:text-deep-grape"
-                  }`}
-                >
-                  <link.icon className={`w-5 h-5 shrink-0 ${isActive ? "text-white" : "group-hover:text-naturals-purple transition-colors"}`} />
-                  {isSidebarOpen && <span className="whitespace-nowrap text-[11px] font-black uppercase tracking-widest">{link.name}</span>}
-                  {isActive && isSidebarOpen && (
-                    <motion.div layoutId="active-indicator" className="absolute right-2 w-1.5 h-1.5 bg-white rounded-full" />
-                  )}
-                </Link>
-              </Tooltip>
+              <Link
+                key={link.name}
+                href={link.href}
+                className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all group relative overflow-hidden ${
+                  isActive 
+                    ? "bg-naturals-purple text-white shadow-xl shadow-naturals-purple/20" 
+                    : "text-deep-grape/60 hover:bg-warm-grey hover:text-deep-grape"
+                }`}
+              >
+                <link.icon className={`w-5 h-5 shrink-0 ${isActive ? "text-white" : "group-hover:text-naturals-purple transition-colors"}`} />
+                {isSidebarOpen && <span className="whitespace-nowrap text-[11px] font-black uppercase tracking-widest">{link.name}</span>}
+                {isActive && isSidebarOpen && (
+                  <motion.div layoutId="active-indicator" className="absolute right-2 w-1.5 h-1.5 bg-white rounded-full" />
+                )}
+              </Link>
             )
           })}
         </div>
 
         <div className="p-6 border-t border-naturals-purple/5 bg-[#fafafa] space-y-2">
-          {isSidebarOpen && (
-            <div className="mb-4 px-2">
+          {isSidebarOpen && filteredLinks.length > 0 && (
+            <div className="mb-6 px-4">
               <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-30 mb-1">Authenticated As</p>
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
@@ -126,7 +165,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             className="w-full flex items-center gap-4 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 transition-all cursor-pointer group"
           >
             <LogOut className="w-5 h-5 shrink-0 group-hover:scale-110 transition-transform" />
-            {isSidebarOpen && <span className="whitespace-nowrap text-[11px] font-black uppercase tracking-widest">Terminate Session</span>}
+            {isSidebarOpen && <span className="whitespace-nowrap text-[11px] font-black uppercase tracking-widest">Sign Out</span>}
           </button>
         </div>
       </motion.aside>
@@ -135,48 +174,65 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative bg-[#fafafa]">
         
         {/* Top Header */}
-        <header className="h-20 bg-white border-b border-naturals-purple/5 flex items-center justify-between px-8 z-10">
-          <button 
-            onClick={() => setSidebarOpen(!isSidebarOpen)}
-            className="p-2 rounded-lg bg-warm-grey text-deep-grape hover:bg-naturals-purple hover:text-white transition-all shadow-sm"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-
-          {/* Search */}
-          <form 
-            onSubmit={handleSearch}
-            className="hidden md:flex items-center gap-3 bg-warm-grey/50 px-5 py-2.5 rounded-full w-[400px] border border-black/5 shadow-inner focus-within:border-naturals-purple/30 focus-within:bg-white transition-all"
-          >
-            <Search className="w-4 h-4 text-deep-grape/30" />
-            <input 
-              type="text" 
-              placeholder="SEARCH PROTOCOLS OR CLIENT ID..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent border-none outline-none text-[10px] font-black tracking-widest w-full placeholder:text-deep-grape/30"
-            />
-          </form>
-
-          <div className="flex items-center gap-6">
+        {!(userRole === "customer" && !customerProfile) && (
+          <header className="h-20 bg-white border-b border-naturals-purple/5 flex items-center justify-between px-8 z-10 shrink-0">
             <button 
-              onClick={() => alert("System Status: Operational • All AI Modules Online")}
-              className="relative p-2.5 text-deep-grape/40 hover:text-naturals-purple transition-colors cursor-pointer bg-warm-grey/50 rounded-full"
+              onClick={() => setSidebarOpen(!isSidebarOpen)}
+              className="p-2 rounded-lg bg-warm-grey text-deep-grape hover:bg-naturals-purple hover:text-white transition-all shadow-sm"
             >
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-naturals-purple rounded-full border-2 border-white"></span>
+              <Menu className="w-5 h-5" />
             </button>
-            <div className="flex items-center gap-4 pl-6 border-l border-black/5">
-              <div className="text-right hidden sm:block">
-                <p className="text-[10px] font-black uppercase tracking-widest opacity-30 leading-none mb-1">HQ Command</p>
-                <p className="text-[11px] font-black text-deep-grape italic">{profile?.full_name?.toUpperCase() || "OPERATOR_01"}</p>
-              </div>
-              <div className="w-10 h-10 rounded-xl bg-deep-grape flex items-center justify-center font-black text-white shadow-lg text-[10px] italic">
-                {userRole?.substring(0, 2).toUpperCase() || "NA"}
+
+            {/* Search */}
+            <form 
+              onSubmit={handleSearch}
+              className="hidden md:flex items-center gap-3 bg-warm-grey/50 px-5 py-2.5 rounded-full w-[400px] border border-black/5 shadow-inner focus-within:border-naturals-purple/30 focus-within:bg-white transition-all"
+            >
+              <Search className="w-4 h-4 text-deep-grape/30" />
+              <input 
+                type="text" 
+                placeholder="SEARCH PROTOCOLS OR CLIENT ID..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-transparent border-none outline-none text-[10px] font-black tracking-widest w-full placeholder:text-deep-grape/30"
+              />
+            </form>
+
+            <div className="flex items-center gap-6">
+              <button 
+                onClick={() => alert("System Status: Operational • All AI Modules Online")}
+                className="relative p-2.5 text-deep-grape/40 hover:text-naturals-purple transition-colors cursor-pointer bg-warm-grey/50 rounded-full"
+              >
+                <Bell className="w-5 h-5" />
+                <span className="absolute top-2 right-2 w-2 h-2 bg-naturals-purple rounded-full border-2 border-white"></span>
+              </button>
+              <div className="flex items-center gap-4 pl-6 border-l border-black/5">
+                <div className="text-right hidden sm:block">
+                  <p className="text-[10px] font-black uppercase tracking-widest opacity-30 leading-none mb-1">
+                    {isAdmin ? "Command Center" : "Customer Profile"}
+                  </p>
+                  <p className="text-[11px] font-black text-deep-grape italic">
+                    {isAdmin ? "ADMINISTRATOR" : (profile?.full_name?.toUpperCase() || customerProfile?.full_name?.toUpperCase() || (user?.displayName?.toUpperCase()) || "GUEST")}
+                  </p>
+                </div>
+                <div className="relative group/avatar">
+                  <div className="w-10 h-10 rounded-xl bg-deep-grape overflow-hidden flex items-center justify-center font-black text-white shadow-lg text-[10px] italic border-2 border-transparent group-hover/avatar:border-naturals-purple transition-all">
+                    {(profile?.profile_photo_url || customerProfile?.profile_photo_url || user?.photoURL) ? (
+                      <img 
+                        src={profile?.profile_photo_url || customerProfile?.profile_photo_url || user?.photoURL} 
+                        alt="Avatar" 
+                        className="w-full h-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <span>{profile?.full_name?.substring(0, 2).toUpperCase() || customerProfile?.full_name?.substring(0, 2).toUpperCase() || user?.email?.substring(0, 2).toUpperCase() || "NA"}</span>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </header>
+          </header>
+        )}
 
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto p-10 z-10">

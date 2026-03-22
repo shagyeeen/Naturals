@@ -29,8 +29,8 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-6 md:px-12 flex justify-between items-center h-16">
         {/* Logo */}
-        <Link href="/" className="flex items-center group">
-            <div className={`relative w-48 h-12 transition-all shrink-0`}>
+        <Link href="/" className="flex items-center group z-10">
+            <div className={`relative w-36 md:w-48 h-10 md:h-12 transition-all shrink-0`}>
                <Image 
                 src="/naturalslogo.png" 
                 alt="Naturals Logo" 
@@ -42,18 +42,8 @@ export default function Navbar() {
           </Link>
 
         {/* Desktop Links */}
-        <div className="hidden md:flex items-center gap-10 font-semibold text-sm uppercase tracking-wider">
-          <Link href="#instructions" className="hover:text-naturals-purple transition-colors">Instructions</Link>
+        <div className="hidden md:flex items-center justify-end font-bold text-sm uppercase tracking-wider">
           <Link href="#features" className="hover:text-naturals-purple transition-colors">Modules</Link>
-          <Link href="#ai" className="hover:text-naturals-purple transition-colors">Intelligence</Link>
-          
-          <Link href="/dashboard/experience" className="text-naturals-purple font-black hover:text-lavender transition-colors border-b-2 border-naturals-purple/20 pb-0.5">
-            Book Appointment
-          </Link>
-          
-          <Link href="/login" className="px-7 py-2.5 rounded-full bg-deep-grape text-white hover:bg-naturals-purple transition-all shadow-md">
-            Launch Platform
-          </Link>
         </div>
 
         {/* Mobile Menu Toggle */}

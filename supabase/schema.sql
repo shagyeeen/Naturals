@@ -64,6 +64,7 @@ CREATE TABLE public.franchise_owners (
     date_of_birth DATE,
     franchise_name TEXT,
     franchise_address TEXT,
+    branch_name TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -80,6 +81,7 @@ CREATE TABLE public.managers (
     phone TEXT NOT NULL,
     email TEXT,
     date_of_birth DATE,
+    branch_name TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
