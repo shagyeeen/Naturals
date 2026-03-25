@@ -35,11 +35,41 @@ The system maintains high standards of data integrity and operational security.
 - **Autonomous Audit**: Provides real-time protocol enforcement and action recognition to maintain brand standards across the network.
 - **Predictive Analytics**: Combines broad social trend listening with localized salon data to predict upcoming regional beauty trends.
 
+## System Architecture
+
+```mermaid
+graph TD
+    A[Elite Salon Network] --> B[AI SOP Engine]
+    A --> C[Passport Identity Sync]
+    B --> D[Central Intelligence Hub]
+    C --> D
+    D --> E[Bandwidth Engine]
+    D --> F[Beauty Passport Vault]
+    E --> G["Duty Roster - Stylist Dashboard"]
+    F --> H[Personalized Experience]
+```
+
+### Operational Lifecycle Flow
+```mermaid
+flowchart LR
+    Start([User Authentication]) --> RoleCheck{Role Validation}
+    RoleCheck -- New User --> Onboarding[Interactive Onboarding]
+    RoleCheck -- Existing --> Hub[Central Intelligence Hub]
+    Onboarding --> Hub
+    Hub --> Action{Service Layer}
+    Action -- Stylist --> Copilot[Stylist Copilot]
+    Action -- Manager --> Audit[SOP Audit System]
+    Action -- Customer --> Booking[Bandwidth Booking]
+    Copilot --> Log([Service Completion])
+    Audit --> Log
+    Booking --> Log
+```
+
 ## Technical Architecture
 
 ### Core Technology Stack
 - **Framework**: Next.js 15+ utilizing the App Router architecture for optimal performance and SEO.
-- **Database and Authentication**: Supabase integration for real-time data persistence, secure authentication, and complex relational mapping.
+- **Database and Authentication**: Supabase integration for real-time data persistence and Firebase for secure multi-layer authentication.
 - **User Interface**: Developed using Tailwind CSS for clean, professional styling and Framer Motion for high-fidelity micro-animations.
 - **Graphics and Icons**: Lucide React iconography for consistent visual language.
 - **Visualization**: Mermaid diagrams for architectural clarity.
@@ -59,9 +89,24 @@ The system maintains high standards of data integrity and operational security.
    ```
 
 ### Configuration Requirements
-Create a .env.local file in the root directory with the following variables:
-- **NEXT_PUBLIC_SUPABASE_URL**: Your secure Supabase project endpoint.
-- **NEXT_PUBLIC_SUPABASE_ANON_KEY**: Your public anonymous API key.
+Create a `.env.local` file in the root directory with the following variables:
+
+**Database & Auth (Supabase)**
+- `NEXT_PUBLIC_SUPABASE_URL`: Project endpoint.
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Public anonymous API key.
+- `SUPABASE_SERVICE_ROLE_KEY`: Service-level administrative key.
+
+**Authentication (Firebase)**
+- `NEXT_PUBLIC_FIREBASE_API_KEY`: Firebase web API key.
+- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`: Firebase auth project domain.
+- `NEXT_PUBLIC_FIREBASE_PROJECT_ID`: Firebase project identifier.
+- `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`: Storage project bucket.
+- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`: Cloud messaging sender ID.
+- `NEXT_PUBLIC_FIREBASE_APP_ID`: Firebase application identifier.
+
+**Intelligence Layer (AI Engine)**
+- `GROQ_API_KEY`: Enterprise AI processing key for SOP analysis.
+- `REPLICATE_API_TOKEN`: AI model execution token for trend listening.
 
 ### Execution
 To initialize the development server and activate the platform:
