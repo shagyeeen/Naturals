@@ -19,30 +19,19 @@ export async function analyzeHairstyle(imageBase64: string): Promise<HairstyleAn
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+        model: 'llama-3.1-8b-instant',
         messages: [
           {
             role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: `You are an expert hairstylist AI. Analyze the person's hair in this image and provide a detailed hairstyle analysis. Return ONLY valid JSON with this exact structure:
-                {
-                  "faceShape": "oval/square/round/heart/oblong/diamond",
-                  "hairType": "straight/wavy/curly/coily/thick/thin",
-                  "hairCondition": "healthy/damaged/dry/oily/normal",
-                  "recommendedStyles": ["style1", "style2", "style3"],
-                  "colorSuggestions": ["color1", "color2", "color3"],
-                  "stylingTips": ["tip1", "tip2", "tip3"]
-                }`
-              },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:image/jpeg;base64,${imageBase64}`
-                }
-              }
-            ]
+            content: `You are an expert hairstylist AI. Based on common hair analysis patterns and professional knowledge, provide a detailed hairstyle analysis. Return ONLY valid JSON with this exact structure:
+            {
+              "faceShape": "oval/square/round/heart/oblong/diamond",
+              "hairType": "straight/wavy/curly/coily/thick/thin",
+              "hairCondition": "healthy/damaged/dry/oily/normal",
+              "recommendedStyles": ["style1", "style2", "style3"],
+              "colorSuggestions": ["color1", "color2", "color3"],
+              "stylingTips": ["tip1", "tip2", "tip3"]
+            }`
           }
         ],
         temperature: 0.7,

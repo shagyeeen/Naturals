@@ -84,7 +84,11 @@ type ModalType = 'add-customer' | 'add-stylist' | 'add-manager' | 'add-franchise
 
 export default function StaffDashboard() {
   const { isAdmin, isManager, isFranchiseOwner, isStylist, profile } = useAuth();
-  const [activeTab, setActiveTab] = useState<'customers' | 'stylists' | 'managers' | 'franchise' | 'appointments'>('stylists');
+  
+  // Default Tabs based on Role
+  const initialTab = isStylist ? 'appointments' : 'stylists';
+  const [activeTab, setActiveTab] = useState<'customers' | 'stylists' | 'managers' | 'franchise' | 'appointments'>(initialTab);
+  
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [stylists, setStylists] = useState<Stylist[]>([]);
   const [managers, setManagers] = useState<Manager[]>([]);
@@ -115,6 +119,18 @@ export default function StaffDashboard() {
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [myStylistId, setMyStylistId] = useState<string | null>(null);
+
+  // Identify current stylist ID for filtering
+  useEffect(() => {
+    if (isStylist && profile?.id) {
+       const getStatus = async () => {
+         const { data } = await supabase.from('stylists').select('id').eq('user_id', profile.id).single();
+         if (data) setMyStylistId(data.id);
+       };
+       getStatus();
+    }
+  }, [isStylist, profile]);
 
   const fetchCustomers = async () => {
     const { data } = await supabase.from('customers').select('*').order('created_at', { ascending: false });
@@ -381,52 +397,73 @@ export default function StaffDashboard() {
     <div className="space-y-8">
       <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-6">
         <div>
-          <h2 className="text-3xl font-black text-deep-grape italic tracking-tight">Management Center</h2>
-          <p className="text-deep-grape/60 text-xs font-bold uppercase tracking-widest mt-1 italic">Authorized Administrator Dashboard</p>
+          <h2 className="text-3xl font-black text-deep-grape italic tracking-tight">
+            {isAdmin ? "Management Center" : 
+             isFranchiseOwner ? "Franchise Oversight" :
+             isManager ? "Branch Operations" :
+             isStylist ? "Stylist Terminal" : "Staff Portal"}
+          </h2>
+          <p className="text-deep-grape/60 text-xs font-bold uppercase tracking-widest mt-1 italic">
+            Authorized {isAdmin ? "Administrator" : isFranchiseOwner ? "Owner" : isManager ? "Manager" : "Stylist"} Dashboard
+          </p>
         </div>
         
-        {isAdmin && (
-          <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3">
+          {(isAdmin || isManager || isFranchiseOwner) && (
             <button
               onClick={() => handleOpenModal('add-customer')}
               className="px-4 py-2.5 bg-naturals-purple text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg hover:scale-105 transition-all flex items-center gap-2"
             >
               <UserPlus className="w-3.5 h-3.5" /> Customer
             </button>
+          )}
+          {(isAdmin || isManager || isFranchiseOwner) && (
             <button
               onClick={() => handleOpenModal('add-stylist')}
               className="px-4 py-2.5 bg-deep-grape text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg hover:scale-105 transition-all flex items-center gap-2"
             >
               <Scissors className="w-3.5 h-3.5" /> Stylist
             </button>
+          )}
+          {(isAdmin || isFranchiseOwner) && (
             <button
               onClick={() => handleOpenModal('add-manager')}
               className="px-4 py-2.5 bg-deep-grape text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg hover:scale-105 transition-all flex items-center gap-2"
             >
               <Users className="w-3.5 h-3.5" /> Manager
             </button>
+          )}
+          {isAdmin && (
             <button
               onClick={() => handleOpenModal('add-franchise')}
               className="px-4 py-2.5 bg-deep-grape text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg hover:scale-105 transition-all flex items-center gap-2"
             >
               <Briefcase className="w-3.5 h-3.5" /> Franchise
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <div className="flex gap-1 p-1.5 rounded-2xl w-fit bg-warm-grey/50 border border-black/5 shadow-inner">
-        {(['customers', 'stylists', 'managers', 'franchise', 'appointments'] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${
-              activeTab === tab ? 'bg-white text-deep-grape shadow-md' : 'text-deep-grape/40 hover:text-deep-grape'
-            }`}
-          >
-            {tab === 'franchise' ? 'Franchise' : tab}
-          </button>
-        ))}
+        {(['customers', 'stylists', 'managers', 'franchise', 'appointments'] as const)
+          .filter(tab => {
+            if (isAdmin) return true;
+            if (isFranchiseOwner) return ['customers', 'stylists', 'managers', 'appointments'].includes(tab);
+            if (isManager) return ['customers', 'stylists', 'appointments'].includes(tab);
+            if (isStylist) return ['customers', 'appointments'].includes(tab);
+            return false;
+          })
+          .map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${
+                activeTab === tab ? 'bg-white text-deep-grape shadow-md' : 'text-deep-grape/40 hover:text-deep-grape'
+              }`}
+            >
+              {tab === 'franchise' ? 'Franchise' : tab}
+            </button>
+          ))}
       </div>
 
       <div className="relative">
@@ -615,9 +652,49 @@ export default function StaffDashboard() {
       )}
 
       {activeTab === 'appointments' && (
-        <div className="glass-card bg-white border border-black/5 shadow-xl rounded-[2rem] p-8 text-center">
-          <Calendar className="w-12 h-12 text-naturals-purple/20 mx-auto mb-4" />
-          <p className="text-sm font-black text-deep-grape/40 uppercase tracking-[0.2em]">Appointment Management Offline</p>
+        <div className="bg-white border border-black/5 shadow-xl rounded-[2rem] overflow-hidden">
+          <div className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] px-6 py-3 bg-warm-grey/40 border-b border-black/5">
+            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Date & Slot</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Client</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Specialist</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Protocol</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Status</span>
+          </div>
+          <div className="divide-y divide-black/5">
+            {appointments
+              .filter(a => {
+                if (isAdmin || isFranchiseOwner || isManager) return true;
+                return (a as any).stylist_id === myStylistId;
+              })
+              .filter(a => {
+                const search = searchQuery.toLowerCase();
+                return (a as any).customer?.full_name?.toLowerCase().includes(search) || 
+                       (a as any).service?.name?.toLowerCase().includes(search) ||
+                       (a as any).stylist?.full_name?.toLowerCase().includes(search);
+              })
+              .map((a: any) => (
+              <div key={a.id} className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] items-center px-6 py-4 hover:bg-warm-grey/20 transition-colors">
+                <div>
+                  <p className="font-bold text-xs text-deep-grape">{new Date(a.appointment_date).toLocaleDateString()}</p>
+                  <p className="text-[10px] text-naturals-purple font-black">{a.start_time.slice(0, 5)} - {a.end_time.slice(0, 5)}</p>
+                </div>
+                <div>
+                  <p className="font-bold text-xs text-deep-grape">{a.customer?.full_name}</p>
+                  <p className="text-[9px] text-deep-grape/40 font-bold">{a.customer?.phone}</p>
+                </div>
+                <p className="text-[10px] font-black italic text-deep-grape/60">{a.stylist?.full_name}</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-naturals-purple">{a.service?.name}</p>
+                <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                  a.status === 'confirmed' ? 'bg-green-50 text-green-600 border-green-200' : 'bg-warm-grey text-deep-grape/40 border-black/5'
+                }`}>
+                  {a.status}
+                </span>
+              </div>
+            ))}
+            {appointments.length === 0 && (
+               <div className="px-6 py-10 text-center text-deep-grape/30 text-xs font-black uppercase tracking-widest">No active deployments found</div>
+            )}
+          </div>
         </div>
       )}
 

@@ -68,31 +68,15 @@ export default function DashboardPage() {
 }
 
 function CustomerDashboard() {
-  const [activeSection, setActiveSection] = useState<'book' | 'hair'>('book');
-
   return (
     <div className="space-y-6">
       <div className="flex gap-2 p-1.5 rounded-2xl w-fit bg-warm-grey/50 border border-black/5 shadow-inner">
-        <button
-          onClick={() => setActiveSection('book')}
-          className={`px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2 ${
-            activeSection === 'book' ? 'bg-white shadow-md text-deep-grape' : 'text-deep-grape/40 hover:bg-white/50'
-          }`}
-        >
+        <div className="px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest bg-white shadow-md text-deep-grape flex items-center gap-2">
           <Calendar className="w-4 h-4" /> Book Appointment
-        </button>
-        <button
-          onClick={() => setActiveSection('hair')}
-          className={`px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2 ${
-            activeSection === 'hair' ? 'bg-white shadow-md text-deep-grape' : 'text-deep-grape/40 hover:bg-white/50'
-          }`}
-        >
-          <Camera className="w-4 h-4" /> AI Hair Try-On
-        </button>
+        </div>
       </div>
 
-      {activeSection === 'book' && <BookingPage />}
-      {activeSection === 'hair' && <ThreeDHairTryOn />}
+      <BookingPage />
     </div>
   );
 }

@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@fal-ai/client": "^1.9.5",
+    "@google/generative-ai": "^0.24.1",
     "@popperjs/core": "^2.11.8",
     "@radix-ui/react-slot": "^1.2.4",
     "@react-email/components": "^1.0.10",
@@ -22,12 +24,13 @@
     "firebase": "^12.11.0",
     "framer-motion": "^12.36.0",
     "lucide-react": "^0.577.0",
-    "next": "16.1.6",
+    "next": "^16.2.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-email": "^5.2.10",
     "react-popper": "^2.3.0",
     "recharts": "^3.8.0",
+    "replicate": "^1.4.0",
     "tailwind-merge": "^3.5.0",
     "three": "^0.183.2"
   },

@@ -8,6 +8,7 @@ import Link from "next/link";
 import NextImage from "next/image";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
+// import { ensureCustomerRecord, getCustomerProfile } from "@/lib/actions";
 
 type Portal = 'customer' | 'staff';
 
@@ -16,36 +17,87 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
-  const { signInWithGoogle, user, loading: authLoading, loginAsGuest } = useAuth();
+  const { signInWithGoogle, user, loading: authLoading, loginAsGuest, refreshProfile, isAdmin } = useAuth();
 
+  const checkOnboardingStatus = async (email: string) => {
+    const response = await fetch(`/api/auth/profile?email=${encodeURIComponent(email)}`);
+    const { customerData: customer } = await response.json();
+    
+    if (!customer) return true;
+    
+    const isProfileComplete = customer.phone && customer.date_of_birth && customer.gender;
+    const isPreferencesSet = customer.ai_hairstyle_analysis?.questionnaire_results;
+    
+    return !(isProfileComplete && isPreferencesSet);
+  };
+
+  // Auto-redirect disabled as requested ("dont auto sign in")
+  /*
   useEffect(() => {
-    if (!authLoading && user) {
-      router.push('/dashboard');
-    }
+    const checkAndRedirect = async () => {
+      if (!authLoading && user) {
+        if (isAdmin) {
+          router.push('/dashboard');
+          return;
+        }
+
+        const needsOnboarding = await checkOnboardingStatus(user.email || '');
+        if (needsOnboarding) {
+          router.push('/dashboard/onboarding');
+        } else {
+          router.push('/dashboard');
+        }
+      }
+    };
+    checkAndRedirect();
   }, [user, authLoading, router]);
+  */
 
   const handleGoogleSignIn = async () => {
     setIsSubmitting(true);
     setError("");
     const result = await signInWithGoogle();
     
-    // High-End Identity Initialization if new Google user
     if (result.user && !result.error) {
-      const { data: existingCustomer } = await supabase
-        .from('customers')
-        .select('id')
-        .eq('email', result.user.email)
-        .single();
+      const profileRes = await fetch(`/api/auth/profile?email=${encodeURIComponent(result.user.email || '')}`);
+      const { customerData: existingCustomer } = await profileRes.json();
         
       if (!existingCustomer) {
         const customerCode = `NAT-SHA-2026-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-        await supabase.from('customers').upsert({
-          email: result.user.email,
-          phone: result.user.phoneNumber || "",
-          full_name: result.user.displayName || "Google User",
-          customer_code: customerCode,
-          is_active: true
-        }, { onConflict: 'email' });
+        const ensureRes = await fetch('/api/auth/action', {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'ensure',
+            email: result.user.email,
+            fullName: result.user.displayName,
+            customerCode,
+            photoURL: result.user.photoURL
+          })
+        });
+        const { error: ensureError } = await ensureRes.json();
+
+        if (ensureError) {
+          console.error("Failed to ensure customer record:", ensureError);
+          setError(`Database configuration error: ${ensureError}`);
+          setIsSubmitting(false);
+          return;
+        }
+        
+        // Refresh profile state in context
+        await refreshProfile(result.user);
+        
+        router.push('/dashboard/onboarding');
+      } else {
+        // Refresh profile state in context
+        await refreshProfile(result.user);
+        
+        const needsOnboarding = !existingCustomer.phone || !existingCustomer.date_of_birth || !existingCustomer.gender;
+        
+        if (needsOnboarding) {
+          router.push('/dashboard/onboarding');
+        } else {
+          router.push('/dashboard');
+        }
       }
     }
 

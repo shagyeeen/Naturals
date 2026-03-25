@@ -47,6 +47,7 @@ CREATE TABLE public.customers (
     preferred_salon_id UUID,
     notes TEXT,
     is_premium BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );

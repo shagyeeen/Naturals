@@ -6,8 +6,10 @@ import { supabase, Stylist } from "@/lib/supabase";
 import { 
   Sparkles, Heart, Star, Calendar, Clock, 
   MapPin, User, ChevronRight, Zap, Target,
-  Image as ImageIcon, Wand2, History, Activity
+  Image as ImageIcon, Wand2, History, Activity, CalendarPlus
 } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { Appointment } from "@/lib/supabase";
 
 const beautyGoals = [
   { id: "skin", title: "Skin Clarity", progress: 65, status: "On Track", icon: <Star className="w-5 h-5 text-naturals-purple" /> },
@@ -22,7 +24,7 @@ const recommendedServices = [
     description: "Deep cleansing and hydration based on your skin type.",
     price: "₹2,499",
     duration: "60 mins",
-    image: "https://images.unsplash.com/photo-1570172619244-92151a1d8a9d?w=400&q=80"
+    image: "https://images.pexels.com/photos/3373745/pexels-photo-3373745.jpeg?auto=compress&cs=tinysrgb&w=400"
   },
   {
     id: 2,
@@ -30,7 +32,7 @@ const recommendedServices = [
     description: "Frizz control and long-lasting smoothness for your hair.",
     price: "₹4,999",
     duration: "180 mins",
-    image: "https://images.unsplash.com/photo-1560869713-7d0a29430863?w=400&q=80"
+    image: "https://images.unsplash.com/photo-1595476108010-b4d1f102b1b1?q=80&w=400&auto=format&fit=crop"
   },
   {
     id: 3,
@@ -38,11 +40,14 @@ const recommendedServices = [
     description: "A tailored haircut designed for your face shape and style preferences.",
     price: "₹899",
     duration: "30 mins",
-    image: "https://images.unsplash.com/photo-1522337360788-8b13df772ad5?w=400&q=80"
+    image: "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?q=80&w=400&auto=format&fit=crop"
   }
 ];
 
 export default function PersonalExperience() {
+  const { customerProfile } = useAuth();
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loadingAppointments, setLoadingAppointments] = useState(true);
   const [activeView, setActiveView] = useState<"overview" | "booking" | "history">("overview");
   const [selectedCategory, setSelectedCategory] = useState("Haircare");
   const [stylists, setStylists] = useState<Stylist[]>([]);
@@ -51,7 +56,32 @@ export default function PersonalExperience() {
 
   useEffect(() => {
     fetchStylists();
-  }, []);
+    if (customerProfile?.id) {
+      fetchUpcomingAppointments();
+    } else {
+      setLoadingAppointments(false);
+    }
+  }, [customerProfile]);
+
+  const fetchUpcomingAppointments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('appointments')
+        .select('*, stylist:stylist_id(*), service:service_id(*)')
+        .eq('customer_id', customerProfile.id)
+        .gte('appointment_date', new Date().toISOString().split('T')[0])
+        .order('appointment_date', { ascending: true })
+        .limit(1);
+
+      if (!error && data) {
+        setAppointments(data);
+      }
+    } catch (e) {
+      console.error("Error fetching appointments:", e);
+    } finally {
+      setLoadingAppointments(false);
+    }
+  };
 
   const fetchStylists = async () => {
     const { data } = await supabase.from('stylists').select('*').eq('is_active', true);
@@ -76,12 +106,12 @@ export default function PersonalExperience() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-naturals-purple/10 text-naturals-purple text-[10px] font-black uppercase tracking-[0.2em] mb-2 border border-naturals-purple/20">
-            <Activity className="w-3 h-3" /> Based on your Questionnaire
+            <Heart className="w-3 h-3" /> Personalized For You
           </div>
           <h1 className="text-4xl font-black text-deep-grape mb-2 italic tracking-tighter">
-            My Beauty Profile
+            Your Beauty Journey
           </h1>
-          <p className="text-deep-grape/40 font-bold uppercase text-xs tracking-widest">Personalized recommendations based on your recent salon visits.</p>
+          <p className="text-deep-grape/40 font-bold uppercase text-xs tracking-widest">Recommended services and goals based on your preferences.</p>
         </div>
         
         <div className="flex items-center gap-2 bg-warm-grey/50 p-1.5 rounded-2xl border border-naturals-purple/5">
@@ -111,14 +141,14 @@ export default function PersonalExperience() {
                 <div className="relative z-10 space-y-6">
                   <div className="flex items-center gap-3">
                     <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    <span className="px-4 py-1 rounded-full bg-white/10 backdrop-blur-md text-[10px] font-black border border-white/20 uppercase tracking-[0.3em]">Latest Analysis</span>
+                    <span className="px-4 py-1 rounded-full bg-white/10 backdrop-blur-md text-[10px] font-black border border-white/20 uppercase tracking-[0.3em]">Top Recommendation</span>
                   </div>
                   <h2 className="text-5xl font-black leading-tight tracking-tighter italic">
                     Primary Concern: <br />
-                    <span className="text-naturals-purple">Frizz Control</span>.
+                    <span className="text-naturals-purple">Frizz Control</span>
                   </h2>
                   <p className="text-white/60 max-w-md text-sm font-bold leading-relaxed uppercase tracking-wider">
-                    Based on your questionnaire, you selected Frizz Control as a primary concern. We strongly recommend a Keratin Smoothing treatment.
+                    You mentioned that managing frizz is a priority. For the best smoothness and shine, we recommend our professional Keratin Smoothing treatment.
                   </p>
                   <div className="flex gap-4 pt-4">
                     <button onClick={() => { setSelectedCategory("Haircare"); setActiveView("booking"); }} className="px-8 py-4 bg-white text-deep-grape font-black text-xs uppercase tracking-widest rounded-xl shadow-xl hover:scale-105 transition-transform cursor-pointer">Book Treatment</button>
@@ -130,9 +160,9 @@ export default function PersonalExperience() {
               {/* Recommended Services Section */}
               <div>
                 <div className="flex items-center justify-between mb-8">
-                  <h3 className="text-xl font-black uppercase tracking-[0.1em] text-deep-grape/40">Verified Recommendations</h3>
+                  <h3 className="text-xl font-black uppercase tracking-[0.1em] text-deep-grape/40">Services You'll Love</h3>
                   <button className="text-naturals-purple font-black uppercase tracking-widest flex items-center gap-2 group text-[10px]">
-                    Access Full Catalog <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    See All Services <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </button>
                 </div>
                 <div className="grid md:grid-cols-3 gap-6">
@@ -144,8 +174,13 @@ export default function PersonalExperience() {
                       className="glass-card overflow-hidden flex flex-col group cursor-pointer border border-black/5"
                     >
                       <div className="h-48 overflow-hidden relative">
-                        <img src={service.image} alt={service.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                        <div className="absolute inset-0 bg-deep-grape/20 group-hover:bg-transparent transition-colors" />
+                        <img 
+                          src={service.image} 
+                          alt={service.name} 
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                          referrerPolicy="no-referrer"
+                        />
+                        <div className="absolute inset-0 bg-deep-grape/10 group-hover:bg-transparent transition-colors" />
                         <div className="absolute top-4 right-4 px-3 py-1 bg-deep-grape text-white text-[10px] font-black tracking-widest shadow-lg">
                           {service.price}
                         </div>
@@ -175,7 +210,7 @@ export default function PersonalExperience() {
               {/* Beauty Score Card */}
               <div className="glass-card p-8 border border-black/5 bg-white relative overflow-hidden">
                 <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/30 mb-8 flex items-center gap-3">
-                  <Target className="w-4 h-4" /> Recommended Goals Progress
+                  <Target className="w-4 h-4" /> Beauty Goal Progress
                 </h3>
                 
                 <div className="space-y-10">
@@ -213,29 +248,58 @@ export default function PersonalExperience() {
               </div>
 
               {/* Next Appointment Snippet */}
-              <div className="glass-card p-8 border-t-8 border-naturals-purple bg-white shadow-xl">
-                <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-[0.2em] mb-1">Upcoming Appointment</p>
-                    <h4 className="font-black text-lg text-deep-grape italic">Hair Coloring & Styling</h4>
+              {!loadingAppointments && appointments.length > 0 ? (
+                <div className="glass-card p-8 border-t-8 border-naturals-purple bg-white shadow-xl">
+                  <div className="flex justify-between items-start mb-6">
+                    <div>
+                      <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-[0.2em] mb-1">Upcoming Appointment</p>
+                      <h4 className="font-black text-lg text-deep-grape italic">{appointments[0].service?.name || "Premium Salon Service"}</h4>
+                    </div>
+                    <div className="w-12 h-12 rounded-xl bg-deep-grape text-white flex items-center justify-center font-black text-[9px] text-center italic leading-none">
+                      {new Date(appointments[0].appointment_date).toLocaleDateString('en-US', { day: '2-digit', month: 'short' }).toUpperCase().split(' ').reverse().join('\n')}
+                    </div>
                   </div>
-                  <div className="w-12 h-12 rounded-xl bg-deep-grape text-white flex items-center justify-center font-black text-xs italic">
-                    24<br/>MAR
+
+                  <div className="relative h-32 rounded-2xl overflow-hidden mb-6 group/img">
+                    <img 
+                      src="https://images.unsplash.com/photo-1562322140-8baeececf3df?q=80&w=500&auto=format&fit=crop" 
+                      alt="Service Preview" 
+                      className="w-full h-full object-cover group-hover/img:scale-110 transition-transform duration-700"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-deep-grape/60 to-transparent" />
+                    <div className="absolute bottom-3 left-4 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                      <span className="text-[8px] font-black text-white uppercase tracking-widest">Confirmed Slot</span>
+                    </div>
                   </div>
+
+                  <div className="space-y-4 mb-8">
+                    <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-deep-grape/60">
+                      <Clock className="w-4 h-4 text-naturals-purple" /> {appointments[0].start_time}
+                    </div>
+                    <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-deep-grape/60">
+                      <MapPin className="w-4 h-4 text-naturals-purple" /> Branch: Naturals Chennai
+                    </div>
+                    <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-deep-grape/60">
+                      <User className="w-4 h-4 text-naturals-purple" /> Stylist: {appointments[0].stylist?.full_name || "Assigned Stylist"}
+                    </div>
+                  </div>
+                  <button onClick={() => alert("Opening Booking Management...")} className="w-full py-4 bg-naturals-purple text-white font-black text-[10px] uppercase tracking-[0.25em] rounded-xl shadow-xl shadow-naturals-purple/20 hover:scale-105 transition-transform cursor-pointer">Manage Booking</button>
                 </div>
-                <div className="space-y-4 mb-8">
-                  <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-deep-grape/60">
-                    <Clock className="w-4 h-4 text-naturals-purple" /> 10:30 AM
-                  </div>
-                  <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-deep-grape/60">
-                    <MapPin className="w-4 h-4 text-naturals-purple" /> Branch: Naturals Chennai
-                  </div>
-                  <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-widest text-deep-grape/60">
-                    <User className="w-4 h-4 text-naturals-purple" /> Stylist: Priya S.
-                  </div>
+              ) : !loadingAppointments && (
+                <div className="glass-card p-8 border border-black/5 bg-white shadow-sm flex flex-col items-center text-center py-12">
+                   <CalendarPlus className="w-12 h-12 text-naturals-purple/20 mb-4" />
+                   <h4 className="font-black text-xs uppercase tracking-[0.2em] text-deep-grape/40 mb-2">No Appointments</h4>
+                   <p className="text-[10px] font-bold text-deep-grape/20 uppercase tracking-widest leading-relaxed mb-6">You haven't booked any <br/> services yet.</p>
+                   <button 
+                    onClick={() => setActiveView("booking")}
+                    className="px-6 py-3 rounded-xl border border-naturals-purple text-naturals-purple font-black text-[9px] uppercase tracking-widest hover:bg-naturals-purple hover:text-white transition-all"
+                   >
+                     Book Service
+                   </button>
                 </div>
-                <button onClick={() => alert("Opening Booking Management...")} className="w-full py-4 bg-naturals-purple text-white font-black text-[10px] uppercase tracking-[0.25em] rounded-xl shadow-xl shadow-naturals-purple/20 hover:scale-105 transition-transform cursor-pointer">Manage Booking</button>
-              </div>
+              )}
             </div>
           </motion.div>
         )}

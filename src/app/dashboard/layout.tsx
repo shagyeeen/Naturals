@@ -19,19 +19,21 @@ import {
   LogOut,
   Menu,
   Activity,
-  Calendar
+  Calendar,
+  Bot
 } from "lucide-react";
 import { Tooltip } from "@/components/Tooltip";
 import Image from "next/image";
 
 const sidebarLinks = [
-  { name: "Overview", href: "/dashboard", icon: LayoutDashboard, roles: ["admin"] },
+  { name: "Overview", href: "/dashboard", icon: LayoutDashboard, roles: ["admin", "manager", "franchise_owner", "stylist"] },
+  { name: "AI Assistant", href: "/dashboard/assistant", icon: Bot, roles: ["admin", "manager", "franchise_owner", "stylist", "customer"] },
   { name: "Book Appointment", href: "/dashboard", icon: Calendar, roles: ["customer"] },
   { name: "Personal Experience", href: "/dashboard/experience", icon: Sparkles, roles: ["customer", "stylist"] },
-  { name: "SOP Audit", href: "/dashboard/sop", icon: ShieldCheck, roles: ["admin"] },
+  { name: "SOP Audit", href: "/dashboard/sop", icon: ShieldCheck, roles: ["admin", "manager"] },
   { name: "Beauty Passport", href: "/dashboard/passport", icon: Target, roles: ["customer"] },
   { name: "AI Stylist Copilot", href: "/dashboard/stylist", icon: Scissors, roles: ["stylist", "admin"] },
-  { name: "Trend Engine", href: "/dashboard/trends", icon: LineChart, roles: ["admin"] },
+  { name: "Trend Engine", href: "/dashboard/trends", icon: LineChart, roles: ["admin", "manager"] },
   { name: "Consultation", href: "/dashboard/consultation", icon: Activity, roles: ["customer", "stylist"] },
   { name: "Academy", href: "/dashboard/academy", icon: BookOpen, roles: ["admin"] },
 ];
@@ -44,10 +46,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
+    console.log('Dashboard State Debug:', {
+      userRole: isAdmin ? "admin" : (profile?.role || "customer"),
+      hasCustomerProfile: !!customerProfile,
+      pathname,
+      loading
+    });
+  }, [isAdmin, profile, customerProfile, pathname, loading]);
+
+  useEffect(() => {
     if (!loading && !user) {
       router.push("/login");
     }
-  }, [user, loading, router]);
+    
+    if (!loading && user && (isAdmin ? false : (profile?.role === 'customer')) && customerProfile) {
+      const isComplete = customerProfile.phone && customerProfile.phone !== 'PENDING';
+      
+      if (!isComplete && pathname !== '/dashboard/onboarding') {
+        router.push('/dashboard/onboarding');
+      } else if (isComplete && pathname === '/dashboard/onboarding') {
+        router.push('/dashboard');
+      }
+    }
+  }, [user, loading, router, profile, customerProfile, pathname]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,14 +81,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Use the verified role flags from the auth context
   const userRole = isAdmin ? "admin" : (profile?.role || "customer");
 
+  const needsOnboarding = userRole === 'customer' && customerProfile && (!customerProfile.phone || customerProfile.phone === 'PENDING');
+
   const filteredLinks = sidebarLinks.filter(link => {
     if (userRole === "customer" && !customerProfile) return false;
+    if (needsOnboarding) return false;
     return link.roles.includes(userRole);
   });
 
   if (loading) return null;
 
-  if (userRole === "customer" && !customerProfile) {
+  if (userRole === "customer" && !customerProfile && pathname !== '/dashboard/onboarding') {
     return (
       <div className="min-h-screen bg-[#fafafa] flex flex-col items-center justify-center p-6 relative overflow-hidden">
         <div className="absolute top-0 w-full h-96 bg-naturals-purple/5 blur-[100px] pointer-events-none" />
@@ -82,21 +106,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               className="object-contain"
               priority
             />
-          </div>
+           </div>
         </div>
         
         <div className="p-12 text-center bg-white/80 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl border border-black/5 max-w-lg mx-auto w-full relative z-10 animate-in fade-in slide-in-from-bottom-10 duration-700 ease-out">
           <Users className="w-16 h-16 text-naturals-purple/30 mx-auto mb-6" />
-          <h2 className="text-2xl font-black text-deep-grape uppercase tracking-tighter mb-3">Customer Not Registered</h2>
+          <h2 className="text-2xl font-black text-deep-grape uppercase tracking-tighter mb-3">Welcome to Naturals AI!</h2>
           <p className="text-xs font-bold text-deep-grape/40 mb-10 uppercase tracking-widest leading-relaxed">
-            We couldn't find your beauty profile. <br />
-            Please contact your salon to activate your account.
+            Let&apos;s set up your personalized beauty profile.<br />
+            Please complete your registration below.
           </p>
           <button 
-            onClick={() => signOut()}
+            onClick={() => router.push('/dashboard/onboarding')}
             className="px-10 py-4 bg-naturals-purple text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-[0_8px_30px_rgb(20,20,20,0.12)] shadow-naturals-purple/20 hover:scale-[1.02] transition-all w-full sm:w-auto"
           >
-            Sign Out
+            Complete Profile Setup
           </button>
         </div>
       </div>
@@ -174,7 +198,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative bg-[#fafafa]">
         
         {/* Top Header */}
-        {!(userRole === "customer" && !customerProfile) && (
+        {!(userRole === "customer" && !customerProfile) && pathname !== '/dashboard/onboarding' && (
           <header className="h-20 bg-white border-b border-naturals-purple/5 flex items-center justify-between px-8 z-10 shrink-0">
             <button 
               onClick={() => setSidebarOpen(!isSidebarOpen)}
@@ -235,13 +259,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-10 z-10">
+        <main className="flex-1 overflow-y-auto p-10 z-10 bg-[#fafafa]">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.4 }}
-            className="max-w-7xl mx-auto"
+            className="max-w-7xl mx-auto w-full"
           >
             {children}
           </motion.div>

@@ -12,6 +12,7 @@ export interface Hairstyle {
 }
 
 export const hairstyles: Hairstyle[] = [
+  { id: "none", name: "None", image: "", offsetY: 0, scale: 1.0 },
   { id: "short", name: "Short", image: "/hairstyles/short.png", offsetY: -0.35, scale: 1.1 },
   { id: "curly", name: "Curly", image: "/hairstyles/curly.png", offsetY: -0.3, scale: 1.2 },
   { id: "fade", name: "Fade", image: "/hairstyles/fade.png", offsetY: -0.35, scale: 1.0 },

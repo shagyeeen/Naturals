@@ -34,6 +34,7 @@ export interface Customer {
   preferred_salon_id?: string
   notes?: string
   is_premium: boolean
+  is_active: boolean
   branch_name?: string
   created_at: string
   updated_at: string

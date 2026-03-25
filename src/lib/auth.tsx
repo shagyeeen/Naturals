@@ -30,6 +30,7 @@ interface AuthContextType {
   isCustomer: boolean
   customerProfile: any | null
   loginAsGuest: (role: string) => void
+  refreshProfile: (authUser: FirebaseUser) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -44,41 +45,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshProfile = async (authUser: FirebaseUser) => {
     if (!authUser || !authUser.email) return;
     try {
-      // 1. Fetch the user profile by email
-      const { data: userData } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', authUser.email)
-        .single()
+      console.log('Refreshing profile for:', authUser.email);
+      
+      // 1. Fetch via API route to bypass RLS and avoid compile-time panics
+      // 1. Fetch via API route with cache: 'no-store' to ensure we get fresh data after onboarding
+      const response = await fetch(`/api/auth/profile?email=${encodeURIComponent(authUser.email)}&t=${Date.now()}`, {
+        cache: 'no-store'
+      });
+      const data = await response.json();
+      console.log('Profile API response:', data);
+      
+      const { userData, customerData } = data;
       
       if (userData) {
-        setProfile(userData)
-        
-        // 2. Fetch/Sync Customer Registry
-        const { data: customerData } = await supabase
-          .from('customers')
-          .select('*')
-          .eq('email', authUser.email)
-          .single()
-        
-        if (customerData) {
-          // Sync user_id if missing (e.g. added by staff manually first)
-          if (!customerData.user_id) {
-            await supabase.from('customers').update({ user_id: userData.id }).eq('id', customerData.id);
-          }
-          
-          // Sync Google Profile Image if the customer doesn't have one
-          if (!customerData.profile_photo_url && authUser.photoURL) {
-            await supabase.from('customers').update({ profile_photo_url: authUser.photoURL }).eq('id', customerData.id);
-          }
+        setProfile(userData);
+      }
 
-          setCustomerProfile({ ...customerData, user_id: userData.id })
+      if (customerData) {
+        // Sync Google Profile Image if the customer doesn't have one
+        if (!customerData.profile_photo_url && authUser.photoURL) {
+          await supabase.from('customers').update({ profile_photo_url: authUser.photoURL }).eq('id', customerData.id);
         }
+
+        setCustomerProfile(customerData);
       } else {
-        console.warn("Firebase user has no profile in Supabase DB")
+        setCustomerProfile(null);
       }
     } catch (e) {
-      console.warn("Could not fetch profile", e)
+      console.error("Could not fetch profile", e)
     }
   }
 
@@ -88,11 +82,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (guestRole) {
          console.log("Guest Auth state active:", guestRole);
-         setUser({ email: `guest_${guestRole}@naturals.ai`, uid: 'guest-123' } as any);
-         setProfile({ role: guestRole, full_name: `Guest ${guestRole}`, branch_id: 'guest-branch' });
          if (guestRole === 'customer') {
-            setCustomerProfile({ last_diagnosis: null });
+            setUser({ email: 'guest_customer@naturals.ai', uid: 'guest-123' } as any);
+            setProfile({ role: 'customer', full_name: 'Aditi Sharma', gender: 'female' });
+            setCustomerProfile({ 
+               id: '00000000-0000-0000-0000-000000000001',
+               full_name: 'Aditi Sharma',
+               gender: 'female',
+               phone: '+91 98765 43210',
+               email: 'guest_customer@naturals.ai',
+               hairstyle_preference: 'Long layers, Frizz control, Hydration focus',
+               last_diagnosis: 'Dry scalp, Frizzy ends',
+               ai_hairstyle_analysis: {
+                 questionnaire_results: {
+                   hair_wash_preference: 'Before SPA',
+                   hairstyle_female: 'Layered Cut',
+                   water_temp: 'Lukewarm',
+                   scalp_massage: 'Strong',
+                   conversation: 'Friendly Chat'
+                 }
+               }
+            });
          } else {
+            setUser({ email: `guest_${guestRole}@naturals.ai`, uid: 'guest-123' } as any);
+            setProfile({ role: guestRole, full_name: `Guest ${guestRole}`, branch_id: 'guest-branch' });
             setCustomerProfile(null);
          }
          setLoading(false);
@@ -154,11 +167,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (typeof window !== 'undefined') {
       localStorage.setItem('naturals_guest_role', role);
     }
-    setUser({ email: `guest_${role}@naturals.ai`, uid: 'guest-123' } as any);
-    setProfile({ role: role, full_name: `Guest ${role}`, branch_id: 'guest-branch' });
     if (role === 'customer') {
-       setCustomerProfile({ last_diagnosis: null });
+       setUser({ email: 'guest_customer@naturals.ai', uid: 'guest-123' } as any);
+       setProfile({ role: 'customer', full_name: 'Aditi Sharma', gender: 'female' });
+       setCustomerProfile({ 
+          id: '00000000-0000-0000-0000-000000000001', // Mock ID
+          full_name: 'Aditi Sharma',
+          gender: 'female',
+          phone: '+91 98765 43210',
+          email: 'guest_customer@naturals.ai',
+          hairstyle_preference: 'Long layers, Frizz control, Hydration focus',
+          last_diagnosis: 'Dry scalp, Frizzy ends',
+          ai_hairstyle_analysis: {
+            questionnaire_results: {
+              hair_wash_preference: 'Before SPA',
+              hairstyle_female: 'Layered Cut',
+              water_temp: 'Lukewarm',
+              scalp_massage: 'Strong',
+              conversation: 'Friendly Chat'
+            }
+          }
+       });
     } else {
+       setUser({ email: `guest_${role}@naturals.ai`, uid: 'guest-123' } as any);
+       setProfile({ role: role, full_name: `Guest ${role}`, branch_id: 'guest-branch' });
        setCustomerProfile(null);
     }
   }
@@ -184,6 +216,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const adminCheck = user?.email?.toLowerCase() === 'shynewebhosters@gmail.com' || user?.email?.toLowerCase() === 'shynewebh1@gmail.com' || profile?.role === 'admin';
+  const franchiseOwnerCheck = profile?.role === 'franchise_owner';
+  const managerCheck = profile?.role === 'manager' || profile?.role === 'franchise_owner';
+  const stylistCheck = profile?.role === 'stylist' || profile?.role === 'manager';
+  const customerCheck = (!profile || profile?.role === 'customer') && !adminCheck;
+
   const value = {
     user,
     profile,
@@ -192,13 +230,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signUp,
     signInWithGoogle,
     signOut,
-    isAdmin: user?.email === 'shynewebhosters@gmail.com' || profile?.role === 'admin',
-    isFranchiseOwner: profile?.role === 'franchise_owner',
-    isManager: profile?.role === 'manager' || profile?.role === 'franchise_owner',
-    isStylist: profile?.role === 'stylist' || profile?.role === 'manager',
-    isCustomer: (!profile || profile?.role === 'customer') && user?.email !== 'shynewebhosters@gmail.com' && profile?.role !== 'admin',
+    isAdmin: adminCheck,
+    isFranchiseOwner: franchiseOwnerCheck,
+    isManager: managerCheck,
+    isStylist: stylistCheck,
+    isCustomer: customerCheck,
     customerProfile,
-    loginAsGuest
+    loginAsGuest,
+    refreshProfile
   }
 
   return (
