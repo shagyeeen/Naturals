@@ -112,9 +112,11 @@ export default function BookingPage() {
     setLoading(true);
     console.log('Initializing appointment deployment...');
 
-    // SECURITY GATE: Prevent Guest Customers from booking. Redirect to sign-in.
-    if (customerProfile.id === '00000000-0000-0000-0000-000000000001') {
-      console.log('Guest booking attempt detected. Redirecting to auth...');
+    // ROBUST SECURITY GATE: Detect Guest Customers by Mock ID or Email to prevent DB constraint errors.
+    const isGuest = customerProfile.id === '00000000-0000-0000-0000-000000000001' || customerProfile.email === 'guest_customer@naturals.ai';
+    
+    if (isGuest || !customerProfile.id) {
+      console.log('Guest booking attempt detected (Robust Check). Redirecting...');
       alert("Sign in to book appointment. A valid Beauty Passport is required for salon sessions.");
       router.push('/login');
       return;
