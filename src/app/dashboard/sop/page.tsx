@@ -93,7 +93,7 @@ export default function SOPAuditSystem() {
                   {/* Mock Video Feed 1 */}
                   <div onClick={() => alert("Expanding Adyar Live Stream...")} className="relative rounded-2xl overflow-hidden bg-black aspect-video group cursor-pointer border border-black/10 shadow-lg">
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10" />
-                    <img src="https://images.unsplash.com/photo-1521590832167-7bfcbaa6362d?w=800&q=80" alt="Salon cam" className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-700" />
+                    <img src="/monitor1.png" alt="Salon cam" className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700" />
                     <div className="absolute top-3 left-3 z-20 flex gap-2">
                        <span className="px-2 py-1 bg-red-500 text-white text-[10px] font-bold rounded-md uppercase tracking-wider animate-pulse">Live</span>
                        <span className="px-2 py-1 bg-black/50 backdrop-blur-md text-white text-[10px] font-bold rounded-md">Cam 04 • Adyar</span>
@@ -111,7 +111,7 @@ export default function SOPAuditSystem() {
                   {/* Mock Video Feed 2 (Violation Alert) */}
                   <div onClick={() => alert("Alert Logged: Patch Test Skyped at RS Puram. Manager notification sent.")} className="relative rounded-2xl overflow-hidden bg-black aspect-video group cursor-pointer border-2 border-orange-500/50 shadow-[0_0_20px_rgba(249,115,22,0.3)]">
                     <div className="absolute inset-0 bg-gradient-to-t from-orange-900/80 to-transparent z-10" />
-                    <img src="https://images.unsplash.com/photo-1560066984-138dadb4c035?w=800&q=80" alt="Salon cam" className="w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-700 grayscale mix-blend-luminosity" />
+                    <img src="/monitor2_violation.png" alt="Salon cam" className="w-full h-full object-cover opacity-40 group-hover:scale-105 transition-transform duration-700 grayscale mix-blend-luminosity" />
                     <div className="absolute top-3 left-3 z-20 flex gap-2">
                       <span className="px-2 py-1 bg-red-500 text-white text-[10px] font-bold rounded-md uppercase tracking-wider animate-pulse">Live</span>
                       <span className="px-2 py-1 bg-black/50 backdrop-blur-md text-white text-[10px] font-bold rounded-md">Cam 02 • RS Puram</span>

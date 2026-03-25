@@ -29,12 +29,10 @@ const sidebarLinks = [
   { name: "Overview", href: "/dashboard", icon: LayoutDashboard, roles: ["admin", "manager", "franchise_owner", "stylist"] },
   { name: "AI Assistant", href: "/dashboard/assistant", icon: Bot, roles: ["admin", "manager", "franchise_owner", "stylist", "customer"] },
   { name: "Book Appointment", href: "/dashboard", icon: Calendar, roles: ["customer"] },
-  { name: "Personal Experience", href: "/dashboard/experience", icon: Sparkles, roles: ["customer", "stylist"] },
   { name: "SOP Audit", href: "/dashboard/sop", icon: ShieldCheck, roles: ["admin", "manager"] },
   { name: "Beauty Passport", href: "/dashboard/passport", icon: Target, roles: ["customer"] },
   { name: "AI Stylist Copilot", href: "/dashboard/stylist", icon: Scissors, roles: ["stylist", "admin"] },
   { name: "Trend Engine", href: "/dashboard/trends", icon: LineChart, roles: ["admin", "manager"] },
-  { name: "Consultation", href: "/dashboard/consultation", icon: Activity, roles: ["customer", "stylist"] },
   { name: "Academy", href: "/dashboard/academy", icon: BookOpen, roles: ["admin"] },
 ];
 
@@ -200,12 +198,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Top Header */}
         {!(userRole === "customer" && !customerProfile) && pathname !== '/dashboard/onboarding' && (
           <header className="h-20 bg-white border-b border-naturals-purple/5 flex items-center justify-between px-8 z-10 shrink-0">
-            <button 
-              onClick={() => setSidebarOpen(!isSidebarOpen)}
-              className="p-2 rounded-lg bg-warm-grey text-deep-grape hover:bg-naturals-purple hover:text-white transition-all shadow-sm"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={() => setSidebarOpen(!isSidebarOpen)}
+                className="p-2 rounded-lg bg-warm-grey text-deep-grape hover:bg-naturals-purple hover:text-white transition-all shadow-sm"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+              
+              <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-naturals-purple/5 border border-naturals-purple/10">
+                <div className="w-1.5 h-1.5 rounded-full bg-naturals-purple animate-pulse" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-naturals-purple italic">
+                  {isAdmin ? "Central Command" : (profile?.branch_name || (isFranchiseOwner ? "Adayar Branch" : "Official Branch"))}
+                </span>
+              </div>
+            </div>
 
             {/* Search */}
             <form 
@@ -232,10 +239,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </button>
               <div className="flex items-center gap-4 pl-6 border-l border-black/5">
                 <div className="text-right hidden sm:block">
-                  <p className="text-[10px] font-black uppercase tracking-widest opacity-30 leading-none mb-1">
-                    {isAdmin ? "Command Center" : "Customer Profile"}
+                  <p className="text-[10px] font-black uppercase tracking-widest opacity-30 leading-none mb-1 text-right">
+                    {isAdmin ? "Command Center" : (profile?.branch_name || (isFranchiseOwner ? "Adayar Branch" : "Official Branch"))}
                   </p>
-                  <p className="text-[11px] font-black text-deep-grape italic">
+                  <p className="text-[11px] font-black text-deep-grape italic text-right">
                     {isAdmin ? "ADMINISTRATOR" : (profile?.full_name?.toUpperCase() || customerProfile?.full_name?.toUpperCase() || (user?.displayName?.toUpperCase()) || "GUEST")}
                   </p>
                 </div>

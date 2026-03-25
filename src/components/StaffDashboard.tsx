@@ -157,7 +157,45 @@ export default function StaffDashboard() {
       .from('appointments')
       .select('*, customer:customers(*), stylist:stylists(*), service:services(*)')
       .order('appointment_date', { ascending: false });
-    if (data) setAppointments(data as any);
+    
+    const sampleAppointments = [
+      {
+        id: 'sample-1',
+        appointment_date: new Date().toISOString().split('T')[0],
+        start_time: '10:00:00',
+        end_time: '13:00:00',
+        status: 'confirmed',
+        customer: { full_name: 'Aditi Sharma', phone: '9876543210' },
+        stylist: { full_name: 'Rahul Varma' },
+        service: { name: 'Keratin Treatment' }
+      },
+      {
+        id: 'sample-2',
+        appointment_date: new Date().toISOString().split('T')[0],
+        start_time: '14:30:00',
+        end_time: '17:00:00',
+        status: 'in-progress',
+        customer: { full_name: 'Rajesh Kumar', phone: '9887766554' },
+        stylist: { full_name: 'Suresh Raina' },
+        service: { name: 'Global Coloring' }
+      },
+      {
+        id: 'sample-3',
+        appointment_date: new Date().toISOString().split('T')[0],
+        start_time: '11:00:00',
+        end_time: '11:45:00',
+        status: 'confirmed',
+        customer: { full_name: 'Priya Singh', phone: '9988776655' },
+        stylist: { full_name: 'Anjali Gupta' },
+        service: { name: 'Classic Fade' }
+      }
+    ];
+
+    if (data && data.length > 0) {
+      setAppointments([...data, ...sampleAppointments] as any);
+    } else {
+      setAppointments(sampleAppointments as any);
+    }
   };
 
   useEffect(() => {
@@ -478,49 +516,74 @@ export default function StaffDashboard() {
       </div>
 
       {activeTab === 'customers' && (
-        <div className="glass-card bg-white border border-black/5 shadow-xl rounded-[2rem] overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-warm-grey/50">
-                  <th className="text-left p-3 text-[10px] font-black uppercase tracking-widest text-deep-grape/60">Code</th>
-                  <th className="text-left p-3 text-[10px] font-black uppercase tracking-widest text-deep-grape/60">Name</th>
-                  <th className="text-left p-3 text-[10px] font-black uppercase tracking-widest text-deep-grape/60">Phone</th>
-                  <th className="text-right p-3 text-[10px] font-black uppercase tracking-widest text-deep-grape/60">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredCustomers.map((customer) => (
-                  <tr key={customer.id} className="border-t border-black/5 hover:bg-warm-grey/20">
-                    <td className="p-3 font-bold text-xs">{customer.customer_code || '---'}</td>
-                    <td className="p-3 font-bold text-sm text-naturals-purple">{customer.full_name}</td>
-                    <td className="p-3 text-sm font-medium">{customer.phone}</td>
-                    <td className="p-3 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button 
-                          onClick={() => handleEdit('customer', customer)}
-                          className="p-2 hover:bg-naturals-purple/10 rounded-xl transition-all group"
-                        >
-                          <Edit className="w-4 h-4 text-naturals-purple/60 group-hover:text-naturals-purple" />
-                        </button>
-                        <button 
-                          onClick={() => handleDelete('customer', customer.id)} 
-                          className="p-2 hover:bg-red-50 rounded-xl transition-all group"
-                        >
-                          <Trash2 className="w-4 h-4 text-red-400 group-hover:text-red-500" />
-                        </button>
-                      </div>
-                    </td>
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2 italic">Global Client Directory</h3>
+            {(isAdmin || isManager || isFranchiseOwner) && (
+              <button
+                onClick={() => handleOpenModal('add-customer')}
+                className="px-4 py-2 bg-naturals-purple text-white font-black text-[9px] uppercase tracking-widest rounded-xl hover:scale-105 transition-all flex items-center gap-2 shadow-lg shadow-naturals-purple/20"
+              >
+                <UserPlus className="w-3.5 h-3.5" /> Add Customer
+              </button>
+            )}
+          </div>
+          <div className="glass-card bg-white border border-black/5 shadow-xl rounded-[2rem] overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-warm-grey/50">
+                    <th className="text-left p-3 text-[10px] font-black uppercase tracking-widest text-deep-grape/60">Code</th>
+                    <th className="text-left p-3 text-[10px] font-black uppercase tracking-widest text-deep-grape/60">Name</th>
+                    <th className="text-left p-3 text-[10px] font-black uppercase tracking-widest text-deep-grape/60">Phone</th>
+                    <th className="text-right p-3 text-[10px] font-black uppercase tracking-widest text-deep-grape/60">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredCustomers.map((customer) => (
+                    <tr key={customer.id} className="border-t border-black/5 hover:bg-warm-grey/20">
+                      <td className="p-3 font-bold text-xs">{customer.customer_code || '---'}</td>
+                      <td className="p-3 font-bold text-sm text-naturals-purple">{customer.full_name}</td>
+                      <td className="p-3 text-sm font-medium">{customer.phone}</td>
+                      <td className="p-3 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button 
+                            onClick={() => handleEdit('customer', customer)}
+                            className="p-2 hover:bg-naturals-purple/10 rounded-xl transition-all group"
+                          >
+                            <Edit className="w-4 h-4 text-naturals-purple/60 group-hover:text-naturals-purple" />
+                          </button>
+                          <button 
+                            onClick={() => handleDelete('customer', customer.id)} 
+                            className="p-2 hover:bg-red-50 rounded-xl transition-all group"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-400 group-hover:text-red-500" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
 
       {activeTab === 'stylists' && (
-        <div className="bg-white border border-black/5 shadow-xl rounded-[2rem] overflow-hidden">
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2 italic">Active Analyst Inventory</h3>
+            {(isAdmin || isManager || isFranchiseOwner) && (
+              <button
+                onClick={() => handleOpenModal('add-stylist')}
+                className="px-4 py-2 bg-deep-grape text-white font-black text-[9px] uppercase tracking-widest rounded-xl hover:scale-105 transition-all flex items-center gap-2 shadow-lg shadow-deep-grape/20"
+              >
+                <UserPlus className="w-3.5 h-3.5" /> Add Stylist
+              </button>
+            )}
+          </div>
+          <div className="bg-white border border-black/5 shadow-xl rounded-[2rem] overflow-hidden">
           <div className="grid grid-cols-[1fr_2fr_auto] px-6 py-3 bg-warm-grey/40 border-b border-black/5">
             <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Stylist</span>
             <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Expertise</span>
@@ -556,76 +619,103 @@ export default function StaffDashboard() {
             ))}
           </div>
         </div>
-      )}
+      </div>
+    )}
 
       {activeTab === 'managers' && (
-        <div className="bg-white border border-black/5 shadow-xl rounded-[2rem] overflow-hidden">
-          <div className="grid grid-cols-[1fr_1fr_140px_120px] px-6 py-3 bg-warm-grey/40 border-b border-black/5">
-            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Manager</span>
-            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Email</span>
-            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Branch</span>
-            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Actions</span>
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2 italic">Regional Management Assets</h3>
+            {(isAdmin || isFranchiseOwner) && (
+              <button
+                onClick={() => handleOpenModal('add-manager')}
+                className="px-4 py-2 bg-deep-grape text-white font-black text-[9px] uppercase tracking-widest rounded-xl hover:scale-105 transition-all flex items-center gap-2 shadow-lg shadow-deep-grape/20"
+              >
+                <Users className="w-3.5 h-3.5" /> Add Manager
+              </button>
+            )}
           </div>
-          <div className="divide-y divide-black/5">
-            {managers.length === 0 ? (
-              <div className="px-6 py-10 text-center text-deep-grape/30 text-xs font-black uppercase tracking-widest">No managers registered</div>
-            ) : managers.map((m) => (
-              <div key={m.id} className="grid grid-cols-[1fr_1fr_140px_120px] items-center px-6 py-4 hover:bg-warm-grey/20 transition-colors">
-                <div>
-                  <p className="font-bold text-sm text-deep-grape">{m.full_name}</p>
-                  <p className="text-[10px] text-deep-grape/40 font-bold mt-0.5">{m.phone || '—'}</p>
+          <div className="bg-white border border-black/5 shadow-xl rounded-[2rem] overflow-hidden">
+            <div className="grid grid-cols-[1fr_1fr_140px_120px] px-6 py-3 bg-warm-grey/40 border-b border-black/5">
+              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Manager</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Email</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Branch</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Actions</span>
+            </div>
+            <div className="divide-y divide-black/5">
+              {managers.length === 0 ? (
+                <div className="px-6 py-10 text-center text-deep-grape/30 text-xs font-black uppercase tracking-widest">No managers registered</div>
+              ) : managers.map((m) => (
+                <div key={m.id} className="grid grid-cols-[1fr_1fr_140px_120px] items-center px-6 py-4 hover:bg-warm-grey/20 transition-colors">
+                  <div>
+                    <p className="font-bold text-sm text-deep-grape">{m.full_name}</p>
+                    <p className="text-[10px] text-deep-grape/40 font-bold mt-0.5">{m.phone || '—'}</p>
+                  </div>
+                  <p className="text-xs text-deep-grape/60 font-semibold">{m.email}</p>
+                  <button
+                    onClick={() => { setBranchAssign({id: m.id, table: 'managers', current: m.branch_name || ''}); setBranchInput(m.branch_name || ''); }}
+                    className="px-2 py-0.5 bg-naturals-purple/5 text-naturals-purple rounded-md text-[9px] font-black uppercase hover:bg-naturals-purple hover:text-white transition-all"
+                  >{m.branch_name || 'Assign Branch'}</button>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => handleEdit('manager', m)} className="p-2 hover:bg-naturals-purple/10 rounded-xl transition-all group">
+                      <Edit className="w-4 h-4 text-naturals-purple/60 group-hover:text-naturals-purple" />
+                    </button>
+                    <button onClick={() => handleDelete('manager', m.id)} className="p-2 hover:bg-red-50 rounded-xl transition-all group">
+                      <Trash2 className="w-4 h-4 text-red-500 group-hover:text-red-600" />
+                    </button>
+                  </div>
                 </div>
-                <p className="text-xs text-deep-grape/60 font-semibold">{m.email}</p>
-                <button
-                  onClick={() => { setBranchAssign({id: m.id, table: 'managers', current: m.branch_name || ''}); setBranchInput(m.branch_name || ''); }}
-                  className="px-2 py-0.5 bg-naturals-purple/5 text-naturals-purple rounded-md text-[9px] font-black uppercase hover:bg-naturals-purple hover:text-white transition-all"
-                >{m.branch_name || 'Assign Branch'}</button>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => handleEdit('manager', m)} className="p-2 hover:bg-naturals-purple/10 rounded-xl transition-all group">
-                    <Edit className="w-4 h-4 text-naturals-purple/60 group-hover:text-naturals-purple" />
-                  </button>
-                  <button onClick={() => handleDelete('manager', m.id)} className="p-2 hover:bg-red-50 rounded-xl transition-all group">
-                    <Trash2 className="w-4 h-4 text-red-500 group-hover:text-red-600" />
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}
 
       {activeTab === 'franchise' && (
-        <div className="bg-white border border-black/5 shadow-xl rounded-[2rem] overflow-hidden">
-          <div className="grid grid-cols-[1fr_1fr_140px_120px] px-6 py-3 bg-warm-grey/40 border-b border-black/5">
-            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Franchise Owner</span>
-            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Email</span>
-            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Branch</span>
-            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Actions</span>
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2 italic">Corporate Partner Registry</h3>
+            {isAdmin && (
+              <button
+                onClick={() => handleOpenModal('add-franchise')}
+                className="px-4 py-2 bg-deep-grape text-white font-black text-[9px] uppercase tracking-widest rounded-xl hover:scale-105 transition-all flex items-center gap-2 shadow-lg shadow-deep-grape/20"
+              >
+                <Briefcase className="w-3.5 h-3.5" /> Add Franchise
+              </button>
+            )}
           </div>
-          <div className="divide-y divide-black/5">
-            {franchiseOwners.length === 0 ? (
-              <div className="px-6 py-10 text-center text-deep-grape/30 text-xs font-black uppercase tracking-widest">No franchise owners registered</div>
-            ) : franchiseOwners.map((fo) => (
-              <div key={fo.id} className="grid grid-cols-[1fr_1fr_140px_120px] items-center px-6 py-4 hover:bg-warm-grey/20 transition-colors">
-                <div>
-                  <p className="font-bold text-sm text-deep-grape">{fo.full_name}</p>
-                  <p className="text-[10px] text-deep-grape/40 font-bold mt-0.5">{fo.phone || '—'}</p>
+          <div className="bg-white border border-black/5 shadow-xl rounded-[2rem] overflow-hidden">
+            <div className="grid grid-cols-[1fr_1fr_140px_120px] px-6 py-3 bg-warm-grey/40 border-b border-black/5">
+              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Franchise Owner</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Email</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Branch</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Actions</span>
+            </div>
+            <div className="divide-y divide-black/5">
+              {franchiseOwners.length === 0 ? (
+                <div className="px-6 py-10 text-center text-deep-grape/30 text-xs font-black uppercase tracking-widest">No franchise owners registered</div>
+              ) : franchiseOwners.map((fo) => (
+                <div key={fo.id} className="grid grid-cols-[1fr_1fr_140px_120px] items-center px-6 py-4 hover:bg-warm-grey/20 transition-colors">
+                  <div>
+                    <p className="font-bold text-sm text-deep-grape">{fo.full_name}</p>
+                    <p className="text-[10px] text-deep-grape/40 font-bold mt-0.5">{fo.phone || '—'}</p>
+                  </div>
+                  <p className="text-xs text-deep-grape/60 font-semibold">{fo.email}</p>
+                  <button
+                    onClick={() => { setBranchAssign({id: fo.id, table: 'franchise_owners', current: fo.branch_name || ''}); setBranchInput(fo.branch_name || ''); }}
+                    className="px-2 py-0.5 bg-deep-grape/5 text-deep-grape rounded-md text-[9px] font-black uppercase hover:bg-deep-grape hover:text-white transition-all"
+                  >{fo.branch_name || 'Assign Branch'}</button>
+                  <div className="flex items-center gap-1">
+                    <button onClick={() => handleEdit('franchise', fo)} className="p-2 hover:bg-naturals-purple/10 rounded-xl transition-all group">
+                      <Edit className="w-4 h-4 text-naturals-purple/60 group-hover:text-naturals-purple" />
+                    </button>
+                    <button onClick={() => handleDelete('franchise', fo.id)} className="p-2 hover:bg-red-50 rounded-xl transition-all group">
+                      <Trash2 className="w-4 h-4 text-red-500 group-hover:text-red-600" />
+                    </button>
+                  </div>
                 </div>
-                <p className="text-xs text-deep-grape/60 font-semibold">{fo.email}</p>
-                <button
-                  onClick={() => { setBranchAssign({id: fo.id, table: 'franchise_owners', current: fo.branch_name || ''}); setBranchInput(fo.branch_name || ''); }}
-                  className="px-2 py-0.5 bg-deep-grape/5 text-deep-grape rounded-md text-[9px] font-black uppercase hover:bg-deep-grape hover:text-white transition-all"
-                >{fo.branch_name || 'Assign Branch'}</button>
-                <div className="flex items-center gap-1">
-                  <button onClick={() => handleEdit('franchise', fo)} className="p-2 hover:bg-naturals-purple/10 rounded-xl transition-all group">
-                    <Edit className="w-4 h-4 text-naturals-purple/60 group-hover:text-naturals-purple" />
-                  </button>
-                  <button onClick={() => handleDelete('franchise', fo.id)} className="p-2 hover:bg-red-50 rounded-xl transition-all group">
-                    <Trash2 className="w-4 h-4 text-red-500 group-hover:text-red-600" />
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}
