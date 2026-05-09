@@ -46,6 +46,8 @@ export default function MyAppointments() {
   }, [customerProfile, authLoading]);
 
   const fetchAppointments = async () => {
+    if (!customerProfile?.id) return;
+    
     try {
       setLoading(true);
       const { data, error } = await supabase

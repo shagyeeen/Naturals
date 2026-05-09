@@ -177,7 +177,7 @@ export interface Appointment {
   // joined relations
   customer?: Pick<Customer, 'id' | 'full_name' | 'phone' | 'email' | 'customer_code'>
   stylist?: Pick<Stylist, 'id' | 'full_name' | 'phone'>
-  service?: Pick<Service, 'id' | 'name' | 'duration_minutes' | 'price'>
+  service?: Pick<Service, 'id' | 'name' | 'duration_minutes' | 'price' | 'category'>
 }
 
 export interface CustomerHistory {

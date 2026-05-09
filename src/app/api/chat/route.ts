@@ -156,7 +156,7 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json({ text: choice.message.content });
+    return NextResponse.json({ text: choice.message.content || "Operational synchronization complete. How else may I assist you?" });
   } catch (error: any) {
     console.error('Chat API Error:', error.message);
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });

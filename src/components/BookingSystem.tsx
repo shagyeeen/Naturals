@@ -241,7 +241,7 @@ export default function BookingPage() {
           </div>
           
           <div className="flex items-center gap-2 bg-warm-grey/50 p-1 rounded-2xl border border-black/5 overflow-x-auto no-scrollbar">
-            {['All', ...Array.from(new Set(services.map(s => s.category)))].map((cat) => (
+            {['All', ...Array.from(new Set(services.map(s => s.category || 'General')))].map((cat) => (
               <button
                 key={cat}
                 onClick={() => setServiceCategory(cat)}
@@ -260,7 +260,7 @@ export default function BookingPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <AnimatePresence mode="popLayout">
             {services
-              .filter(s => serviceCategory === 'All' || s.category === serviceCategory)
+              .filter(s => serviceCategory === 'All' || (s.category || 'General') === serviceCategory)
               .map((service) => {
                 const isSelected = selectedServices.some(s => s.id === service.id);
                 return (
