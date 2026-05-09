@@ -1,23 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useAuth } from "@/lib/auth";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Sparkles, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import NextImage from "next/image";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
-// import { ensureCustomerRecord, getCustomerProfile } from "@/lib/actions";
 
 type Portal = 'customer' | 'staff';
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#FDF9FF] flex items-center justify-center"><div className="w-8 h-8 rounded-full border-4 border-naturals-purple/20 border-t-naturals-purple animate-spin" /></div>}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const [portal, setPortal] = useState<Portal>('customer');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
   const { signInWithGoogle, user, loading: authLoading, loginAsGuest, refreshProfile, isAdmin } = useAuth();
+  const searchParams = useSearchParams();
+  const message = searchParams.get('message');
 
   const checkOnboardingStatus = async (email: string) => {
     const response = await fetch(`/api/auth/profile?email=${encodeURIComponent(email)}`);
@@ -30,28 +39,6 @@ export default function LoginPage() {
     
     return !(isProfileComplete && isPreferencesSet);
   };
-
-  // Auto-redirect disabled as requested ("dont auto sign in")
-  /*
-  useEffect(() => {
-    const checkAndRedirect = async () => {
-      if (!authLoading && user) {
-        if (isAdmin) {
-          router.push('/dashboard');
-          return;
-        }
-
-        const needsOnboarding = await checkOnboardingStatus(user.email || '');
-        if (needsOnboarding) {
-          router.push('/dashboard/onboarding');
-        } else {
-          router.push('/dashboard');
-        }
-      }
-    };
-    checkAndRedirect();
-  }, [user, authLoading, router]);
-  */
 
   const handleGoogleSignIn = async () => {
     setIsSubmitting(true);
@@ -179,6 +166,15 @@ export default function LoginPage() {
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
                   <p className="text-red-600 text-[10px] font-black uppercase tracking-widest">{error}</p>
+                </div>
+              </div>
+            )}
+
+            {message && !error && (
+              <div className="bg-naturals-purple/5 border border-naturals-purple/10 rounded-xl p-4 flex flex-col gap-2 mb-6 animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-naturals-purple animate-pulse" />
+                  <p className="text-naturals-purple text-[10px] font-black uppercase tracking-widest">{message}</p>
                 </div>
               </div>
             )}

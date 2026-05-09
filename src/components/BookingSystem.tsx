@@ -117,8 +117,7 @@ export default function BookingPage() {
     
     if (isGuest || !customerProfile.id) {
       console.log('Guest booking attempt detected (Robust Check). Redirecting...');
-      alert("Sign in to book appointment. A valid Beauty Passport is required for salon sessions.");
-      router.push('/login');
+      router.push(`/login?message=${encodeURIComponent('Sign in to book appointment. A valid Beauty Passport is required for salon sessions.')}`);
       return;
     }
 
