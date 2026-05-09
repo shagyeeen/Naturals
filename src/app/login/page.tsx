@@ -31,6 +31,15 @@ function CustomerLoginForm() {
     
     if (result.user && !result.error) {
       const profileRes = await fetch(`/api/auth/profile?email=${encodeURIComponent(result.user.email || '')}`);
+      
+      if (!profileRes.ok) {
+        const text = await profileRes.text();
+        console.error(`[Auth] Initial profile check failed with status ${profileRes.status}:`, text.substring(0, 100));
+        setError(`Authentication service error (${profileRes.status}). Please try again.`);
+        setIsSubmitting(false);
+        return;
+      }
+
       const { customerData: existingCustomer } = await profileRes.json();
         
       if (!existingCustomer) {

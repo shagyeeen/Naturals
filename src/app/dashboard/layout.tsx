@@ -15,7 +15,6 @@ import {
   LineChart, 
   Users, 
   BookOpen, 
-  Search, 
   Bell, 
   LogOut,
   Menu,
@@ -30,12 +29,12 @@ import { Tooltip } from "@/components/Tooltip";
 import Image from "next/image";
 
 const sidebarLinks = [
-  { name: "Overview", href: "/dashboard", icon: LayoutDashboard, roles: ["admin", "manager", "franchise_owner", "stylist"] },
-  { name: "AI Assistant", href: "/dashboard/assistant", icon: Bot, roles: ["admin", "manager", "franchise_owner", "stylist", "customer"] },
-  { name: "Book Appointment", href: "/dashboard", icon: Calendar, roles: ["customer"] },
-  { name: "My Appointments", href: "/dashboard/appointments", icon: History, roles: ["customer"] },
-  { name: "SOP Audit", href: "/dashboard/sop", icon: ShieldCheck, roles: ["admin", "manager"] },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["admin", "manager", "franchise_owner", "stylist", "customer"] },
+  { name: "Book Appointment", href: "/dashboard/booking", icon: Calendar, roles: ["customer"] },
+  { name: "My Appointment", href: "/dashboard/appointments", icon: History, roles: ["customer"] },
+  { name: "AI Assistance", href: "/dashboard/assistant", icon: Bot, roles: ["admin", "manager", "franchise_owner", "stylist", "customer"] },
   { name: "Beauty Passport", href: "/dashboard/passport", icon: Target, roles: ["customer"] },
+  { name: "SOP Audit", href: "/dashboard/sop", icon: ShieldCheck, roles: ["admin", "manager"] },
   { name: "AI Stylist Copilot", href: "/dashboard/stylist", icon: Scissors, roles: ["stylist", "admin"] },
   { name: "Trend Engine", href: "/dashboard/trends", icon: LineChart, roles: ["admin", "manager"] },
   { name: "Academy", href: "/dashboard/academy", icon: BookOpen, roles: ["admin"] },
@@ -46,8 +45,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const router = useRouter();
   const [isSidebarOpen, setSidebarOpen] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
   const [upcomingCount, setUpcomingCount] = useState(0);
+  const [isNotificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
 
   // Use the verified role flags from the auth context
   const userRole = isAdmin ? "admin" : (profile?.role || "customer");
@@ -80,6 +80,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     fetchUpcomingCount();
   }, [userRole, customerProfile]);
+
+  useEffect(() => {
+    const generateNotifications = () => {
+      const notes = [
+        { id: 1, title: 'System Status', message: 'All AI Modules Online • Adyar Branch Synchronized', time: 'Just now', type: 'system' },
+        { id: 2, title: 'Welcome', message: 'Welcome to the new Naturals AI Experience!', time: '2h ago', type: 'info' }
+      ];
+
+      if (upcomingCount > 0) {
+        notes.unshift({ id: 3, title: 'Appointment Reminder', message: `You have ${upcomingCount} confirmed appointment(s) scheduled.`, time: 'Recently', type: 'alert' });
+      }
+
+      setNotifications(notes);
+    };
+
+    if (!loading && user) {
+      generateNotifications();
+    }
+  }, [upcomingCount, user, loading]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -187,7 +206,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               >
                 <link.icon className={`w-5 h-5 shrink-0 ${isActive ? "text-white" : "group-hover:text-naturals-purple transition-colors"}`} />
                 {isSidebarOpen && <span className="whitespace-nowrap text-[11px] font-black uppercase tracking-widest">{link.name}</span>}
-                {link.name === "My Appointments" && upcomingCount > 0 && (
+                {link.name === "My Appointment" && upcomingCount > 0 && (
                   <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-black text-white shadow-lg shadow-red-500/20 animate-in zoom-in duration-300">
                     {upcomingCount}
                   </span>
@@ -226,7 +245,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         
         {/* Top Header */}
         {!(userRole === "customer" && !customerProfile) && pathname !== '/dashboard/onboarding' && (
-          <header className="h-20 bg-white border-b border-naturals-purple/5 flex items-center justify-between px-8 z-10 shrink-0">
+          <header className="h-20 bg-white border-b border-naturals-purple/5 flex items-center justify-between px-8 z-40 shrink-0 relative">
             <div className="flex items-center gap-4">
               <button 
                 onClick={() => setSidebarOpen(!isSidebarOpen)}
@@ -238,38 +257,62 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-naturals-purple/5 border border-naturals-purple/10">
                 <div className="w-1.5 h-1.5 rounded-full bg-naturals-purple animate-pulse" />
                 <span className="text-[10px] font-black uppercase tracking-widest text-naturals-purple italic">
-                  {isAdmin ? "Central Command" : (profile?.branch_name || (isFranchiseOwner ? "Adayar Branch" : "Official Branch"))}
+                  {isAdmin ? "Central Command" : (profile?.branch_name || (isFranchiseOwner ? "Adayar Branch" : "Adayar Branch"))}
                 </span>
               </div>
             </div>
 
-            {/* Search */}
-            <form 
-              onSubmit={handleSearch}
-              className="hidden md:flex items-center gap-3 bg-warm-grey/50 px-5 py-2.5 rounded-full w-[400px] border border-black/5 shadow-inner focus-within:border-naturals-purple/30 focus-within:bg-white transition-all"
-            >
-              <Search className="w-4 h-4 text-deep-grape/30" />
-              <input 
-                type="text" 
-                placeholder="SEARCH PROTOCOLS OR CLIENT ID..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent border-none outline-none text-[10px] font-black tracking-widest w-full placeholder:text-deep-grape/30"
-              />
-            </form>
 
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-6 relative">
               <button 
-                onClick={() => alert("System Status: Operational • All AI Modules Online")}
-                className="relative p-2.5 text-deep-grape/40 hover:text-naturals-purple transition-colors cursor-pointer bg-warm-grey/50 rounded-full"
+                onClick={() => setNotificationsOpen(!isNotificationsOpen)}
+                className={`relative p-2.5 transition-all cursor-pointer rounded-full ${isNotificationsOpen ? 'bg-naturals-purple text-white shadow-lg' : 'bg-warm-grey/50 text-deep-grape/40 hover:text-naturals-purple'}`}
               >
                 <Bell className="w-5 h-5" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-naturals-purple rounded-full border-2 border-white"></span>
+                {notifications.length > 0 && (
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                )}
               </button>
+
+              {/* Notifications Dropdown - Simplified positioning */}
+              {isNotificationsOpen && (
+                <div
+                  className="absolute top-full right-0 mt-4 w-80 bg-white rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-black/5 z-[100] p-6 animate-in fade-in slide-in-from-top-2 duration-200"
+                >
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xs font-black uppercase tracking-widest text-deep-grape">Notifications</h3>
+                    <span className="text-[10px] font-black text-naturals-purple bg-naturals-purple/10 px-2 py-0.5 rounded-full">{notifications.length} NEW</span>
+                  </div>
+                  
+                  <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                    {notifications.length > 0 ? notifications.map((note) => (
+                      <div key={note.id} className="p-4 rounded-2xl bg-warm-grey/30 hover:bg-naturals-purple/5 transition-all group cursor-default">
+                        <div className="flex justify-between items-start mb-1">
+                          <h4 className="text-[11px] font-black text-deep-grape group-hover:text-naturals-purple transition-colors italic">{note.title}</h4>
+                          <span className="text-[8px] font-black text-deep-grape/30 uppercase">{note.time}</span>
+                        </div>
+                        <p className="text-[10px] font-bold text-deep-grape/60 leading-relaxed">{note.message}</p>
+                      </div>
+                    )) : (
+                      <div className="py-12 text-center">
+                        <Bell className="w-8 h-8 text-deep-grape/10 mx-auto mb-3" />
+                        <p className="text-[10px] font-black text-deep-grape/30 uppercase">No new alerts</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <button 
+                    onClick={() => setNotificationsOpen(false)}
+                    className="w-full mt-6 py-3 text-[10px] font-black uppercase tracking-widest text-deep-grape/40 hover:text-naturals-purple transition-all border-t border-black/5 pt-6"
+                  >
+                    Dismiss All
+                  </button>
+                </div>
+              )}
               <div className="flex items-center gap-4 pl-6 border-l border-black/5">
                 <div className="text-right hidden sm:block">
                   <p className="text-[10px] font-black uppercase tracking-widest opacity-30 leading-none mb-1 text-right">
-                    {isAdmin ? "Command Center" : (profile?.branch_name || (isFranchiseOwner ? "Adayar Branch" : "Official Branch"))}
+                    {isAdmin ? "Command Center" : (profile?.branch_name || (isFranchiseOwner ? "Adayar Branch" : "Adayar Branch"))}
                   </p>
                   <p className="text-[11px] font-black text-deep-grape italic text-right">
                     {isAdmin ? "ADMINISTRATOR" : (profile?.full_name?.toUpperCase() || customerProfile?.full_name?.toUpperCase() || (user?.displayName?.toUpperCase()) || "GUEST")}
@@ -295,7 +338,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-10 z-10 bg-[#fafafa]">
+        <main className="flex-1 overflow-y-auto p-10 z-0 bg-[#fafafa]">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}

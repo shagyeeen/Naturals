@@ -38,6 +38,7 @@ export default function NeuralAssistantPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userName,
+          customerId: customerProfile?.id,
           messages: messages.concat(userMessage).map(m => ({
             role: m.role === 'bot' ? 'assistant' : 'user',
             content: m.text
@@ -73,17 +74,6 @@ export default function NeuralAssistantPage() {
           <p className="text-deep-grape/40 font-bold uppercase text-[9px] tracking-[0.15em] text-left">Advanced agentic beauty intelligence. Personalized styling, skincare, and operational consulting.</p>
         </div>
         
-        <div className="hidden lg:flex items-center gap-8 px-8 py-4 bg-white rounded-3xl border border-black/5 shadow-sm">
-           <div className="flex flex-col">
-              <span className="text-[9px] font-black text-deep-grape/30 uppercase tracking-widest">Neural Link State</span>
-              <span className="text-[11px] font-black text-green-500 flex items-center gap-2">ACTIVE <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /></span>
-           </div>
-           <div className="w-px h-8 bg-black/5" />
-           <div className="flex flex-col">
-              <span className="text-[9px] font-black text-deep-grape/30 uppercase tracking-widest">Assigned Agent</span>
-              <span className="text-[11px] font-black text-naturals-purple italic font-black">NAT_L3_ASSISTANT</span>
-           </div>
-        </div>
       </div>
 
       {/* Main Chat Interface - Larger Box */}

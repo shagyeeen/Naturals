@@ -52,6 +52,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await fetch(`/api/auth/profile?email=${encodeURIComponent(authUser.email)}&t=${Date.now()}`, {
         cache: 'no-store'
       });
+
+      if (!response.ok) {
+        const text = await response.text();
+        console.error(`[Auth] Profile fetch failed with status ${response.status}:`, text.substring(0, 100));
+        return;
+      }
+
       const data = await response.json();
       console.log('Profile API response:', data);
       
