@@ -32,6 +32,9 @@ export default function MyAppointments() {
   const [filter, setFilter] = useState<"all" | AppointmentStatus>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedAppt, setSelectedAppt] = useState<Appointment | null>(null);
+  const [isDetailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [isCancelModalOpen, setCancelModalOpen] = useState(false);
+  const [apptToCancel, setApptToCancel] = useState<string | null>(null);
   const [isReviewModalOpen, setReviewModalOpen] = useState(false);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewText, setReviewText] = useState("");
@@ -81,20 +84,29 @@ export default function MyAppointments() {
 
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
-  const handleCancel = async (id: string) => {
-    if (!confirm("Are you sure you want to cancel this appointment?")) return;
+  const handleCancel = async () => {
+    if (!apptToCancel) return;
     
     try {
-      setCancellingId(id);
+      setCancellingId(apptToCancel);
       const { error } = await supabase
         .from('appointments')
         .update({ status: 'cancelled' })
-        .eq('id', id);
+        .eq('id', apptToCancel);
 
       if (error) throw error;
       
-      // Success feedback
-      setAppointments(prev => prev.map(a => a.id === id ? { ...a, status: 'cancelled' as AppointmentStatus } : a));
+      // Update local state immediately for speed
+      setAppointments(prev => prev.map(a => a.id === apptToCancel ? { ...a, status: 'cancelled' as AppointmentStatus } : a));
+      
+      // Re-fetch to be absolutely sure and sync any other calculated fields
+      await fetchAppointments();
+      
+      // Notify sidebar to refresh upcoming count
+      window.dispatchEvent(new CustomEvent('appointment-cancelled'));
+      
+      setCancelModalOpen(false);
+      setApptToCancel(null);
     } catch (error: any) {
       console.error("Error cancelling appointment:", error);
       alert(`Failed to cancel appointment: ${error.message || "Unknown error"}`);
@@ -289,12 +301,9 @@ export default function MyAppointments() {
                         <CreditCard className="w-5 h-5" />
                       </div>
                       <div>
-                        <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-widest mb-0.5">Price & Status</p>
+                        <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-widest mb-0.5">Investment</p>
                         <div className="flex items-center gap-2">
-                          <p className="text-xs font-black text-deep-grape">₹{appt.total_amount || appt.service?.price || 0}</p>
-                          <span className={`text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md ${appt.payment_status === 'paid' ? 'bg-green-500/10 text-green-500' : 'bg-amber-500/10 text-amber-500'}`}>
-                            {appt.payment_status}
-                          </span>
+                          <p className="text-xs font-black text-deep-grape">₹{appt.total_amount || appt.service?.price || 0} <span className="text-[9px] opacity-50 italic ml-1">+taxes</span></p>
                         </div>
                       </div>
                     </div>
@@ -336,9 +345,12 @@ export default function MyAppointments() {
 
                 {/* Actions */}
                 <div className="px-8 pb-8 flex gap-3 mt-auto">
-                  {appt.status === 'confirmed' && (
+                   {appt.status === 'confirmed' && (
                     <button 
-                      onClick={() => handleCancel(appt.id)}
+                      onClick={() => {
+                        setApptToCancel(appt.id);
+                        setCancelModalOpen(true);
+                      }}
                       disabled={cancellingId === appt.id}
                       className="flex-1 py-3 bg-red-500/10 text-red-500 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-red-500 hover:text-white transition-all disabled:opacity-50"
                     >
@@ -354,7 +366,10 @@ export default function MyAppointments() {
                     </button>
                   ) : (
                     <button 
-                      onClick={() => alert("Viewing full details...")}
+                      onClick={() => {
+                        setSelectedAppt(appt);
+                        setDetailsModalOpen(true);
+                      }}
                       className="flex-1 py-3 bg-deep-grape text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:scale-105 transition-transform"
                     >
                       View Details
@@ -450,6 +465,146 @@ export default function MyAppointments() {
                   </button>
                 </div>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Details Modal */}
+      <AnimatePresence>
+        {isDetailsModalOpen && selectedAppt && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-deep-grape/40 backdrop-blur-md" 
+              onClick={() => setDetailsModalOpen(false)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="w-full max-w-lg bg-white rounded-[2.5rem] p-10 shadow-2xl relative z-10 border border-black/5 overflow-hidden"
+            >
+               <div className="absolute top-0 left-0 w-full h-2 bg-naturals-purple" />
+               
+               <div className="flex justify-between items-start mb-8">
+                  <div>
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border mb-4 ${getStatusStyle(selectedAppt.status)}`}>
+                      {getStatusIcon(selectedAppt.status)}
+                      {selectedAppt.status}
+                    </span>
+                    <h3 className="text-3xl font-black text-deep-grape italic tracking-tighter">{selectedAppt.service?.name}</h3>
+                    <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-[0.25em]">{selectedAppt.service?.category} • {selectedAppt.service?.duration_minutes} Minutes</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[9px] font-black text-deep-grape/20 uppercase tracking-widest mb-1">REFERENCE ID</p>
+                    <p className="text-xs font-black text-deep-grape">{selectedAppt.id.split('-')[0].toUpperCase()}</p>
+                  </div>
+               </div>
+
+               <div className="space-y-6 bg-warm-grey/30 p-8 rounded-[2rem] border border-black/5 mb-8">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-naturals-purple shadow-sm">
+                      <MapPin className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-black text-deep-grape/30 uppercase tracking-widest mb-0.5">Salon Branch</p>
+                      <p className="text-xs font-black text-deep-grape">Naturals {customerProfile?.preferred_branch_location || "Adyar Branch"}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-naturals-purple shadow-sm">
+                      <Calendar className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-black text-deep-grape/30 uppercase tracking-widest mb-0.5">Scheduled Slot</p>
+                      <p className="text-xs font-black text-deep-grape">
+                        {new Date(selectedAppt.appointment_date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })} at {selectedAppt.start_time.slice(0, 5)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-naturals-purple shadow-sm">
+                      <User className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-black text-deep-grape/30 uppercase tracking-widest mb-0.5">Protocol Specialist</p>
+                      <p className="text-xs font-black text-deep-grape">{selectedAppt.stylist?.full_name || "Any Available Specialist"}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 border-t border-black/5 pt-6 mt-6">
+                    <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-naturals-purple shadow-sm">
+                      <CreditCard className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 flex justify-between items-center">
+                      <div>
+                        <p className="text-[9px] font-black text-deep-grape/30 uppercase tracking-widest mb-0.5">Total Investment</p>
+                        <p className="text-sm font-black text-deep-grape">₹{selectedAppt.total_amount || selectedAppt.service?.price || 0} <span className="text-[10px] opacity-40 italic font-bold">+taxes</span></p>
+                      </div>
+                      <div className="text-right">
+                         <p className="text-[8px] font-black text-deep-grape/30 uppercase tracking-widest mb-1">PAYMENT</p>
+                         <p className="text-[10px] font-black text-naturals-purple uppercase italic">In-Salon Pay</p>
+                      </div>
+                    </div>
+                  </div>
+               </div>
+
+               <button 
+                  onClick={() => setDetailsModalOpen(false)}
+                  className="w-full py-4 bg-deep-grape text-white font-black text-[10px] uppercase tracking-[0.3em] rounded-xl shadow-2xl hover:bg-naturals-purple transition-all"
+               >
+                  Close Archive
+               </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Cancellation Confirmation Modal */}
+      <AnimatePresence>
+        {isCancelModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-deep-grape/40 backdrop-blur-md" 
+              onClick={() => setCancelModalOpen(false)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="w-full max-w-sm bg-white rounded-[2.5rem] p-10 shadow-2xl relative z-10 border border-black/5 text-center"
+            >
+               <div className="w-20 h-20 bg-red-50 rounded-3xl flex items-center justify-center mx-auto mb-8">
+                  <XCircle className="w-10 h-10 text-red-500" />
+               </div>
+               <h3 className="text-2xl font-black text-deep-grape italic tracking-tighter mb-2">Cancel Session?</h3>
+               <p className="text-deep-grape/40 font-bold uppercase text-[10px] tracking-[0.2em] leading-relaxed mb-10">
+                  Are you sure you want to terminate this protocol? This action cannot be undone.
+               </p>
+               
+               <div className="flex gap-4">
+                  <button 
+                    onClick={() => setCancelModalOpen(false)}
+                    className="flex-1 py-4 border-2 border-black/5 text-deep-grape font-black text-[10px] uppercase tracking-[0.3em] rounded-xl hover:bg-warm-grey transition-all"
+                  >
+                    No, Keep
+                  </button>
+                  <button 
+                    onClick={handleCancel}
+                    disabled={!!cancellingId}
+                    className="flex-1 py-4 bg-red-500 text-white font-black text-[10px] uppercase tracking-[0.3em] rounded-xl shadow-xl shadow-red-500/20 hover:scale-[1.02] transition-transform disabled:opacity-50"
+                  >
+                    {cancellingId ? "TERMINATING..." : "Yes, Cancel"}
+                  </button>
+               </div>
             </motion.div>
           </div>
         )}

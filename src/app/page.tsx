@@ -54,24 +54,29 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#FDF9FF] text-deep-grape selection:bg-naturals-purple selection:text-white overflow-x-hidden">
       
-      {/* Premium Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/70 backdrop-blur-xl border-b border-naturals-purple/5 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <Link href="/" className="relative w-32 h-10 hover:scale-105 transition-transform duration-300">
+      {/* Ultra-Unique Floating Navigation */}
+      <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] w-[95%] max-w-5xl">
+        <nav className="glass-card !rounded-full px-10 py-5 flex justify-between items-center bg-white/60 backdrop-blur-3xl border-white/50 shadow-[0_32px_100px_-20px_rgba(47,1,55,0.1)] radiant-glow">
+          <Link href="/" className="relative w-36 h-12 hover:scale-110 transition-all duration-500">
             <Image src="/naturalslogo.png" alt="Naturals Logo" fill className="object-contain" priority />
           </Link>
-          <div className="hidden md:flex items-center gap-10">
-            <a href="#services" className="text-[10px] font-black uppercase tracking-[0.2em] hover:text-naturals-purple transition-colors">Services</a>
-            <a href="#offers" className="text-[10px] font-black uppercase tracking-[0.2em] hover:text-naturals-purple transition-colors">Limited Offers</a>
-            <a href="#features" className="text-[10px] font-black uppercase tracking-[0.2em] hover:text-naturals-purple transition-colors">AI Features</a>
+          <div className="hidden lg:flex items-center gap-12">
+            {['Services', 'Offers', 'AI Features'].map(item => (
+              <a 
+                key={item} 
+                href={`#${item.toLowerCase().replace(' ', '')}`} 
+                className="text-[10px] font-black uppercase tracking-[0.4em] text-deep-grape/40 hover:text-naturals-purple transition-all relative group"
+              >
+                {item}
+                <span className="absolute -bottom-2 left-0 w-0 h-0.5 bg-naturals-purple transition-all group-hover:w-full" />
+              </a>
+            ))}
           </div>
-          <div className="flex items-center gap-4">
-            <Link href="/login" className="px-8 py-3 bg-naturals-purple text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-naturals-purple/20 hover:bg-deep-grape hover:shadow-deep-grape/30 transition-all">
-              Sign In
-            </Link>
-          </div>
-        </div>
-      </nav>
+          <Link href="/login" className="px-10 py-3.5 bg-deep-grape text-white rounded-full text-[10px] font-black uppercase tracking-[0.3em] hover:bg-naturals-purple hover:scale-105 transition-all shadow-2xl">
+            Sign In
+          </Link>
+        </nav>
+      </div>
 
       {/* Hero Section */}
       <section className="relative pt-40 pb-20 px-6 overflow-hidden min-h-[90vh] flex items-center">
@@ -86,10 +91,19 @@ export default function LandingPage() {
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-naturals-purple/10 text-naturals-purple text-[10px] font-black uppercase tracking-[0.2em] mb-8 border border-naturals-purple/10">
               <Sparkles className="w-3 h-3" /> Redefining Beauty with AI
             </div>
-            <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.9] text-deep-grape italic">
-              Your Beauty, <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-naturals-purple to-deep-grape">Intelligently</span> <br />
-              Personalised.
+            <h1 className="text-7xl md:text-[10rem] lg:text-[13rem] powerful-heading text-deep-grape mb-12 flex flex-col pointer-events-none">
+              <span className="relative z-30">Your Beauty,</span>
+              <motion.span 
+                initial={{ opacity: 0, x: 100 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5, duration: 1 }}
+                className="text-stroke-grape -mt-6 md:-mt-16 lg:-mt-24 relative z-20"
+              >
+                Intelligently
+              </motion.span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-naturals-purple to-deep-grape -mt-6 md:-mt-16 lg:-mt-24 relative z-10">
+                Personalised.
+              </span>
             </h1>
             <p className="text-lg text-deep-grape/60 max-w-xl mb-12 font-bold uppercase tracking-widest leading-relaxed">
               Step into the future of salon experiences. AI-powered consultations, personalized beauty journeys, and premium service standards.
@@ -98,8 +112,8 @@ export default function LandingPage() {
               <Link href="/login" className="px-10 py-5 bg-naturals-purple text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-naturals-purple/30 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3">
                 Experience Naturals AI <ArrowRight className="w-4 h-4" />
               </Link>
-              <a href="#services" className="px-10 py-5 bg-white text-deep-grape border border-black/5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg hover:bg-gray-50 transition-all flex items-center justify-center">
-                Explore Services
+              <a href="#services" className="px-10 py-5 bg-deep-grape text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-deep-grape/20 hover:bg-naturals-purple transition-all flex items-center justify-center">
+                Explore Protocols
               </a>
             </div>
           </motion.div>
@@ -107,30 +121,39 @@ export default function LandingPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.8, rotate: 5 }}
             animate={{ opacity: 1, scale: 1, rotate: 0 }}
-            transition={{ duration: 1, ease: "easeOut" }}
+            transition={{ duration: 1.2, cubicBezier: [0.23, 1, 0.32, 1] }}
             className="relative hidden lg:block"
           >
-            <div className="relative w-full aspect-square rounded-[4rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(142,62,150,0.3)] group">
+            <div className="relative w-full aspect-[4/5] rounded-[5rem] overflow-hidden shadow-[0_100px_150px_-40px_rgba(47,1,55,0.2)] group cursor-none">
                <Image 
                 src="/features/ai-diagnosis.png" 
                 alt="AI Diagnosis" 
                 fill 
-                className="object-cover group-hover:scale-110 transition-transform duration-1000"
+                className="object-cover scale-110 group-hover:scale-100 transition-transform duration-1000 ease-out"
                />
-               <div className="absolute inset-0 bg-gradient-to-t from-deep-grape/60 to-transparent" />
-               <div className="absolute bottom-12 left-12 right-12">
-                  <div className="p-6 bg-white/10 backdrop-blur-md rounded-3xl border border-white/20">
-                     <p className="text-white text-xs font-black uppercase tracking-widest mb-2 flex items-center gap-2">
-                       <ShieldCheck className="w-4 h-4 text-naturals-purple" /> AR Diagnosis Active
-                     </p>
-                     <p className="text-white/80 text-[10px] font-bold uppercase tracking-widest">Scanning facial geometry for optimal hairstyle alignment...</p>
-                  </div>
+               <div className="absolute inset-0 bg-gradient-to-t from-deep-grape/80 via-transparent to-transparent" />
+               
+               {/* Animated HUD Overlays */}
+               <div className="absolute inset-0 border-[20px] border-white/5 m-10 rounded-[3rem] pointer-events-none" />
+               
+               <div className="absolute bottom-16 left-16 right-16">
+                  <motion.div 
+                    initial={{ y: 50, opacity: 0 }}
+                    whileInView={{ y: 0, opacity: 1 }}
+                    className="p-8 bg-white/10 backdrop-blur-2xl rounded-[2.5rem] border border-white/20 shadow-2xl"
+                  >
+                     <div className="flex items-center gap-4 mb-3">
+                        <div className="w-2 h-2 rounded-full bg-naturals-purple animate-ping" />
+                        <p className="text-white text-[10px] font-black uppercase tracking-[0.4em]">NEURAL SCAN ACTIVE</p>
+                     </div>
+                     <p className="text-white/60 text-[9px] font-bold uppercase tracking-[0.3em] leading-relaxed">Processing multi-spectral dermal analysis for precision styling...</p>
+                  </motion.div>
                </div>
             </div>
             
-            {/* Decorative Elements */}
-            <div className="absolute -top-10 -right-10 w-40 h-40 bg-naturals-purple/20 rounded-full blur-3xl animate-pulse" />
-            <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-lavender/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+            {/* Dynamic Light Orbs */}
+            <div className="absolute -top-20 -right-20 w-80 h-80 bg-naturals-purple/20 rounded-full blur-[120px] animate-pulse" />
+            <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-lavender/30 rounded-full blur-[120px] animate-pulse delay-1000" />
           </motion.div>
         </div>
       </section>
@@ -139,7 +162,8 @@ export default function LandingPage() {
       <section id="features" className="py-32 px-6 bg-white relative overflow-hidden">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-24">
-            <h2 className="text-4xl md:text-6xl font-black italic text-deep-grape mb-6 tracking-tighter">Beyond a Salon. An Ecosystem.</h2>
+            <h2 className="text-5xl md:text-7xl pageant-heading text-deep-grape mb-6">Beyond a Salon. An Ecosystem.</h2>
+            <div className="elegant-divider w-32 mx-auto mb-6" />
             <p className="text-xs font-black uppercase tracking-[0.4em] text-naturals-purple">Revolutionizing the Beauty Landscape</p>
           </div>
 
@@ -174,24 +198,12 @@ export default function LandingPage() {
           <div className="flex flex-col gap-12 mb-20">
             <div className="flex flex-col md:flex-row justify-between items-center gap-8">
               <div>
-                <h2 className="text-4xl md:text-6xl font-black italic text-deep-grape mb-4 tracking-tighter">Services Offered</h2>
+                <h2 className="text-5xl md:text-7xl pageant-heading text-deep-grape mb-4">Services Offered</h2>
+                <div className="elegant-divider w-24 mb-4" />
                 <p className="text-xs font-black uppercase tracking-[0.3em] text-deep-grape/40">Select a category to explore our protocols</p>
               </div>
-              <div className="relative w-full max-w-md">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-deep-grape/20" />
-                <input 
-                  type="text"
-                  placeholder="Search for a specific treatment..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    if (e.target.value.length > 0) setSelectedCategory(null);
-                  }}
-                  className="w-full bg-white border border-black/5 rounded-2xl py-4 pl-12 pr-6 text-sm font-bold text-deep-grape shadow-sm focus:outline-none focus:border-naturals-purple transition-all"
-                />
-              </div>
-              <Link href="/login" className="hidden md:flex px-8 py-4 bg-white border border-black/5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-naturals-purple hover:text-white transition-all shadow-sm">
-                Book Your Session
+               <Link href="/login" className="hidden md:flex px-10 py-5 bg-deep-grape text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-naturals-purple transition-all shadow-2xl shadow-deep-grape/20">
+                Book Session Now
               </Link>
             </div>
 
@@ -307,7 +319,7 @@ export default function LandingPage() {
                 <div className="absolute top-0 right-0 p-8">
                    <button 
                      onClick={() => setViewingService(null)}
-                     className="w-12 h-12 rounded-2xl bg-warm-grey hover:bg-naturals-purple/10 text-deep-grape/40 hover:text-naturals-purple flex items-center justify-center transition-all"
+                     className="w-12 h-12 rounded-2xl bg-deep-grape text-white hover:bg-naturals-purple flex items-center justify-center transition-all shadow-lg"
                    >
                      <X className="w-6 h-6" />
                    </button>
@@ -372,10 +384,11 @@ export default function LandingPage() {
         
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center mb-24">
-             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 text-orange-600 text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-orange-500/20">
+             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 text-orange-600 text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-orange-500/20 shadow-sm">
               <Flame className="w-3 h-3 animate-pulse" /> Limited Time Specials
             </div>
-            <h2 className="text-4xl md:text-6xl font-black italic text-deep-grape mb-4 tracking-tighter">Exclusive Offers</h2>
+            <h2 className="text-5xl md:text-7xl pageant-heading text-deep-grape mb-4">Exclusive Offers</h2>
+            <div className="elegant-divider w-32 mx-auto mb-4" />
             <p className="text-xs font-black uppercase tracking-[0.3em] text-deep-grape/40">Claim your rewards before they expire</p>
           </div>
 
@@ -405,7 +418,10 @@ export default function LandingPage() {
                         </div>
                      </div>
                   </div>
-                  <Link href="/login" className="px-12 py-6 bg-white text-deep-grape rounded-3xl font-black text-sm uppercase tracking-[0.2em] hover:bg-naturals-purple hover:text-white transition-all shadow-2xl shrink-0">
+                  <Link 
+                    href={`/dashboard/booking?service=${encodeURIComponent('Anti-Dandruff Hair Spa')}&discount=500`}
+                    className="px-12 py-6 bg-white text-deep-grape rounded-3xl font-black text-sm uppercase tracking-[0.2em] hover:bg-naturals-purple hover:text-white transition-all shadow-2xl shrink-0"
+                  >
                      Claim Voucher
                   </Link>
                </div>
@@ -430,7 +446,7 @@ export default function LandingPage() {
                      <div className="flex flex-wrap gap-4">
                         <div className="px-6 py-4 bg-warm-grey rounded-2xl border border-black/5 flex flex-col gap-1">
                            <span className="text-[8px] font-black uppercase text-deep-grape/30">Voucher Value</span>
-                           <span className="text-xl font-black text-orange-600">30% OFF</span>
+                           <span className="text-xl font-black text-orange-600">₹1000 OFF</span>
                         </div>
                         <div className="px-6 py-4 bg-warm-grey rounded-2xl border border-black/5 flex flex-col gap-1">
                            <span className="text-[8px] font-black uppercase text-deep-grape/30">Code</span>
@@ -438,7 +454,10 @@ export default function LandingPage() {
                         </div>
                      </div>
                   </div>
-                  <Link href="/login" className="px-12 py-6 bg-deep-grape text-white rounded-3xl font-black text-sm uppercase tracking-[0.2em] hover:bg-naturals-purple transition-all shadow-2xl shrink-0">
+                  <Link 
+                    href={`/dashboard/booking?service=${encodeURIComponent('Microdermabrasion')}&discount=1000`}
+                    className="px-12 py-6 bg-deep-grape text-white rounded-3xl font-black text-sm uppercase tracking-[0.2em] hover:bg-naturals-purple transition-all shadow-2xl shrink-0"
+                  >
                      Claim Voucher
                   </Link>
                </div>
@@ -453,7 +472,8 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto rounded-[5rem] bg-gradient-to-br from-deep-grape to-black p-16 md:p-32 text-center relative overflow-hidden">
            <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
            <div className="relative z-10">
-              <h2 className="text-5xl md:text-8xl font-black text-white italic mb-10 tracking-tighter leading-none">The Future <br /> of Beauty is Here.</h2>
+              <h2 className="text-6xl md:text-9xl font-serif italic text-white mb-10 tracking-tighter leading-none">The Future <br /> of Beauty is Here.</h2>
+              <div className="elegant-divider w-48 mx-auto mb-10 opacity-30" />
               <p className="text-lg text-white/50 font-bold uppercase tracking-[0.3em] mb-16 max-w-2xl mx-auto">
                 Join thousands of customers experiencing the precision of Naturals AI.
               </p>
@@ -501,7 +521,7 @@ function FeatureCard({ img, title, desc, icon, delay = 0 }: { img: string, title
           {icon}
         </div>
       </div>
-      <h3 className="text-2xl font-black italic text-deep-grape mb-4 tracking-tight">{title}</h3>
+      <h3 className="text-2xl pageant-heading text-deep-grape mb-4">{title}</h3>
       <p className="text-[10px] font-bold uppercase tracking-widest text-deep-grape/50 leading-relaxed max-w-xs">{desc}</p>
     </motion.div>
   );

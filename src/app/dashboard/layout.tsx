@@ -79,6 +79,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     };
 
     fetchUpcomingCount();
+
+    // Listen for cancellation events to refresh count without page reload
+    const handleRefresh = () => fetchUpcomingCount();
+    window.addEventListener('appointment-cancelled', handleRefresh);
+    window.addEventListener('appointment-created', handleRefresh);
+
+    return () => {
+      window.removeEventListener('appointment-cancelled', handleRefresh);
+      window.removeEventListener('appointment-created', handleRefresh);
+    };
   }, [userRole, customerProfile]);
 
   useEffect(() => {
@@ -102,7 +112,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push("/login");
+      const search = window.location.search;
+      router.push(`/login${search}`);
     }
     
     if (!loading && user && (isAdmin ? false : (profile?.role === 'customer')) && customerProfile) {

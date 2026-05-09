@@ -23,6 +23,15 @@ function CustomerLoginForm() {
   const { signInWithGoogle, loading: authLoading, loginAsGuest, refreshProfile } = useAuth();
   const searchParams = useSearchParams();
   const message = searchParams.get('message');
+  const service = searchParams.get('service');
+  const discount = searchParams.get('discount');
+
+  const getTargetUrl = (base: string) => {
+    if (service) {
+      return `/dashboard/booking?service=${encodeURIComponent(service)}&discount=${discount || '0'}`;
+    }
+    return base;
+  };
 
   const handleGoogleSignIn = async () => {
     setIsSubmitting(true);
@@ -63,14 +72,14 @@ function CustomerLoginForm() {
         }
         
         await refreshProfile(result.user);
-        router.push('/dashboard/onboarding');
+        router.push(getTargetUrl('/dashboard/onboarding'));
       } else {
         await refreshProfile(result.user);
         const needsOnboarding = !existingCustomer.phone || !existingCustomer.date_of_birth || !existingCustomer.gender;
         if (needsOnboarding) {
-          router.push('/dashboard/onboarding');
+          router.push(getTargetUrl('/dashboard/onboarding'));
         } else {
-          router.push('/dashboard/passport');
+          router.push(getTargetUrl('/dashboard/passport'));
         }
       }
     }
