@@ -9,6 +9,14 @@ export const getOffers = (ownerId: string) =>
     .eq('franchise_owner_id', ownerId)
     .order('created_at', { ascending: false })
 
+// GET — all active offers for public
+export const getAllActiveOffers = () =>
+  supabase
+    .from('offers')
+    .select('*, service:services(id, name)')
+    .eq('is_active', true)
+    .order('valid_until', { ascending: true })
+
 // POST — create offer
 export const createOffer = (payload: Omit<Offer, 'id' | 'created_at'>) =>
   supabase

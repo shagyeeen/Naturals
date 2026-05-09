@@ -89,17 +89,6 @@ export default function BeautyPassport() {
     }
   };
 
-  const handleScanFace = async () => {
-    setIsScanning(true);
-    // In a real app, this might use a camera/face-api, 
-    // but here we just simulate finding the current user or a default guest
-    setTimeout(async () => {
-      setIsScanning(false);
-      const target = customerProfile || { id: '00000000-0000-0000-0000-000000000001', full_name: 'Aditi Sharma', phone: '+91 98765 43210' };
-      setSelectedCustomer(target);
-      alert(`Style Session Synchronization Successful. Subject: ${target.full_name} • Access Granted.`);
-    }, 2000);
-  };
 
   return (
     <div className="space-y-8">
@@ -125,13 +114,6 @@ export default function BeautyPassport() {
               className="bg-transparent border-none outline-none text-[10px] font-black tracking-widest px-3 w-48 text-deep-grape placeholder:text-deep-grape/30" 
              />
            </form>
-           <button 
-            onClick={handleScanFace}
-            disabled={isScanning}
-            className="px-8 py-3 bg-deep-grape text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl hover:bg-naturals-purple transition-all disabled:opacity-50 cursor-pointer"
-           >
-             {isScanning ? "SYNCHRONIZING..." : "INITIALIZE SCAN"}
-           </button>
         </div>
       </div>
 
