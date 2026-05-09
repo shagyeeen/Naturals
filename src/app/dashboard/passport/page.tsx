@@ -147,19 +147,19 @@ export default function BeautyPassport() {
           </div>
 
           <div className="glass-card p-10 border border-black/5 bg-white">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/30 mb-8 flex items-center gap-3"><Sparkles className="w-4 h-4 opacity-50" /> Beauty Calibration</h3>
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/30 mb-8 flex items-center gap-3"><MapIcon className="w-4 h-4 opacity-50" /> Environment Calibration</h3>
             <div className="space-y-6">
               <div className="flex justify-between items-center border-b border-black/5 pb-4">
-                <span className="text-[9px] font-black uppercase tracking-widest text-deep-grape/40 flex gap-3 items-center"><Activity className="w-4 h-4" /> Dermal Sensitivity</span>
-                <span className="text-[10px] font-black text-green-600 uppercase">Balanced / Robust</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-deep-grape/40 flex gap-3 items-center"><Sun className="w-4 h-4" /> Climate Exposure</span>
+                <span className="text-[10px] font-black text-orange-600 uppercase">Critical Humidity</span>
               </div>
               <div className="flex justify-between items-center border-b border-black/5 pb-4">
-                <span className="text-[9px] font-black uppercase tracking-widest text-deep-grape/40 flex gap-3 items-center"><ShieldCheck className="w-4 h-4" /> Follicle Resilience</span>
-                <span className="text-[10px] font-black text-naturals-purple uppercase">High (Node: NAT-AI)</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-deep-grape/40 flex gap-3 items-center"><Droplets className="w-4 h-4" /> Resource Quality</span>
+                <span className="text-[10px] font-black text-red-500 uppercase">Hard Water (Node: MAA)</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-[9px] font-black uppercase tracking-widest text-deep-grape/40 flex gap-3 items-center"><Sun className="w-4 h-4" /> Oxidation Exposure</span>
-                <span className="text-[10px] font-black text-orange-600 uppercase">Minimal / Shielded</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-deep-grape/40 flex gap-3 items-center"><Leaf className="w-4 h-4" /> Behavioral Activity</span>
+                <span className="text-[10px] font-black text-green-600 uppercase">High Frequency Maintenance</span>
               </div>
             </div>
           </div>

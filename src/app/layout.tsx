@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Outfit, Playfair_Display } from "next/font/google";
+import { Outfit } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { ClearCache } from "@/components/ClearCache";
@@ -7,11 +7,6 @@ import { AOSInitializer } from "@/components/AOSInitializer";
 
 const outfit = Outfit({
   variable: "--font-outfit",
-  subsets: ["latin"],
-});
-
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
   subsets: ["latin"],
 });
 
@@ -27,7 +22,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${outfit.variable} ${playfair.variable} antialiased min-h-screen flex flex-col`}>
+      <body className={`${outfit.variable} antialiased min-h-screen flex flex-col`}>
         <AOSInitializer />
         <ClearCache />
         <Providers>{children}</Providers>

@@ -5,9 +5,7 @@ import { supabase, Stylist, Service, Appointment } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Clock, User, Scissors, CreditCard, Check, Search } from "lucide-react";
-
-import { useSearchParams } from "next/navigation";
+import { Calendar, Clock, User, Scissors, CreditCard, Check } from "lucide-react";
 
 interface TimeSlot {
   start_time: string;
@@ -22,17 +20,11 @@ export default function BookingPage() {
   const [selectedStylist, setSelectedStylist] = useState<Stylist | null>(null);
   const [selectedServices, setSelectedServices] = useState<Service[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [hoveredStylistId, setHoveredStylistId] = useState<string | null>(null);
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [serviceCategory, setServiceCategory] = useState<string>('All');
-  const [serviceSearchTerm, setServiceSearchTerm] = useState<string>('');
-  
-  const searchParams = useSearchParams();
-  const preSelectedServiceName = searchParams.get('service');
-  const discountAmount = parseInt(searchParams.get('discount') || '0');
 
   useEffect(() => {
     fetchStylists();
@@ -72,15 +64,6 @@ export default function BookingPage() {
     } else if (data) {
       console.log('Services Found:', data.length);
       setServices(data);
-      
-      // Auto-select service from query param
-      if (preSelectedServiceName) {
-        const preSelected = data.find(s => s.name.toLowerCase() === preSelectedServiceName.toLowerCase());
-        if (preSelected) {
-          setSelectedServices([preSelected]);
-          if (preSelected.category) setServiceCategory(preSelected.category);
-        }
-      }
     }
   };
 
@@ -140,7 +123,7 @@ export default function BookingPage() {
     }
 
     const totalDuration = selectedServices.reduce((sum, s) => sum + s.duration_minutes, 0);
-    const totalPrice = Math.max(0, selectedServices.reduce((sum, s) => sum + s.price, 0) - discountAmount);
+    const totalPrice = selectedServices.reduce((sum, s) => sum + s.price, 0);
     const serviceNames = selectedServices.map(s => s.name).join(', ');
 
     const endTime = new Date(`2000-01-01 ${selectedSlot.start_time}`);
@@ -150,7 +133,7 @@ export default function BookingPage() {
       customer_id: customerProfile.id,
       stylist_id: selectedStylist.id,
       service_id: selectedServices[0].id, // Primary service ID
-      notes: `Multiple Services: ${serviceNames}. Total Duration: ${totalDuration} mins.${discountAmount > 0 ? ` Applied Voucher Discount: ₹${discountAmount}` : ''}`,
+      notes: `Multiple Services: ${serviceNames}. Total Duration: ${totalDuration} mins.`,
       appointment_date: selectedDate,
       start_time: selectedSlot.start_time,
       end_time: endTime.toTimeString().slice(0, 8),
@@ -217,7 +200,7 @@ export default function BookingPage() {
               Your salon session has been confirmed and synchronized with our stylist. We look forward to seeing you soon!
             </p>
             <button 
-              onClick={() => { setSuccess(false); router.push('/dashboard'); }}
+              onClick={() => setSuccess(false)}
               className="w-full py-5 bg-deep-grape text-white font-black text-xs uppercase tracking-[0.3em] rounded-2xl hover:bg-naturals-purple transition-all shadow-2xl"
             >
               Back to Dashboard
@@ -232,111 +215,21 @@ export default function BookingPage() {
           <h3 className="text-sm font-black uppercase tracking-widest text-deep-grape">Select Stylist</h3>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {stylists.map((stylist) => {
-            const isSelected = selectedStylist?.id === stylist.id;
-            const specialistProfiles: Record<string, { specialty: string, bio: string }> = {
-              'Colin': { specialty: 'Precision Architect', bio: 'Master of geometric cuts and facial contouring alignment.' },
-              'Eloise': { specialty: 'Color Alchemist', bio: 'Expert in high-contrast balayage and pigment restorative protocols.' },
-              'Nandini': { specialty: 'Dermal Scientist', bio: 'Focused on deep skin rejuvenation and bridal radiance layering.' },
-              'Vikram': { specialty: 'Texture Specialist', bio: 'Renowned for multi-dimensional curls and premium grooming.' },
-              'Default': { specialty: 'Senior Protocol Analyst', bio: 'Highly skilled across all aesthetic and styling categories.' }
-            };
-            const profile = specialistProfiles[stylist.full_name.split(' ')[0]] || specialistProfiles['Default'];
-
-            return (
-              <button
-                key={stylist.id}
-                onMouseEnter={() => setHoveredStylistId(stylist.id)}
-                onMouseLeave={() => setHoveredStylistId(null)}
-                onClick={() => { setSelectedStylist(stylist); setSelectedSlot(null); }}
-                className={`p-6 rounded-[2rem] border-2 transition-all text-left relative overflow-hidden group ${
-                  isSelected
-                    ? 'border-naturals-purple bg-naturals-purple text-white shadow-2xl shadow-naturals-purple/20'
-                    : 'border-black/5 hover:border-naturals-purple/30 bg-deep-grape/5'
-                }`}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-14 h-14 rounded-2xl bg-white/20 shadow-sm flex items-center justify-center p-1 border border-white/10">
-                    <div className={`w-full h-full rounded-xl flex items-center justify-center ${isSelected ? 'bg-white text-naturals-purple' : 'bg-naturals-purple/10 text-naturals-purple'}`}>
-                       <User className="w-6 h-6" />
-                    </div>
-                  </div>
-                  {isSelected && (
-                    <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center text-naturals-purple shadow-lg animate-in zoom-in">
-                      <Check className="w-4 h-4" />
-                    </div>
-                  )}
-                </div>
-                
-                <div className="space-y-1">
-                  <p className={`font-black text-base ${isSelected ? 'text-white' : 'text-deep-grape'}`}>{stylist.full_name}</p>
-                  <div className="h-4 relative overflow-hidden">
-                    <AnimatePresence mode="wait">
-                      {(isSelected || hoveredStylistId === stylist.id) ? (
-                        <motion.p 
-                          key="specialty"
-                          initial={{ y: 10, opacity: 0 }}
-                          animate={{ y: 0, opacity: 1 }}
-                          exit={{ y: -10, opacity: 0 }}
-                          className={`text-[9px] font-black uppercase tracking-[0.2em] absolute inset-0 ${isSelected ? 'text-white/80' : 'text-naturals-purple'}`}
-                        >
-                          {profile.specialty}
-                        </motion.p>
-                      ) : (
-                        <motion.p 
-                          key="exp"
-                          initial={{ y: 10, opacity: 0 }}
-                          animate={{ y: 0, opacity: 1 }}
-                          exit={{ y: -10, opacity: 0 }}
-                          className={`text-[9px] font-black uppercase tracking-[0.2em] absolute inset-0 ${isSelected ? 'text-white/60' : 'text-deep-grape/30'}`}
-                        >
-                          {stylist.experience_years}Y EXP • Top Rated
-                        </motion.p>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </div>
-
-                <AnimatePresence>
-                  {(isSelected || hoveredStylistId === stylist.id) && (
-                    <motion.div 
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ 
-                        opacity: 1, 
-                        height: 'auto',
-                        transition: { 
-                          height: { duration: 0.5, ease: [0.23, 1, 0.32, 1] },
-                          opacity: { duration: 0.3, delay: 0.1 }
-                        }
-                      }}
-                      exit={{ 
-                        opacity: 0, 
-                        height: 0,
-                        transition: { 
-                          height: { duration: 0.4, ease: [0.23, 1, 0.32, 1] },
-                          opacity: { duration: 0.2 }
-                        }
-                      }}
-                      className="overflow-hidden"
-                    >
-                      <div className={`h-px w-full my-4 ${isSelected ? 'bg-white/20' : 'bg-black/5'}`} />
-                      <p className={`text-[10px] font-bold leading-relaxed italic mb-4 ${isSelected ? 'text-white/70' : 'text-deep-grape/40'}`}>
-                        &quot;{profile.bio}&quot;
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <div className={`px-2 py-1 rounded-md text-[8px] font-black uppercase tracking-widest ${isSelected ? 'bg-white/10 text-white/80' : 'bg-deep-grape/5 text-deep-grape/40'}`}>
-                            Cert. Specialist
-                        </div>
-                        <div className={`px-2 py-1 rounded-md text-[8px] font-black uppercase tracking-widest ${isSelected ? 'bg-white/20 text-white' : 'bg-amber-500/10 text-amber-600'}`}>
-                            Top Tier
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </button>
-            );
-          })}
+          {stylists.map((stylist) => (
+            <button
+              key={stylist.id}
+              onClick={() => { setSelectedStylist(stylist); setSelectedSlot(null); }}
+              className={`p-4 rounded-2xl border-2 transition-all text-left ${
+                selectedStylist?.id === stylist.id
+                  ? 'border-naturals-purple bg-naturals-purple/5'
+                  : 'border-black/5 hover:border-naturals-purple/30'
+              }`}
+            >
+              <div className="w-12 h-12 rounded-xl bg-warm-grey mb-3" />
+              <p className="font-black text-sm text-deep-grape">{stylist.full_name}</p>
+              <p className="text-xs text-deep-grape/50">{stylist.experience_years} years exp</p>
+            </button>
+          ))}
         </div>
       </div>
 
@@ -347,46 +240,27 @@ export default function BookingPage() {
             <h3 className="text-sm font-black uppercase tracking-widest text-deep-grape">Select Service</h3>
           </div>
           
-          <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
-            {/* Elegant Search Bar */}
-            <div className="relative w-full md:w-64 group/search">
-               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-deep-grape/20 group-focus-within/search:text-naturals-purple transition-colors" />
-               <input 
-                 type="text" 
-                 placeholder="Search" 
-                 value={serviceSearchTerm}
-                 onChange={(e) => setServiceSearchTerm(e.target.value)}
-                 className="w-full bg-warm-grey/50 border border-black/5 rounded-2xl py-3 pl-11 pr-4 text-[10px] font-black tracking-widest uppercase focus:outline-none focus:border-naturals-purple/30 focus:bg-white transition-all shadow-sm"
-               />
-            </div>
-
-            <div className="flex items-center gap-2 bg-warm-grey/50 p-1 rounded-2xl border border-black/5 overflow-x-auto no-scrollbar w-full md:w-auto">
-              {['All', ...Array.from(new Set(services.map(s => s.category || 'General')))].map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setServiceCategory(cat)}
-                  className={`px-5 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
-                    serviceCategory === cat 
-                      ? 'bg-naturals-purple text-white shadow-lg' 
-                      : 'text-deep-grape/40 hover:text-deep-grape'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
+          <div className="flex items-center gap-2 bg-warm-grey/50 p-1 rounded-2xl border border-black/5 overflow-x-auto no-scrollbar">
+            {['All', ...Array.from(new Set(services.map(s => s.category || 'General')))].map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setServiceCategory(cat)}
+                className={`px-5 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                  serviceCategory === cat 
+                    ? 'bg-naturals-purple text-white shadow-lg' 
+                    : 'text-deep-grape/40 hover:text-deep-grape'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <AnimatePresence mode="popLayout">
             {services
-              .filter(s => {
-                const matchesCategory = serviceCategory === 'All' || (s.category || 'General') === serviceCategory;
-                const matchesSearch = s.name.toLowerCase().includes(serviceSearchTerm.toLowerCase()) || 
-                                     (s.category || '').toLowerCase().includes(serviceSearchTerm.toLowerCase());
-                return matchesCategory && matchesSearch;
-              })
+              .filter(s => serviceCategory === 'All' || (s.category || 'General') === serviceCategory)
               .map((service) => {
                 const isSelected = selectedServices.some(s => s.id === service.id);
                 return (
@@ -406,25 +280,25 @@ export default function BookingPage() {
                     }}
                     className={`p-6 rounded-2xl border-2 transition-all text-left relative group ${
                       isSelected
-                        ? 'border-naturals-purple bg-naturals-purple text-white shadow-2xl shadow-naturals-purple/30'
-                        : 'border-black/5 hover:border-naturals-purple/30 bg-deep-grape/5'
+                        ? 'border-naturals-purple bg-naturals-purple/5 shadow-lg shadow-naturals-purple/5'
+                        : 'border-black/5 hover:border-naturals-purple/30 bg-[#fafafa]/50'
                     }`}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
-                        <span className={`text-[8px] font-black uppercase tracking-widest mb-1 block ${isSelected ? 'text-white/60' : 'text-naturals-purple/60'}`}>{service.category}</span>
-                        <p className={`font-black text-sm leading-tight transition-colors ${isSelected ? 'text-white' : 'text-deep-grape group-hover:text-naturals-purple'}`}>{service.name}</p>
+                        <span className="text-[8px] font-black uppercase tracking-widest text-naturals-purple/60 mb-1 block">{service.category}</span>
+                        <p className="font-black text-deep-grape text-sm leading-tight group-hover:text-naturals-purple transition-colors">{service.name}</p>
                       </div>
-                      <p className={`font-black text-lg ${isSelected ? 'text-white' : 'text-naturals-purple'}`}>₹{service.price}</p>
+                      <p className="font-black text-naturals-purple text-lg">₹{service.price}</p>
                     </div>
                     <div className="flex items-center gap-3 mt-4">
-                      <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[9px] font-bold ${isSelected ? 'bg-white/10 text-white/60' : 'bg-black/5 text-deep-grape/40'}`}>
+                      <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-black/5 text-[9px] font-bold text-deep-grape/40">
                         <Clock className="w-3 h-3" />
                         {service.duration_minutes} MINS
                       </div>
                     </div>
                     {isSelected && (
-                      <div className="absolute top-4 right-4 w-5 h-5 bg-white rounded-full flex items-center justify-center text-naturals-purple shadow-lg">
+                      <div className="absolute top-4 right-4 w-5 h-5 bg-naturals-purple rounded-full flex items-center justify-center text-white shadow-lg">
                         <Check className="w-3 h-3" />
                       </div>
                     )}
@@ -534,22 +408,10 @@ export default function BookingPage() {
                 {new Date(selectedDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })} at {formatTime(selectedSlot.start_time)}
               </span>
             </div>
-            <div className="flex justify-between py-2 border-b border-black/5">
-              <span className="text-deep-grape font-black uppercase">Subtotal</span>
-              <span className="font-bold text-deep-grape">
-                ₹{selectedServices.reduce((sum, s) => sum + s.price, 0)}
-              </span>
-            </div>
-            {discountAmount > 0 && (
-               <div className="flex justify-between py-2 border-b border-black/5 text-green-600">
-                  <span className="text-sm font-black uppercase italic">Voucher Discount</span>
-                  <span className="font-black">- ₹{discountAmount}</span>
-               </div>
-            )}
             <div className="flex justify-between py-2">
-              <span className="text-deep-grape font-black uppercase">Final Investment</span>
+              <span className="text-deep-grape font-black uppercase">Total Amount</span>
               <span className="text-2xl font-black text-naturals-purple">
-                ₹{Math.max(0, selectedServices.reduce((sum, s) => sum + s.price, 0) - discountAmount)}
+                ₹{selectedServices.reduce((sum, s) => sum + s.price, 0)}
               </span>
             </div>
           </div>
@@ -562,7 +424,7 @@ export default function BookingPage() {
         <button
           onClick={handleBooking}
           disabled={!selectedStylist || selectedServices.length === 0 || !selectedSlot || loading}
-          className="w-full py-5 bg-naturals-purple text-white font-black text-xs uppercase tracking-[0.35em] rounded-2xl shadow-2xl shadow-naturals-purple/30 hover:bg-deep-grape transition-all disabled:opacity-40 disabled:scale-95 transform cursor-pointer"
+          className="w-full py-5 bg-deep-grape text-white font-black text-xs uppercase tracking-[0.35em] rounded-2xl shadow-2xl shadow-deep-grape/20 hover:bg-naturals-purple transition-all disabled:opacity-20 disabled:scale-95 transform cursor-pointer"
         >
           {loading ? "PROCESSING DEPLOYMENT..." : "CONFIRM APPOINTMENT"}
         </button>

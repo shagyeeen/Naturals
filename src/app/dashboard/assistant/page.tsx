@@ -63,30 +63,31 @@ export default function NeuralAssistantPage() {
   return (
     <div className="flex flex-col space-y-4 h-[calc(100vh-180px)] max-w-6xl mx-auto overflow-hidden">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 shrink-0 relative z-10">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 shrink-0">
         <div>
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-naturals-purple/10 text-naturals-purple text-[10px] font-black uppercase tracking-[0.2em] mb-4 border border-naturals-purple/20 shadow-sm">
-            <Sparkles className="w-3 h-3" /> Aesthetic AI Discovery
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-naturals-purple/10 text-naturals-purple text-[10px] font-black uppercase tracking-[0.2em] mb-4 border border-naturals-purple/20">
+            <Zap className="w-3 h-3" /> Protocol 01: Core Intelligence
           </div>
-          <h1 className="text-4xl font-black text-deep-grape mb-2 flex items-center gap-3 italic tracking-tighter">
-            Beauty Intelligence Oasis
+          <h1 className="text-2xl font-black text-deep-grape mb-1 flex items-center gap-3 italic tracking-tighter">
+            Neural Command Center
           </h1>
-          <p className="text-deep-grape/40 font-bold uppercase text-[10px] tracking-[0.2em] text-left">Curated styling insights • Personalized skincare protocols • Precision beauty analytics</p>
+          <p className="text-deep-grape/40 font-bold uppercase text-[9px] tracking-[0.15em] text-left">Advanced agentic beauty intelligence. Personalized styling, skincare, and operational consulting.</p>
         </div>
+        
       </div>
 
       {/* Main Chat Interface - Larger Box */}
-      <div className="flex-1 min-h-0 flex flex-col bg-white/60 backdrop-blur-3xl overflow-hidden shadow-[0_32px_100px_-20px_rgba(142,62,150,0.1)] border border-white/50 rounded-[3.5rem] relative z-10">
-         <div className="bg-gradient-to-r from-deep-grape via-naturals-purple to-lavender p-8 text-white flex items-center justify-between relative shrink-0">
-            <div className="flex items-center gap-6 relative z-10">
-                <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-xl flex items-center justify-center p-0.5 shadow-2xl border border-white/30 rotate-3">
-                   <div className="w-full h-full rounded-[0.9rem] bg-white flex items-center justify-center text-naturals-purple">
-                     <Bot className="w-8 h-8" />
+      <div className="flex-1 min-h-0 flex flex-col bg-white glass-card overflow-hidden shadow-2xl border border-black/5 rounded-[2.5rem]">
+         <div className="bg-deep-grape p-5 text-white flex items-center justify-between relative shrink-0">
+            <div className="flex items-center gap-4 relative z-10">
+                <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center p-1 shadow-2xl transform rotate-3">
+                   <div className="w-full h-full rounded-lg bg-naturals-purple flex items-center justify-center text-white">
+                     <Bot className="w-6 h-6" />
                    </div>
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black italic tracking-tighter text-white">Naturals Beauty Concierge</h2>
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50 flex items-center gap-2 mt-1">Synchronizing with your Beauty Passport • Secure</p>
+                  <h2 className="text-xl font-black italic tracking-tighter text-white">AI Neural Assistant</h2>
+                  <p className="text-[9px] font-black uppercase tracking-[0.3em] opacity-40 flex items-center gap-2 mt-1">Terminal Active • Encryption Level 04</p>
                 </div>
             </div>
             
@@ -104,24 +105,24 @@ export default function NeuralAssistantPage() {
 
          <div 
           ref={chatContainerRef}
-          className="flex-1 overflow-y-auto p-10 space-y-8 bg-transparent scroll-smooth custom-scrollbar"
+          className="flex-1 overflow-y-auto p-8 space-y-6 bg-[#fafafa] scroll-smooth"
          >
             <AnimatePresence>
               {messages.map((msg, idx) => (
                 <motion.div 
                   key={idx} 
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div className={`flex gap-6 max-w-[85%] sm:max-w-[75%] ${msg.role === 'user' ? 'flex-row-reverse items-start' : 'items-start'}`}>
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-xl border-2 border-white ${msg.role === 'user' ? 'bg-deep-grape text-white rotate-3' : 'bg-lavender text-naturals-purple -rotate-3'}`}>
-                       {msg.role === 'user' ? <Sparkles className="w-7 h-7" /> : <Bot className="w-7 h-7" />}
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${msg.role === 'user' ? 'bg-deep-grape text-white' : 'bg-naturals-purple text-white'}`}>
+                       {msg.role === 'user' ? <Activity className="w-6 h-6" /> : <Bot className="w-6 h-6" />}
                     </div>
-                    <div className={`p-8 rounded-[2.5rem] shadow-xl text-xs font-bold uppercase tracking-widest leading-loose ${
+                    <div className={`p-6 rounded-[2rem] shadow-sm text-sm font-bold uppercase tracking-widest leading-relaxed ${
                       msg.role === 'user' 
-                        ? 'bg-gradient-to-br from-deep-grape to-black text-white rounded-tr-none' 
-                        : 'bg-white/80 backdrop-blur-xl border border-white text-deep-grape rounded-tl-none'
+                        ? 'bg-deep-grape text-white rounded-tr-none' 
+                        : 'bg-white border border-black/5 text-deep-grape rounded-tl-none shadow-md'
                     }`}>
                       {msg.text}
                     </div>
@@ -130,32 +131,26 @@ export default function NeuralAssistantPage() {
               ))}
               {isTyping && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-                   <div className="flex gap-4 items-center italic text-naturals-purple/60 text-[10px] font-black uppercase tracking-[0.4em] ml-20 bg-white/50 px-6 py-3 rounded-full border border-white">
-                      <Sparkles className="w-4 h-4 animate-spin" /> Curating your signature look...
+                   <div className="flex gap-4 items-center italic text-naturals-purple/40 text-[9px] font-black uppercase tracking-[0.4em] ml-14">
+                      <Sparkles className="w-3 h-3 animate-spin" /> Neural core processing...
                    </div>
                 </motion.div>
               )}
             </AnimatePresence>
          </div>
 
-         <form onSubmit={handleSendMessage} className="p-8 bg-white/40 backdrop-blur-2xl border-t border-white/50 flex gap-6 shrink-0 relative z-10">
+         <form onSubmit={handleSendMessage} className="p-5 bg-white border-t border-black/5 flex gap-4 shrink-0">
            <input 
             type="text" 
-            placeholder="ASK YOUR BEAUTY CONCIERGE..." 
+            placeholder="INPUT DEEP ANALYTIC QUERY..." 
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            className="flex-1 bg-white/60 border border-white focus:border-naturals-purple focus:bg-white rounded-3xl px-8 py-5 outline-none text-[11px] font-black tracking-[0.15em] uppercase transition-all shadow-[inset_0_4px_12px_rgba(0,0,0,0.03)]" 
+            className="flex-1 bg-warm-grey/50 border border-transparent focus:border-naturals-purple focus:bg-white rounded-2xl px-6 py-4 outline-none text-[10px] font-black tracking-[0.1em] uppercase transition-all shadow-inner" 
            />
-           <button type="submit" className="w-16 h-16 rounded-3xl bg-deep-grape text-white flex items-center justify-center shadow-[0_12px_40px_-10px_rgba(40,11,44,0.4)] hover:bg-naturals-purple hover:scale-105 transition-all group shrink-0">
-             <Send className="w-7 h-7 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+           <button type="submit" className="w-14 h-14 rounded-2xl bg-deep-grape text-white flex items-center justify-center shadow-2xl hover:bg-naturals-purple transition-all group shrink-0">
+             <Send className="w-6 h-6 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
            </button>
          </form>
-      </div>
-
-      {/* Background Decorative Elements */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden -z-0">
-         <div className="absolute top-1/4 -left-24 w-96 h-96 bg-naturals-purple/10 rounded-full blur-[100px] animate-pulse" />
-         <div className="absolute bottom-1/4 -right-24 w-80 h-80 bg-lavender/20 rounded-full blur-[100px] animate-pulse delay-1000" />
       </div>
     </div>
   );

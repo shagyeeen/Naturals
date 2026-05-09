@@ -17,10 +17,7 @@ import {
   Star,
   ChevronRight,
   Flame,
-  Clock,
-  Search,
-  Copy,
-  Check
+  Clock
 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -41,8 +38,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!loading && !user) {
-      const search = window.location.search;
-      router.push(`/login${search}`);
+      router.push('/login');
     }
   }, [user, loading, router]);
 
@@ -79,15 +75,6 @@ export default function DashboardPage() {
 }
 
 function CustomerOverview({ customerProfile }: { customerProfile: any }) {
-  const router = useRouter();
-  const [copied, setCopied] = useState(false);
-
-  const handleCopyCode = (code: string) => {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
       
@@ -116,55 +103,29 @@ function CustomerOverview({ customerProfile }: { customerProfile: any }) {
 
       {/* Quick Stats Sidebar */}
       <div className="space-y-8">
-         <motion.div 
-           whileHover={{ scale: 1.02, y: -5 }} 
-           className="bg-gradient-to-br from-[#8E3E96] via-[#2F0137] to-black rounded-[2.5rem] p-8 shadow-2xl shadow-[#8E3E96]/30 border border-white/10 relative overflow-hidden group"
-         >
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform">
-               <Star className="w-16 h-16 text-white" />
-            </div>
-            <div className="flex items-center justify-between mb-6 relative z-10">
-               <div className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center shadow-lg backdrop-blur-md border border-white/20">
+         <motion.div whileHover={{ scale: 1.02 }} className="bg-white border border-black/5 rounded-[2.5rem] p-8 shadow-xl shadow-black/5">
+            <div className="flex items-center justify-between mb-6">
+               <div className="w-10 h-10 rounded-xl bg-lavender/50 text-naturals-purple flex items-center justify-center">
                   <Star className="w-5 h-5" />
                </div>
-               <span className="text-[10px] font-black text-[#8E3E96] bg-white px-3 py-1 rounded-full uppercase shadow-md">Loyalty</span>
+               <span className="text-[10px] font-black text-naturals-purple bg-naturals-purple/10 px-3 py-1 rounded-full uppercase">Loyalty</span>
             </div>
-            <p className="text-[8px] font-black text-white/50 uppercase tracking-[0.2em] mb-1 relative z-10">Membership Status</p>
-            <h3 className="text-2xl font-black text-white italic uppercase tracking-tighter relative z-10">Platinum Elite</h3>
-            <div className="mt-4 h-1 w-full bg-white/10 rounded-full relative z-10 overflow-hidden">
-               <motion.div 
-                 initial={{ x: '-100%' }}
-                 animate={{ x: '0%' }}
-                 transition={{ duration: 1.5, ease: "easeOut" }}
-                 className="absolute inset-0 bg-white" 
-               />
-            </div>
+            <p className="text-[8px] font-black text-deep-grape/30 uppercase tracking-[0.2em] mb-1">Membership</p>
+            <h3 className="text-xl font-black text-deep-grape italic uppercase">Platinum Elite</h3>
          </motion.div>
 
-         <motion.div 
-            whileHover={{ scale: 1.02, y: -5 }} 
-            onClick={() => router.push('/dashboard/passport')}
-            className="bg-gradient-to-br from-[#2F0137] via-[#8E3E96] to-[#2F0137] rounded-[2.5rem] p-8 text-white shadow-2xl cursor-pointer group relative overflow-hidden border border-white/10"
-         >
-            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-colors" />
-            <div className="flex items-center justify-between mb-6 relative z-10">
-               <div className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center border border-white/10">
+         <motion.div whileHover={{ scale: 1.02 }} className="bg-deep-grape rounded-[2.5rem] p-8 text-white shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+               <div className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center">
                   <Target className="w-5 h-5" />
                </div>
-               <ChevronRight className="w-4 h-4 text-white/30 group-hover:text-white group-hover:translate-x-1 transition-all" />
+               <ChevronRight className="w-4 h-4 text-white/30" />
             </div>
-            <p className="text-[8px] font-black text-white/40 uppercase tracking-[0.2em] mb-1 relative z-10">Intelligence Archive</p>
-            <h3 className="text-2xl font-black italic uppercase tracking-tighter relative z-10">Beauty Passport</h3>
-            <div className="mt-8 flex items-center justify-between relative z-10">
-               <div className="text-[9px] font-black uppercase tracking-widest text-[#8E3E96] px-4 py-2 bg-white rounded-xl shadow-xl">
-                  View Profile
-               </div>
-               <div className="flex -space-x-2">
-                  {[1,2,3].map(i => (
-                    <div key={i} className="w-6 h-6 rounded-full border-2 border-[#2F0137] bg-white/10" />
-                  ))}
-               </div>
-            </div>
+            <p className="text-[8px] font-black text-white/40 uppercase tracking-[0.2em] mb-1">Style Insight</p>
+            <h3 className="text-xl font-black italic uppercase">Beauty Passport</h3>
+            <Link href="/dashboard/passport" className="mt-6 text-[9px] font-black uppercase tracking-widest text-naturals-purple flex items-center gap-2">
+               View Profile
+            </Link>
          </motion.div>
       </div>
 
@@ -226,14 +187,11 @@ function CustomerOverview({ customerProfile }: { customerProfile: any }) {
                      </div>
                      <div className="px-6 py-4 bg-warm-grey rounded-2xl border border-black/5 flex flex-col gap-1">
                         <span className="text-[8px] font-black uppercase text-deep-grape/30">Applicable On</span>
-                        <span className="text-xs font-black text-deep-grape uppercase">ANTI-AGEING FACIAL</span>
+                        <span className="text-xs font-black text-deep-grape uppercase">ADVANCED SKIN REPAIR</span>
                      </div>
                   </div>
                </div>
-               <Link 
-                  href={`/dashboard/booking?service=${encodeURIComponent('Anti-Ageing Facial')}&discount=1000`}
-                  className="px-12 py-6 bg-deep-grape text-white rounded-3xl font-black text-sm uppercase tracking-[0.2em] hover:bg-naturals-purple transition-all shadow-2xl shrink-0"
-               >
+               <Link href="/dashboard/booking" className="px-12 py-6 bg-deep-grape text-white rounded-3xl font-black text-sm uppercase tracking-[0.2em] hover:bg-naturals-purple transition-all shadow-2xl shrink-0">
                   Book Appointment
                </Link>
             </div>
@@ -254,17 +212,9 @@ function CustomerOverview({ customerProfile }: { customerProfile: any }) {
                      Unlock specialized rewards for our premium cosmetics line. Your Beauty Passport entitles you to early access on seasonal collections.
                   </p>
                   <div className="flex flex-wrap gap-4">
-                     <div 
-                        onClick={() => handleCopyCode('BAE-2026-PREMIUM')}
-                        className="px-6 py-4 bg-white rounded-2xl border border-black/5 flex flex-col gap-1 cursor-pointer hover:bg-naturals-purple/5 transition-all group/copy"
-                     >
-                        <div className="flex justify-between items-center w-full">
-                           <span className="text-[8px] font-black uppercase text-deep-grape/30">Discount Code</span>
-                           {copied ? <Check className="w-2.5 h-2.5 text-green-500" /> : <Copy className="w-2.5 h-2.5 text-deep-grape/20 group-hover/copy:text-naturals-purple" />}
-                        </div>
-                        <span className="text-xs font-black text-naturals-purple uppercase flex items-center gap-2">
-                           {copied ? 'COPIED!' : 'BAE-2026-PREMIUM'}
-                        </span>
+                     <div className="px-6 py-4 bg-white rounded-2xl border border-naturals-purple/10 flex flex-col gap-1">
+                        <span className="text-[8px] font-black uppercase text-deep-grape/30">Discount Code</span>
+                        <span className="text-xs font-black text-naturals-purple">BAE-2026-PREMIUM</span>
                      </div>
                      <div className="px-6 py-4 bg-white rounded-2xl border border-naturals-purple/10 flex flex-col gap-1">
                         <span className="text-[8px] font-black uppercase text-deep-grape/30">Reward Tier</span>
