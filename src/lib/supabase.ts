@@ -170,6 +170,8 @@ export interface Appointment {
   total_amount?: number
   discount_amount: number
   payment_status: PaymentStatus
+  rating?: number
+  feedback?: string
   created_at: string
   updated_at: string
   // joined relations

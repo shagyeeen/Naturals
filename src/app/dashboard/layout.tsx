@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,7 +21,10 @@ import {
   Menu,
   Activity,
   Calendar,
-  Bot
+  Bot,
+  History,
+  CalendarCheck,
+  Star
 } from "lucide-react";
 import { Tooltip } from "@/components/Tooltip";
 import Image from "next/image";
@@ -29,6 +33,7 @@ const sidebarLinks = [
   { name: "Overview", href: "/dashboard", icon: LayoutDashboard, roles: ["admin", "manager", "franchise_owner", "stylist"] },
   { name: "AI Assistant", href: "/dashboard/assistant", icon: Bot, roles: ["admin", "manager", "franchise_owner", "stylist", "customer"] },
   { name: "Book Appointment", href: "/dashboard", icon: Calendar, roles: ["customer"] },
+  { name: "My Appointments", href: "/dashboard/appointments", icon: History, roles: ["customer"] },
   { name: "SOP Audit", href: "/dashboard/sop", icon: ShieldCheck, roles: ["admin", "manager"] },
   { name: "Beauty Passport", href: "/dashboard/passport", icon: Target, roles: ["customer"] },
   { name: "AI Stylist Copilot", href: "/dashboard/stylist", icon: Scissors, roles: ["stylist", "admin"] },
@@ -42,15 +47,39 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const [isSidebarOpen, setSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [upcomingCount, setUpcomingCount] = useState(0);
+
+  // Use the verified role flags from the auth context
+  const userRole = isAdmin ? "admin" : (profile?.role || "customer");
+  const needsOnboarding = userRole === 'customer' && customerProfile && (!customerProfile.phone || customerProfile.phone === 'PENDING');
 
   useEffect(() => {
     console.log('Dashboard State Debug:', {
-      userRole: isAdmin ? "admin" : (profile?.role || "customer"),
+      userRole,
       hasCustomerProfile: !!customerProfile,
       pathname,
       loading
     });
-  }, [isAdmin, profile, customerProfile, pathname, loading]);
+  }, [userRole, customerProfile, pathname, loading]);
+
+  useEffect(() => {
+    const fetchUpcomingCount = async () => {
+      if (userRole === 'customer' && customerProfile?.id) {
+        const { count, error } = await supabase
+          .from('appointments')
+          .select('*', { count: 'exact', head: true })
+          .eq('customer_id', customerProfile.id)
+          .eq('status', 'confirmed')
+          .gte('appointment_date', new Date().toISOString().split('T')[0]);
+        
+        if (!error && count !== null) {
+          setUpcomingCount(count);
+        }
+      }
+    };
+
+    fetchUpcomingCount();
+  }, [userRole, customerProfile]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -75,11 +104,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       setSearchQuery("");
     }
   };
-
-  // Use the verified role flags from the auth context
-  const userRole = isAdmin ? "admin" : (profile?.role || "customer");
-
-  const needsOnboarding = userRole === 'customer' && customerProfile && (!customerProfile.phone || customerProfile.phone === 'PENDING');
 
   const filteredLinks = sidebarLinks.filter(link => {
     if (userRole === "customer" && !customerProfile) return false;
@@ -163,6 +187,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               >
                 <link.icon className={`w-5 h-5 shrink-0 ${isActive ? "text-white" : "group-hover:text-naturals-purple transition-colors"}`} />
                 {isSidebarOpen && <span className="whitespace-nowrap text-[11px] font-black uppercase tracking-widest">{link.name}</span>}
+                {link.name === "My Appointments" && upcomingCount > 0 && (
+                  <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-black text-white shadow-lg shadow-red-500/20 animate-in zoom-in duration-300">
+                    {upcomingCount}
+                  </span>
+                )}
                 {isActive && isSidebarOpen && (
                   <motion.div layoutId="active-indicator" className="absolute right-2 w-1.5 h-1.5 bg-white rounded-full" />
                 )}
