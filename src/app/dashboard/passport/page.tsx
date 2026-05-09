@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/lib/auth";
-import { usePreferences } from "@/modules/customer/preferences/hooks";
-import { searchCustomer } from "@/modules/admin/customers/service";
+import { supabase } from "@/lib/supabase";
 import { User, Activity, Calendar, Award, Droplets, Sun, Sparkles, Map as MapIcon, Leaf, Search, ShieldCheck, Edit2, Loader2, Check } from "lucide-react";
 
 const questionnaireData = [
@@ -21,83 +20,51 @@ export default function BeautyPassport() {
   const { profile, customerProfile } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [isScanning, setIsScanning] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
-  const [isSearching, setIsSearching] = useState(false);
   
   const [isEditingPreferences, setIsEditingPreferences] = useState(false);
-  // Local draft state — mirrors the shape used by the questionnaire UI
-  const [draft, setDraft] = useState<Record<string, string | string[]>>({});
+  const [preferences, setPreferences] = useState<any>({});
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (customerProfile) setSelectedCustomer(customerProfile);
+    if (customerProfile?.ai_hairstyle_analysis?.questionnaire_results) {
+      setPreferences(customerProfile.ai_hairstyle_analysis.questionnaire_results);
+    }
   }, [customerProfile]);
 
-  const { preferences: dbPrefs, saving: isSaving, save: savePrefs } = usePreferences(selectedCustomer?.id);
-
-  // Sync draft from DB when preferences load
-  const preferences: Record<string, string | string[]> = isEditingPreferences
-    ? draft
-    : {
-        hair_wash_preference:  dbPrefs?.hairwash_preference ?? '',
-        hairstyle_male:        (dbPrefs?.preferred_hairstyle && (selectedCustomer?.gender === 'male' || profile?.gender === 'male')) ? [dbPrefs.preferred_hairstyle] : [],
-        hairstyle_female:      (dbPrefs?.preferred_hairstyle && (selectedCustomer?.gender === 'female' || profile?.gender === 'female')) ? [dbPrefs.preferred_hairstyle] : [],
-        water_temp:            dbPrefs?.water_temperature ?? '',
-        scalp_massage:         dbPrefs?.scalp_massage_intensity ?? '',
-        conversation:          dbPrefs?.conversation_level ?? '',
-      };
-
-  const handleEditStart = () => {
-    setDraft({ ...preferences });
-    setIsEditingPreferences(true);
-  };
-
   const handleSavePreferences = async () => {
-    if (!selectedCustomer?.id) return;
-    const hairstyle = draft.hairstyle_female?.[0] || draft.hairstyle_male?.[0] || undefined;
-    try {
-      await savePrefs({
-        hairwash_preference:     (draft.hair_wash_preference as 'Before SPA' | 'After SPA' | 'Both') || undefined,
-        preferred_hairstyle:     (typeof hairstyle === 'string' && hairstyle.length > 0) ? hairstyle : undefined,
-        water_temperature:       (draft.water_temp as 'Cold' | 'Lukewarm' | 'Warm') || undefined,
-        scalp_massage_intensity: (draft.scalp_massage as 'Soft' | 'Medium' | 'Strong' | 'None') || undefined,
-        conversation_level:      (draft.conversation as 'Quiet Professional' | 'Friendly Chat' | 'Social/Engaging') || undefined,
-      });
+    if (!customerProfile?.id) return;
+    setIsSaving(true);
+    
+    const updatedAnalysis = {
+      ...(customerProfile.ai_hairstyle_analysis || {}),
+      questionnaire_results: preferences
+    };
+    
+    const { error } = await supabase
+      .from('customers')
+      .update({ ai_hairstyle_analysis: updatedAnalysis })
+      .eq('id', customerProfile.id);
+      
+    setIsSaving(false);
+    if (!error) {
       setIsEditingPreferences(false);
-    } catch {
+    } else {
       alert("Error saving preferences. Please try again.");
     }
   };
 
-  const handleSearch = async (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchQuery.trim()) return;
-    
-    setIsSearching(true);
-    try {
-      const customer = await searchCustomer(searchQuery);
-      if (customer) {
-        setSelectedCustomer(customer);
-        setIsEditingPreferences(false);
-      } else {
-        alert("Customer not found. Please verify the Client ID or Mobile number.");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("An error occurred during lookup.");
-    } finally {
-      setIsSearching(false);
+    if (searchQuery.trim()) {
+      alert(`Accessing Encrypted Database for: ${searchQuery}`);
     }
   };
 
-  const handleScanFace = async () => {
+  const handleScanFace = () => {
     setIsScanning(true);
-    // In a real app, this might use a camera/face-api, 
-    // but here we just simulate finding the current user or a default guest
-    setTimeout(async () => {
+    setTimeout(() => {
+      alert(`Style Session Synchronization Successful. Subject: ${customerProfile?.full_name || 'User'} • Access Granted.`);
       setIsScanning(false);
-      const target = customerProfile || { id: '00000000-0000-0000-0000-000000000001', full_name: 'Aditi Sharma', phone: '+91 98765 43210' };
-      setSelectedCustomer(target);
-      alert(`Style Session Synchronization Successful. Subject: ${target.full_name} • Access Granted.`);
     }, 2000);
   };
 
@@ -116,7 +83,7 @@ export default function BeautyPassport() {
         
         <div className="flex gap-4">
            <form onSubmit={handleSearch} className="flex items-center bg-warm-grey/50 border border-black/5 px-4 py-2 rounded-xl focus-within:bg-white transition-all shadow-inner">
-             {isSearching ? <Loader2 className="w-4 h-4 text-naturals-purple animate-spin" /> : <Search className="w-4 h-4 text-deep-grape/30" />}
+             <Search className="w-4 h-4 text-deep-grape/30" />
              <input 
               type="text" 
               placeholder="CLIENT_ID / MOBILE_LINK" 
@@ -147,21 +114,21 @@ export default function BeautyPassport() {
                  <User className="w-12 h-12 text-naturals-purple/20" />
                )}
              </div>
-             <h2 className="text-2xl font-black text-deep-grape italic tracking-tighter">{selectedCustomer?.full_name || profile?.full_name || "Guest User"}</h2>
-              <p className="text-[10px] font-black text-naturals-purple uppercase tracking-[0.3em] mb-10 flex gap-2 items-center justify-center">
-                <Award className="w-4 h-4" /> {selectedCustomer?.is_premium ? "Premium Member" : "Registered Client"}
-              </p>
-              
-              <div className="grid grid-cols-2 gap-4 w-full">
-                <div className="p-4 bg-warm-grey/30 rounded-2xl border border-black/5 overflow-hidden text-ellipsis">
-                  <p className="text-[9px] font-black uppercase tracking-widest opacity-30 mb-1">Mobile Contact</p>
-                  <p className="text-xs font-black italic text-deep-grape">{selectedCustomer?.phone || profile?.phone || "Not Set"}</p>
-                </div>
-                <div className="p-4 bg-warm-grey/30 rounded-2xl border border-black/5 overflow-hidden text-ellipsis">
-                  <p className="text-[9px] font-black uppercase tracking-widest opacity-30 mb-1">Registered Email</p>
-                  <p className="text-[10px] sm:text-xs font-black italic text-deep-grape truncate w-full block">{selectedCustomer?.email || profile?.email || "Not Set"}</p>
-                </div>
-              </div>
+             <h2 className="text-2xl font-black text-deep-grape italic tracking-tighter">{customerProfile?.full_name || profile?.full_name || "Guest User"}</h2>
+             <p className="text-[10px] font-black text-naturals-purple uppercase tracking-[0.3em] mb-10 flex gap-2 items-center justify-center">
+               <Award className="w-4 h-4" /> {customerProfile?.is_premium ? "Premium Member" : "Registered Client"}
+             </p>
+             
+             <div className="grid grid-cols-2 gap-4 w-full">
+               <div className="p-4 bg-warm-grey/30 rounded-2xl border border-black/5 overflow-hidden text-ellipsis">
+                 <p className="text-[9px] font-black uppercase tracking-widest opacity-30 mb-1">Mobile Contact</p>
+                 <p className="text-xs font-black italic text-deep-grape">{customerProfile?.phone || profile?.phone || "Not Set"}</p>
+               </div>
+               <div className="p-4 bg-warm-grey/30 rounded-2xl border border-black/5 overflow-hidden text-ellipsis">
+                 <p className="text-[9px] font-black uppercase tracking-widest opacity-30 mb-1">Registered Email</p>
+                 <p className="text-[10px] sm:text-xs font-black italic text-deep-grape truncate w-full block">{customerProfile?.email || profile?.email || "Not Set"}</p>
+               </div>
+             </div>
           </div>
 
           <div className="glass-card p-10 border border-black/5 bg-white">
@@ -199,7 +166,7 @@ export default function BeautyPassport() {
               
               {!isEditingPreferences ? (
                 <button 
-                  onClick={handleEditStart}
+                  onClick={() => setIsEditingPreferences(true)}
                   className="flex items-center gap-2 px-5 py-2.5 bg-warm-grey text-deep-grape rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-sm hover:bg-naturals-purple/10 hover:text-naturals-purple transition-all cursor-pointer"
                 >
                   <Edit2 className="w-3 h-3" /> Edit Preferences
@@ -218,7 +185,7 @@ export default function BeautyPassport() {
 
             <div className="space-y-6 relative z-10">
               {questionnaireData
-                .filter(q => !q.gender || (q.gender.includes((selectedCustomer?.gender || profile?.gender || '').toLowerCase())))
+                .filter(q => !q.gender || (q.gender.includes((customerProfile?.gender || profile?.gender || '').toLowerCase())))
                 .map((q) => (
                   <div key={q.id} className="p-6 rounded-2xl bg-[#fafafa] border border-black/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex-1">
@@ -226,8 +193,8 @@ export default function BeautyPassport() {
                       {!isEditingPreferences && (
                         <p className="text-base font-black italic text-deep-grape flex items-center gap-2">
                           <Sparkles className="w-4 h-4 text-naturals-purple" /> 
-                          {Array.isArray(preferences[q.id]) && (preferences[q.id] as string[]).length > 0 
-                            ? (preferences[q.id] as string[]).join(", ") 
+                          {Array.isArray(preferences[q.id]) && preferences[q.id].length > 0 
+                            ? preferences[q.id].join(", ") 
                             : preferences[q.id] 
                             ? preferences[q.id] 
                             : "Not Specified"}
@@ -238,9 +205,9 @@ export default function BeautyPassport() {
                     {isEditingPreferences && (
                       <div className="flex-1 flex flex-wrap gap-2">
                         {q.options.map(option => {
-                          const currentSelections = Array.isArray(draft[q.id]) 
-                            ? draft[q.id] as string[]
-                            : (draft[q.id] ? [draft[q.id] as string] : []);
+                          const currentSelections = Array.isArray(preferences[q.id]) 
+                            ? preferences[q.id] 
+                            : (preferences[q.id] ? [preferences[q.id]] : []);
                           const isSelected = currentSelections.includes(option);
 
                           return (
@@ -248,9 +215,9 @@ export default function BeautyPassport() {
                               key={option}
                               onClick={() => {
                                 if (isSelected) {
-                                  setDraft({ ...draft, [q.id]: currentSelections.filter((item: string) => item !== option) });
+                                  setPreferences({ ...preferences, [q.id]: currentSelections.filter((item: string) => item !== option) });
                                 } else {
-                                  setDraft({ ...draft, [q.id]: [...currentSelections, option] });
+                                  setPreferences({ ...preferences, [q.id]: [...currentSelections, option] });
                                 }
                               }}
                               className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all cursor-pointer ${

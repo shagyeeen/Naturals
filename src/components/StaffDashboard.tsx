@@ -1,15 +1,9 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { supabase, Customer, Stylist, Admin, FranchiseOwner, Appointment } from "@/lib/supabase";
+import { supabase, Customer, Stylist, Manager, FranchiseOwner, Appointment } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { UserPlus, Search, Edit, Trash2, Eye, X, Briefcase, Users, UserCheck, Scissors, Calendar } from "lucide-react";
-
-// Modular Hooks
-import { useAdminCustomers } from "@/modules/admin/customers/hooks";
-import { useAdminAppointments } from "@/modules/admin/appointments/hooks";
-import { useBranchStaff } from "@/modules/franchise_owner/staff/hooks";
-import { useBranchOverview } from "@/modules/franchise_owner/overview/hooks";
 
 interface FormData {
   fullName: string;
@@ -18,11 +12,14 @@ interface FormData {
   dateOfBirth: string;
   gender: string;
   experienceYears: string;
+  specializations: string;
   notes: string;
   franchiseName?: string;
   franchiseAddress?: string;
   franchiseOwnerId: string;
   preferences: { [key: string]: string | string[] };
+  profilePhotoUrl?: string;
+  profilePhotoFile?: File | null;
 }
 
 const PREDEFINED_QUESTIONS = [
@@ -94,7 +91,7 @@ export default function StaffDashboard() {
   
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [stylists, setStylists] = useState<Stylist[]>([]);
-  const [managers, setManagers] = useState<Admin[]>([]);
+  const [managers, setManagers] = useState<Manager[]>([]);
   const [franchiseOwners, setFranchiseOwners] = useState<FranchiseOwner[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [branchAssign, setBranchAssign] = useState<{id: string, table: string, current: string} | null>(null);
@@ -110,67 +107,102 @@ export default function StaffDashboard() {
     dateOfBirth: '',
     gender: '',
     experienceYears: '',
+    specializations: '',
     notes: '',
     franchiseName: '',
     franchiseAddress: '',
     franchiseOwnerId: '',
     preferences: {},
+    profilePhotoUrl: '',
+    profilePhotoFile: null
   });
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [myStylistId, setMyStylistId] = useState<string | null>(null);
 
-  const [myFranchiseOwnerId, setMyFranchiseOwnerId] = useState<string | undefined>(undefined);
-
-  // Identify current stylist and franchise owner IDs for filtering
+  // Identify current stylist ID for filtering
   useEffect(() => {
-    if (profile?.id) {
-       const resolveIds = async () => {
-         if (isStylist) {
-           const { data } = await supabase.from('stylists').select('id').eq('user_id', profile.id).single();
-           if (data) setMyStylistId(data.id);
-         }
-         if (isFranchiseOwner) {
-           const { data } = await supabase.from('franchise_owners').select('id').eq('user_id', profile.id).single();
-           if (data) setMyFranchiseOwnerId(data.id);
-         } else if (isManager) {
-           const { data } = await supabase.from('admins').select('franchise_owner_id').eq('user_id', profile.id).single();
-           if (data?.franchise_owner_id) setMyFranchiseOwnerId(data.franchise_owner_id);
-         }
+    if (isStylist && profile?.id) {
+       const getStatus = async () => {
+         const { data } = await supabase.from('stylists').select('id').eq('user_id', profile.id).single();
+         if (data) setMyStylistId(data.id);
        };
-       resolveIds();
+       getStatus();
     }
-  }, [profile, isStylist, isFranchiseOwner, isManager]);
+  }, [isStylist, profile]);
 
-  const { customers: hookCustomers, refresh: fetchCustomers } = useAdminCustomers();
-  const { appointments: hookAppointments, refresh: fetchAppointments } = useAdminAppointments();
-  
-  // For Franchise Owners / Managers
-  const { staff, refresh: fetchStaff } = useBranchStaff(myFranchiseOwnerId);
-  const { metrics, refresh: fetchMetrics } = useBranchOverview(myFranchiseOwnerId);
+  const fetchCustomers = async () => {
+    const { data } = await supabase.from('customers').select('*').order('created_at', { ascending: false });
+    if (data) setCustomers(data);
+  };
 
+  const fetchStylists = async () => {
+    const { data } = await supabase.from('stylists').select('*').order('full_name');
+    if (data) setStylists(data);
+  };
 
-  // Sync hook data to local state for compatibility with existing search/filters
-  useEffect(() => { if (hookCustomers) setCustomers(hookCustomers); }, [hookCustomers]);
-  useEffect(() => { if (hookAppointments) setAppointments(hookAppointments); }, [hookAppointments]);
-  useEffect(() => { 
-    if (staff) {
-      setStylists(staff.stylists);
-      setManagers(staff.admins);
-    }
-  }, [staff]);
+  const fetchManagers = async () => {
+    const { data } = await supabase.from('managers').select('*').order('full_name');
+    if (data) setManagers(data);
+  }
 
-  const fetchStylists = async () => fetchStaff();
-  const fetchManagers = async () => fetchStaff();
   const fetchFranchiseOwners = async () => {
     const { data } = await supabase.from('franchise_owners').select('*').order('full_name');
     if (data) setFranchiseOwners(data as unknown as FranchiseOwner[]);
   }
 
+  const fetchAppointments = async () => {
+    const { data } = await supabase
+      .from('appointments')
+      .select('*, customer:customers(*), stylist:stylists(*), service:services(*)')
+      .order('appointment_date', { ascending: false });
+    
+    const sampleAppointments = [
+      {
+        id: 'sample-1',
+        appointment_date: new Date().toISOString().split('T')[0],
+        start_time: '10:00:00',
+        end_time: '13:00:00',
+        status: 'confirmed',
+        customer: { full_name: 'Aditi Sharma', phone: '9876543210' },
+        stylist: { full_name: 'Rahul Varma' },
+        service: { name: 'Keratin Treatment' }
+      },
+      {
+        id: 'sample-2',
+        appointment_date: new Date().toISOString().split('T')[0],
+        start_time: '14:30:00',
+        end_time: '17:00:00',
+        status: 'in-progress',
+        customer: { full_name: 'Rajesh Kumar', phone: '9887766554' },
+        stylist: { full_name: 'Suresh Raina' },
+        service: { name: 'Global Coloring' }
+      },
+      {
+        id: 'sample-3',
+        appointment_date: new Date().toISOString().split('T')[0],
+        start_time: '11:00:00',
+        end_time: '11:45:00',
+        status: 'confirmed',
+        customer: { full_name: 'Priya Singh', phone: '9988776655' },
+        stylist: { full_name: 'Anjali Gupta' },
+        service: { name: 'Classic Fade' }
+      }
+    ];
+
+    if (data && data.length > 0) {
+      setAppointments([...data, ...sampleAppointments] as any);
+    } else {
+      setAppointments(sampleAppointments as any);
+    }
+  };
+
   useEffect(() => {
     fetchCustomers();
     fetchAppointments();
+    fetchStylists();
+    fetchManagers();
     fetchFranchiseOwners();
   }, []);
 
@@ -179,7 +211,7 @@ export default function StaffDashboard() {
     setEditingId(id || null);
     setFormData({ 
       fullName: '', phone: '', email: '', dateOfBirth: '', gender: '', 
-      experienceYears: '', notes: '', 
+      experienceYears: '', specializations: '', notes: '', 
       franchiseName: '', franchiseAddress: '', franchiseOwnerId: '', preferences: {}
     });
     setShowModal(true);
@@ -203,13 +235,27 @@ export default function StaffDashboard() {
       dateOfBirth: formattedDob,
       gender: data.gender || '',
       experienceYears: data.experience_years?.toString() || '',
+      specializations: data.specializations?.join(', ') || '',
       notes: data.notes || '',
       franchiseName: data.franchise_name || '',
-      franchiseAddress: data.branch_address || '',
+      franchiseAddress: data.franchise_address || '',
       franchiseOwnerId: data.franchise_owner_id || '',
       preferences: data.ai_hairstyle_analysis?.questionnaire_results || {},
+      profilePhotoUrl: data.profile_photo_url || '',
+      profilePhotoFile: null
     });
     setShowModal(true);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFormData({
+        ...formData,
+        profilePhotoFile: file,
+        profilePhotoUrl: URL.createObjectURL(file)
+      });
+    }
   };
 
   const validateForm = () => {
@@ -239,6 +285,26 @@ export default function StaffDashboard() {
     setIsSubmitting(true);
     let table = '';
     let payload: any = {};
+    let profileUrl = formData.profilePhotoUrl;
+
+    // Handle Image Upload
+    if (formData.profilePhotoFile) {
+      const fileExt = formData.profilePhotoFile.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `profiles/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, formData.profilePhotoFile);
+
+      if (!uploadError) {
+        const { data: { publicUrl } } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(filePath);
+        profileUrl = publicUrl;
+      }
+    }
+
 
     const formatDate = (dob: string) => {
       if (dob && dob.length === 10) {
@@ -256,32 +322,46 @@ export default function StaffDashboard() {
     };
 
 
+
     if (modalType === 'add-customer' || (modalType === 'edit' && activeTab === 'customers')) {
       table = 'customers';
       payload = {
         ...basePayload,
         gender: formData.gender || null,
+        profile_photo_url: profileUrl || null,
         notes: formData.notes,
+        ai_hairstyle_analysis: {
+          questionnaire_results: formData.preferences,
+          staff_added_preferences: formData.notes
+        }
       };
+      if (modalType === 'add-customer') {
+        payload.customer_code = `NAT-SHA-2026-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+        payload.is_premium = false;
+      }
     } else if (modalType === 'add-stylist' || (modalType === 'edit' && activeTab === 'stylists')) {
       table = 'stylists';
       payload = {
         ...basePayload,
         gender: formData.gender || null,
+        profile_photo_url: profileUrl || null,
         experience_years: parseInt(formData.experienceYears) || 0,
+        specializations: formData.specializations.split(',').map(s => s.trim()).filter(Boolean)
       };
     } else if (modalType === 'add-manager' || (modalType === 'edit' && activeTab === 'managers')) {
-      table = 'admins';
+      table = 'managers';
       payload = {
         ...basePayload,
         franchise_owner_id: formData.franchiseOwnerId || null,
+        profile_photo_url: profileUrl || null
       };
     } else if (modalType === 'add-franchise' || (modalType === 'edit' && activeTab === 'franchise')) {
       table = 'franchise_owners';
       payload = {
         ...basePayload,
         franchise_name: formData.franchiseName || null,
-        branch_address: formData.franchiseAddress || null,
+        franchise_address: formData.franchiseAddress || null,
+        profile_photo_url: profileUrl || null
       };
     }
 
@@ -318,7 +398,7 @@ export default function StaffDashboard() {
 
   const handleDelete = async (type: 'customer' | 'stylist' | 'manager' | 'franchise', id: string) => {
     if (!confirm('Are you sure you want to delete this record?')) return;
-    const tableMap: Record<string, string> = { customer: 'customers', stylist: 'stylists', manager: 'admins', franchise: 'franchise_owners' };
+    const tableMap: Record<string, string> = { customer: 'customers', stylist: 'stylists', manager: 'managers', franchise: 'franchise_owners' };
     const table = tableMap[type];
     await supabase.from(table).delete().eq('id', id);
     if (type === 'customer') fetchCustomers();
@@ -329,11 +409,10 @@ export default function StaffDashboard() {
 
   const handleAssignBranch = async () => {
     if (!branchAssign) return;
-    const column = branchAssign.table === 'franchise_owners' ? 'branch_name' : 'branch_location';
-    await supabase.from(branchAssign.table).update({ [column]: branchInput }).eq('id', branchAssign.id);
+    await supabase.from(branchAssign.table).update({ branch_name: branchInput }).eq('id', branchAssign.id);
     setBranchAssign(null);
     setBranchInput('');
-    if (branchAssign.table === 'admins') fetchManagers();
+    if (branchAssign.table === 'managers') fetchManagers();
     else fetchFranchiseOwners();
   };
 
@@ -518,8 +597,9 @@ export default function StaffDashboard() {
                   <p className="text-[10px] text-deep-grape/40 font-bold mt-0.5">{stylist.phone}</p>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
-                  <span className="px-2 py-0.5 bg-naturals-purple/5 text-naturals-purple rounded-md text-[9px] font-black uppercase tracking-wide">{stylist.experience_years ?? 0} yrs exp</span>
-                  {stylist.gender && <span className="px-2 py-0.5 bg-warm-grey text-deep-grape/60 rounded-md text-[9px] font-black uppercase tracking-wide">{stylist.gender}</span>}
+                  {stylist.specializations?.map((s, i) => (
+                    <span key={i} className="px-2 py-0.5 bg-naturals-purple/5 text-naturals-purple rounded-md text-[9px] font-black uppercase tracking-wide">{s}</span>
+                  ))}
                 </div>
                 <div className="flex items-center gap-2">
                   <button 
@@ -573,9 +653,9 @@ export default function StaffDashboard() {
                   </div>
                   <p className="text-xs text-deep-grape/60 font-semibold">{m.email}</p>
                   <button
-                    onClick={() => { setBranchAssign({id: m.id, table: 'admins', current: m.branch_location || ''}); setBranchInput(m.branch_location || ''); }}
+                    onClick={() => { setBranchAssign({id: m.id, table: 'managers', current: m.branch_name || ''}); setBranchInput(m.branch_name || ''); }}
                     className="px-2 py-0.5 bg-naturals-purple/5 text-naturals-purple rounded-md text-[9px] font-black uppercase hover:bg-naturals-purple hover:text-white transition-all"
-                  >{m.branch_location || 'Assign Branch'}</button>
+                  >{m.branch_name || 'Assign Branch'}</button>
                   <div className="flex items-center gap-1">
                     <button onClick={() => handleEdit('manager', m)} className="p-2 hover:bg-naturals-purple/10 rounded-xl transition-all group">
                       <Edit className="w-4 h-4 text-naturals-purple/60 group-hover:text-naturals-purple" />
@@ -762,6 +842,37 @@ export default function StaffDashboard() {
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
                   />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2 italic text-naturals-purple">Identity Portrait</label>
+                <div className="flex items-center gap-6 p-4 bg-warm-grey/40 rounded-[2rem] border border-naturals-purple/10">
+                  <div className="relative w-24 h-24 rounded-[1.5rem] overflow-hidden bg-white shadow-xl flex-shrink-0 border-4 border-white">
+                    {formData.profilePhotoUrl ? (
+                      <img src={formData.profilePhotoUrl} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-naturals-purple/5">
+                        <UserPlus className="w-8 h-8 text-naturals-purple/20" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-2 flex-1">
+                    <p className="text-[10px] font-black text-deep-grape uppercase tracking-widest">Upload Profile Image</p>
+                    <input
+                      type="file"
+                      id="profile-upload"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="profile-upload"
+                      className="inline-block px-5 py-2.5 bg-naturals-purple text-white font-black text-[9px] uppercase tracking-widest rounded-xl cursor-pointer hover:bg-deep-grape transition-all active:scale-95 shadow-lg shadow-naturals-purple/20"
+                    >
+                      {formData.profilePhotoFile ? 'Update Portrait' : 'Choose File'}
+                    </label>
+                  </div>
                 </div>
               </div>
 
@@ -1022,12 +1133,12 @@ export default function StaffDashboard() {
               {(modalType === 'add-stylist' || (modalType === 'edit' && activeTab === 'stylists')) && (
                 <div className="space-y-4 pt-2">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Experience Years</label>
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Specializations</label>
                     <input
-                      type="number"
-                      placeholder="e.g. 5"
-                      value={formData.experienceYears}
-                      onChange={(e) => setFormData({ ...formData, experienceYears: e.target.value })}
+                      type="text"
+                      placeholder="Cutting, Coloring, Styling..."
+                      value={formData.specializations}
+                      onChange={(e) => setFormData({ ...formData, specializations: e.target.value })}
                       className="w-full bg-warm-grey/50 border-2 border-transparent rounded-2xl py-4 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple/30 transition-all outline-none"
                     />
                   </div>

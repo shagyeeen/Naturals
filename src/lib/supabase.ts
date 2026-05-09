@@ -5,34 +5,37 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholde
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-// ============================================
-// ENUM TYPES
-// ============================================
-
-export type UserRole = 'franchise_owner' | 'admin' | 'stylist' | 'customer'
+export type UserRole = 'admin' | 'franchise_owner' | 'manager' | 'stylist' | 'customer'
 export type Gender = 'male' | 'female' | 'other'
 export type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled'
 export type PaymentStatus = 'pending' | 'paid' | 'refunded'
-export type DiscountType = 'percentage' | 'flat'
-export type HairwashTiming = 'Before SPA' | 'After SPA' | 'Both'
-export type WaterTemp = 'Cold' | 'Lukewarm' | 'Warm'
-export type MassageIntensity = 'Soft' | 'Medium' | 'Strong' | 'None'
-export type ConversationLevel = 'Quiet Professional' | 'Friendly Chat' | 'Social/Engaging'
-
-// ============================================
-// ENTITY INTERFACES
-// ============================================
 
 export interface User {
   id: string
-  auth_id?: string
   email: string
   phone?: string
   role: UserRole
-  full_name?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Customer {
+  id: string
+  user_id: string
+  customer_code?: string
+  full_name: string
+  phone: string
+  email?: string
+  date_of_birth?: string
   gender?: Gender
-  location?: string
+  hairstyle_preference?: string
+  profile_photo_url?: string
+  ai_hairstyle_analysis?: any
+  preferred_salon_id?: string
+  notes?: string
+  is_premium: boolean
   is_active: boolean
+  branch_name?: string
   created_at: string
   updated_at: string
 }
@@ -43,78 +46,52 @@ export interface FranchiseOwner {
   full_name: string
   phone: string
   email?: string
-  franchise_name: string
+  date_of_birth?: string
+  franchise_name?: string
+  franchise_address?: string
   branch_name?: string
-  branch_address?: string
-  logo_url?: string
   created_at: string
   updated_at: string
 }
 
-export interface Admin {
+export interface Manager {
   id: string
   user_id: string
   franchise_owner_id?: string
-  branch_location?: string
   full_name: string
   phone: string
   email?: string
-  is_active: boolean
+  date_of_birth?: string
+  branch_name?: string
   created_at: string
   updated_at: string
 }
-
-/** @deprecated Use Admin instead */
-export type Manager = Admin
 
 export interface Stylist {
   id: string
   user_id: string
-  franchise_owner_id?: string
-  branch_location?: string
-  full_name: string
-  phone: string
-  email?: string
-  gender?: Gender
-  experience_years: number
-  is_active: boolean
-  created_at: string
-  updated_at: string
-}
-
-export interface Customer {
-  id: string
-  user_id?: string
-  customer_code?: string
+  manager_id?: string
   full_name: string
   phone: string
   email?: string
   date_of_birth?: string
   gender?: Gender
-  hairstyle_preference?: string
-  ai_hairstyle_analysis?: Record<string, unknown>
-  preferred_branch_location?: string
-  preferred_salon_id?: string
-  notes?: string
+  experience_years: number
+  specializations?: string[]
+  profile_photo_url?: string
   is_active: boolean
   created_at: string
   updated_at: string
-  // joined relations
-  customer_preferences?: CustomerPreferences
-  preferred_salon?: Pick<FranchiseOwner, 'id' | 'branch_name' | 'franchise_name'>
 }
 
-export interface CustomerPreferences {
+export interface StylistSchedule {
   id: string
-  customer_id: string
-  hairwash_preference: HairwashTiming
-  preferred_hairstyle?: string
-  water_temperature: WaterTemp
-  scalp_massage_intensity: MassageIntensity
-  conversation_level: ConversationLevel
-  special_instructions?: string
+  stylist_id: string
+  day_of_week: number
+  start_time: string
+  end_time: string
+  is_available: boolean
   created_at: string
-  updated_at: string
 }
 
 export interface Service {
@@ -122,36 +99,9 @@ export interface Service {
   name: string
   description?: string
   category?: string
-  gender_applicability: 'Women' | 'Men' | 'Both'
   duration_minutes: number
   price: number
   is_active: boolean
-  created_at: string
-}
-
-export interface Offer {
-  id: string
-  franchise_owner_id?: string
-  title: string
-  description?: string
-  promo_code?: string
-  discount_type: DiscountType
-  discount_value: number
-  applicable_service_id?: string
-  min_amount: number
-  valid_from: string
-  valid_until: string
-  is_active: boolean
-  created_at: string
-}
-
-export interface StylistSchedule {
-  id: string
-  stylist_id: string
-  day_of_week: number // 0=Sun, 1=Mon ... 6=Sat
-  start_time: string
-  end_time: string
-  is_available: boolean
   created_at: string
 }
 
@@ -160,22 +110,18 @@ export interface Appointment {
   customer_id: string
   stylist_id: string
   service_id?: string
-  booked_by?: string
-  offer_id?: string
   appointment_date: string
   start_time: string
   end_time: string
   status: AppointmentStatus
   notes?: string
   total_amount?: number
-  discount_amount: number
   payment_status: PaymentStatus
   created_at: string
   updated_at: string
-  // joined relations
-  customer?: Pick<Customer, 'id' | 'full_name' | 'phone' | 'email' | 'customer_code'>
-  stylist?: Pick<Stylist, 'id' | 'full_name' | 'phone'>
-  service?: Pick<Service, 'id' | 'name' | 'duration_minutes' | 'price'>
+  customer?: Customer
+  stylist?: Stylist
+  service?: Service
 }
 
 export interface CustomerHistory {
@@ -183,7 +129,19 @@ export interface CustomerHistory {
   customer_id: string
   appointment_id?: string
   action_type: string
-  details?: Record<string, unknown>
+  details?: any
   performed_by?: string
+  created_at: string
+}
+
+export interface AuditLog {
+  id: string
+  user_id?: string
+  action: string
+  table_affected?: string
+  record_id?: string
+  old_data?: any
+  new_data?: any
+  ip_address?: string
   created_at: string
 }
