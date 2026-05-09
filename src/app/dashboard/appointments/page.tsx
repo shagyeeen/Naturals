@@ -77,20 +77,27 @@ export default function MyAppointments() {
     return matchesFilter && matchesSearch;
   });
 
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+
   const handleCancel = async (id: string) => {
     if (!confirm("Are you sure you want to cancel this appointment?")) return;
     
     try {
+      setCancellingId(id);
       const { error } = await supabase
         .from('appointments')
         .update({ status: 'cancelled' })
         .eq('id', id);
 
       if (error) throw error;
-      fetchAppointments();
-    } catch (error) {
+      
+      // Success feedback
+      setAppointments(prev => prev.map(a => a.id === id ? { ...a, status: 'cancelled' as AppointmentStatus } : a));
+    } catch (error: any) {
       console.error("Error cancelling appointment:", error);
-      alert("Failed to cancel appointment. Please try again.");
+      alert(`Failed to cancel appointment: ${error.message || "Unknown error"}`);
+    } finally {
+      setCancellingId(null);
     }
   };
 
@@ -330,9 +337,10 @@ export default function MyAppointments() {
                   {appt.status === 'confirmed' && (
                     <button 
                       onClick={() => handleCancel(appt.id)}
-                      className="flex-1 py-3 bg-red-500/10 text-red-500 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-red-500 hover:text-white transition-all"
+                      disabled={cancellingId === appt.id}
+                      className="flex-1 py-3 bg-red-500/10 text-red-500 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-red-500 hover:text-white transition-all disabled:opacity-50"
                     >
-                      Cancel
+                      {cancellingId === appt.id ? "CANCELLING..." : "Cancel"}
                     </button>
                   )}
                   {appt.status === 'completed' || appt.status === 'cancelled' ? (

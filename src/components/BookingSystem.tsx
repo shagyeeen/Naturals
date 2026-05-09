@@ -24,6 +24,7 @@ export default function BookingPage() {
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [serviceCategory, setServiceCategory] = useState<string>('All');
 
   useEffect(() => {
     fetchStylists();
@@ -232,41 +233,79 @@ export default function BookingPage() {
         </div>
       </div>
 
-      <div className="glass-card p-8 bg-white border border-black/5 shadow-xl rounded-[2rem] space-y-6">
-        <div className="flex items-center gap-3">
-          <Scissors className="w-5 h-5 text-naturals-purple" />
-          <h3 className="text-sm font-black uppercase tracking-widest text-deep-grape">Select Service</h3>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {services.map((service) => {
-            const isSelected = selectedServices.some(s => s.id === service.id);
-            return (
+      <div className="glass-card p-8 bg-white border border-black/5 shadow-xl rounded-[2rem] space-y-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-3">
+            <Scissors className="w-5 h-5 text-naturals-purple" />
+            <h3 className="text-sm font-black uppercase tracking-widest text-deep-grape">Select Service</h3>
+          </div>
+          
+          <div className="flex items-center gap-2 bg-warm-grey/50 p-1 rounded-2xl border border-black/5 overflow-x-auto no-scrollbar">
+            {['All', ...Array.from(new Set(services.map(s => s.category)))].map((cat) => (
               <button
-                key={service.id}
-                onClick={() => { 
-                  if (isSelected) {
-                    setSelectedServices(selectedServices.filter(s => s.id !== service.id));
-                  } else {
-                    setSelectedServices([...selectedServices, service]);
-                  }
-                  setSelectedSlot(null); 
-                }}
-                className={`p-4 rounded-2xl border-2 transition-all text-left ${
-                  isSelected
-                    ? 'border-naturals-purple bg-naturals-purple/5'
-                    : 'border-black/5 hover:border-naturals-purple/30'
+                key={cat}
+                onClick={() => setServiceCategory(cat)}
+                className={`px-5 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                  serviceCategory === cat 
+                    ? 'bg-naturals-purple text-white shadow-lg' 
+                    : 'text-deep-grape/40 hover:text-deep-grape'
                 }`}
               >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-black text-deep-grape">{service.name}</p>
-                    <p className="text-xs text-deep-grape/50 mt-1">{service.duration_minutes} mins</p>
-                  </div>
-                  <p className="font-black text-naturals-purple">₹{service.price}</p>
-                </div>
+                {cat}
               </button>
-            );
-          })}
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <AnimatePresence mode="popLayout">
+            {services
+              .filter(s => serviceCategory === 'All' || s.category === serviceCategory)
+              .map((service) => {
+                const isSelected = selectedServices.some(s => s.id === service.id);
+                return (
+                  <motion.button
+                    layout
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    key={service.id}
+                    onClick={() => { 
+                      if (isSelected) {
+                        setSelectedServices(selectedServices.filter(s => s.id !== service.id));
+                      } else {
+                        setSelectedServices([...selectedServices, service]);
+                      }
+                      setSelectedSlot(null); 
+                    }}
+                    className={`p-6 rounded-2xl border-2 transition-all text-left relative group ${
+                      isSelected
+                        ? 'border-naturals-purple bg-naturals-purple/5 shadow-lg shadow-naturals-purple/5'
+                        : 'border-black/5 hover:border-naturals-purple/30 bg-[#fafafa]/50'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1">
+                        <span className="text-[8px] font-black uppercase tracking-widest text-naturals-purple/60 mb-1 block">{service.category}</span>
+                        <p className="font-black text-deep-grape text-sm leading-tight group-hover:text-naturals-purple transition-colors">{service.name}</p>
+                      </div>
+                      <p className="font-black text-naturals-purple text-lg">₹{service.price}</p>
+                    </div>
+                    <div className="flex items-center gap-3 mt-4">
+                      <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-black/5 text-[9px] font-bold text-deep-grape/40">
+                        <Clock className="w-3 h-3" />
+                        {service.duration_minutes} MINS
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <div className="absolute top-4 right-4 w-5 h-5 bg-naturals-purple rounded-full flex items-center justify-center text-white shadow-lg">
+                        <Check className="w-3 h-3" />
+                      </div>
+                    )}
+                  </motion.button>
+                );
+              })}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -305,26 +344,39 @@ export default function BookingPage() {
           <div className="text-center py-8">
             <div className="w-8 h-8 border-2 border-naturals-purple border-t-transparent rounded-full animate-spin mx-auto" />
           </div>
-        ) : availableSlots.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {availableSlots.map((slot, idx) => (
-              <button
-                key={idx}
-                onClick={() => setSelectedSlot(slot)}
-                className={`px-4 py-2 rounded-xl border-2 transition-all ${
-                  selectedSlot === slot
-                    ? 'border-naturals-purple bg-naturals-purple text-white'
-                    : 'border-black/5 hover:border-naturals-purple/30'
-                }`}
-              >
-                <span className="font-bold text-sm">{formatTime(slot.start_time)}</span>
-              </button>
-            ))}
-          </div>
         ) : (
-          <div className="text-center py-8 text-deep-grape/50">
-            <p className="text-sm font-bold uppercase tracking-widest">No available slots</p>
-            <p className="text-xs mt-1">Try selecting a different date or stylist</p>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+            {(() => {
+              const allSlots = [];
+              for (let h = 10; h < 19; h++) {
+                const hour = h.toString().padStart(2, '0');
+                allSlots.push(`${hour}:00:00`);
+                allSlots.push(`${hour}:30:00`);
+              }
+              allSlots.push(`19:00:00`); // Include 7:00 PM as the final slot
+              
+              return allSlots.map((time, idx) => {
+                const isAvailable = availableSlots.some(s => s.start_time === time);
+                const isSelected = selectedSlot?.start_time === time;
+                
+                return (
+                  <button
+                    key={idx}
+                    disabled={!isAvailable}
+                    onClick={() => setSelectedSlot({ start_time: time, end_time: '' })}
+                    className={`px-4 py-3 rounded-xl border-2 text-[10px] font-black uppercase tracking-widest transition-all ${
+                      isSelected
+                        ? 'border-naturals-purple bg-naturals-purple text-white shadow-lg shadow-naturals-purple/20 scale-105 z-10'
+                        : isAvailable
+                          ? 'border-black/5 bg-white text-deep-grape hover:border-naturals-purple/30 hover:scale-105'
+                          : 'border-black/5 bg-warm-grey/30 text-deep-grape/10 cursor-not-allowed opacity-50 grayscale'
+                    }`}
+                  >
+                    {formatTime(time)}
+                  </button>
+                );
+              });
+            })()}
           </div>
         )}
       </div>
