@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { supabase, Customer, Stylist, Admin, FranchiseOwner, Appointment } from "@/lib/supabase";
+import { supabase, Customer, Stylist, Admin, FranchiseOwner, Appointment, Service } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { UserPlus, Search, Edit, Trash2, Eye, X, Briefcase, Users, UserCheck, Scissors, Calendar } from "lucide-react";
 
@@ -92,6 +92,7 @@ export default function StaffDashboard() {
   const initialTab = isStylist ? 'appointments' : 'stylists';
   const [activeTab, setActiveTab] = useState<'customers' | 'stylists' | 'managers' | 'franchise' | 'appointments' | 'services'>(initialTab);
   
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [stylists, setStylists] = useState<Stylist[]>([]);
   const [managers, setManagers] = useState<Admin[]>([]);
@@ -268,6 +269,10 @@ export default function StaffDashboard() {
         ...basePayload,
         gender: formData.gender || null,
         notes: formData.notes,
+        ai_hairstyle_analysis: {
+          questionnaire_results: formData.preferences
+        },
+        hairstyle_preference: formData.preferences.hairstyle_male || formData.preferences.hairstyle_female || null
       };
     } else if (modalType === 'add-stylist' || (modalType === 'edit' && activeTab === 'stylists')) {
       table = 'stylists';
@@ -300,17 +305,53 @@ export default function StaffDashboard() {
       if (updateError) {
         alert(`Error updating record: ${updateError.message}`);
       } else {
+        // Sync preferences to customer_preferences table if applicable
+        if (table === 'customers') {
+          const prefPayload: any = {};
+          const prefs = formData.preferences;
+          
+          if (prefs.hair_wash_preference) prefPayload.hairwash_preference = Array.isArray(prefs.hair_wash_preference) ? prefs.hair_wash_preference[0] : prefs.hair_wash_preference;
+          if (prefs.water_temp) prefPayload.water_temperature = Array.isArray(prefs.water_temp) ? prefs.water_temp[0] : prefs.water_temp;
+          if (prefs.scalp_massage) prefPayload.scalp_massage_intensity = Array.isArray(prefs.scalp_massage) ? prefs.scalp_massage[0] : prefs.scalp_massage;
+          if (prefs.conversation) prefPayload.conversation_level = Array.isArray(prefs.conversation) ? prefs.conversation[0] : prefs.conversation;
+          
+          const style = prefs.hairstyle_male || prefs.hairstyle_female;
+          if (style) prefPayload.preferred_hairstyle = Array.isArray(style) ? (style as string[]).join(', ') : style;
+
+          if (Object.keys(prefPayload).length > 0) {
+            await supabase.from('customer_preferences').update(prefPayload).eq('customer_id', editingId);
+          }
+        }
+
         alert("Updated successfully!");
         if (table === 'customers') fetchCustomers();
         else if (table === 'stylists') fetchStylists();
         setShowModal(false);
       }
     } else {
-      const { error } = await supabase.from(table).insert(payload);
+      const { data: newData, error } = await supabase.from(table).insert(payload).select().single();
       
       if (error) {
         alert(`Error adding ${modalType.split('-')[1]}: ${error.message}`);
       } else {
+        // Sync preferences to customer_preferences table for new customers
+        if (table === 'customers' && newData) {
+          const prefPayload: any = {};
+          const prefs = formData.preferences;
+          
+          if (prefs.hair_wash_preference) prefPayload.hairwash_preference = Array.isArray(prefs.hair_wash_preference) ? prefs.hair_wash_preference[0] : prefs.hair_wash_preference;
+          if (prefs.water_temp) prefPayload.water_temperature = Array.isArray(prefs.water_temp) ? prefs.water_temp[0] : prefs.water_temp;
+          if (prefs.scalp_massage) prefPayload.scalp_massage_intensity = Array.isArray(prefs.scalp_massage) ? prefs.scalp_massage[0] : prefs.scalp_massage;
+          if (prefs.conversation) prefPayload.conversation_level = Array.isArray(prefs.conversation) ? prefs.conversation[0] : prefs.conversation;
+          
+          const style = prefs.hairstyle_male || prefs.hairstyle_female;
+          if (style) prefPayload.preferred_hairstyle = Array.isArray(style) ? (style as string[]).join(', ') : style;
+
+          if (Object.keys(prefPayload).length > 0) {
+            await supabase.from('customer_preferences').update(prefPayload).eq('customer_id', newData.id);
+          }
+        }
+
         alert(`${modalType.split('-')[1].replace(/^\w/, c => c.toUpperCase())} added successfully!`);
         if (modalType === 'add-customer') fetchCustomers();
         else if (modalType === 'add-stylist') fetchStylists();
@@ -706,11 +747,14 @@ export default function StaffDashboard() {
                   <p className="text-[10px] text-naturals-purple font-black">{a.start_time.slice(0, 5)} - {a.end_time.slice(0, 5)}</p>
                 </div>
                 <div>
-                  <p className="font-bold text-xs text-deep-grape">{a.customer?.full_name}</p>
-                  <p className="text-[9px] text-deep-grape/40 font-bold">{a.customer?.phone}</p>
+                  <p className="font-bold text-xs text-deep-grape">{a.customer?.full_name || 'Guest Client'}</p>
+                  <p className="text-[9px] text-deep-grape/40 font-bold">{a.customer?.phone || 'No Phone'}</p>
                 </div>
                 <p className="text-[10px] font-black italic text-deep-grape/60">{a.stylist?.full_name}</p>
-                <p className="text-[10px] font-black uppercase tracking-widest text-naturals-purple">{a.service?.name}</p>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-naturals-purple">{a.service?.name || 'Custom Service'}</p>
+                  {a.notes && <p className="text-[8px] text-deep-grape/40 font-bold uppercase mt-1 max-w-[120px] truncate">{a.notes}</p>}
+                </div>
                 <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
                   a.status === 'confirmed' ? 'bg-green-50 text-green-600 border-green-200' : 'bg-warm-grey text-deep-grape/40 border-black/5'
                 }`}>

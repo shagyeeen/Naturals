@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase'
 export const getAllAppointments = () =>
   supabase
     .from('appointments')
-    .select('*, customer:customers(id, full_name, phone), stylist:stylists(id, full_name), service:services(id, name, price)')
+    .select('*, customer:customers!customer_id(id, full_name, phone), stylist:stylists!stylist_id(id, full_name), service:services!service_id(id, name, price)')
     .order('appointment_date', { ascending: false })
 
 // PATCH — global status update
