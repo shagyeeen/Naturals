@@ -4,18 +4,20 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import StaffDashboard from "@/components/StaffDashboard";
-import { 
-  Calendar, 
-  Users, 
-  Scissors, 
-  Camera, 
-  Loader2, 
-  Sparkles, 
-  History, 
-  Target, 
+import {
+  Calendar,
+  Users,
+  Scissors,
+  Camera,
+  Loader2,
+  Sparkles,
+  History,
+  Target,
   ArrowRight,
   Star,
-  ChevronRight
+  ChevronRight,
+  Flame,
+  Clock
 } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -163,6 +165,75 @@ function CustomerOverview({ customerProfile }: { customerProfile: any }) {
             <Link href="/dashboard/appointments" className="text-[9px] font-black uppercase tracking-widest text-naturals-purple flex items-center gap-2 group">
                View Schedule <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
             </Link>
+         </div>
+      </div>
+
+      {/* Signature Protocol Vouchers */}
+      <div className="md:col-span-3">
+         <div className="bg-white border border-black/5 rounded-[3rem] p-12 relative overflow-hidden group shadow-xl">
+            <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
+               <div className="max-w-xl">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 text-orange-600 text-[10px] font-black uppercase tracking-[0.2em] mb-6">
+                    <Flame className="w-3 h-3 animate-pulse" /> Trending Protocols
+                  </div>
+                  <h3 className="text-4xl font-black italic text-deep-grape mb-6 tracking-tight">Signature Service Rewards</h3>
+                  <p className="text-sm font-bold text-deep-grape/40 uppercase tracking-widest leading-relaxed mb-8">
+                     Your Beauty Passport tier grants you access to exclusive reductions on our most requested AI-mapped services.
+                  </p>
+                  <div className="flex flex-wrap gap-4">
+                     <div className="px-6 py-4 bg-warm-grey rounded-2xl border border-black/5 flex flex-col gap-1">
+                        <span className="text-[8px] font-black uppercase text-deep-grape/30">Service Reward</span>
+                        <span className="text-xl font-black text-naturals-purple">₹1000 OFF</span>
+                     </div>
+                     <div className="px-6 py-4 bg-warm-grey rounded-2xl border border-black/5 flex flex-col gap-1">
+                        <span className="text-[8px] font-black uppercase text-deep-grape/30">Applicable On</span>
+                        <span className="text-xs font-black text-deep-grape uppercase">ADVANCED SKIN REPAIR</span>
+                     </div>
+                  </div>
+               </div>
+               <Link href="/dashboard/booking" className="px-12 py-6 bg-deep-grape text-white rounded-3xl font-black text-sm uppercase tracking-[0.2em] hover:bg-naturals-purple transition-all shadow-2xl shrink-0">
+                  Book Appointment
+               </Link>
+            </div>
+            <div className="absolute top-[-50px] left-[-50px] w-64 h-64 bg-orange-500/5 rounded-full blur-[80px]" />
+         </div>
+      </div>
+
+      {/* BAE Cosmetics & Rewards */}
+      <div className="md:col-span-3">
+         <div className="bg-gradient-to-r from-naturals-purple/20 to-lavender/30 rounded-[3rem] p-12 border border-naturals-purple/10 relative overflow-hidden group">
+            <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
+               <div className="max-w-xl">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-naturals-purple text-[10px] font-black uppercase tracking-[0.2em] mb-6 shadow-sm">
+                    <Sparkles className="w-3 h-3" /> Naturals BAE Cosmetics
+                  </div>
+                  <h3 className="text-4xl font-black italic text-deep-grape mb-6 tracking-tight">Exclusive BAE Vouchers</h3>
+                  <p className="text-sm font-bold text-deep-grape/60 uppercase tracking-widest leading-relaxed mb-8">
+                     Unlock specialized rewards for our premium cosmetics line. Your Beauty Passport entitles you to early access on seasonal collections.
+                  </p>
+                  <div className="flex flex-wrap gap-4">
+                     <div className="px-6 py-4 bg-white rounded-2xl border border-naturals-purple/10 flex flex-col gap-1">
+                        <span className="text-[8px] font-black uppercase text-deep-grape/30">Discount Code</span>
+                        <span className="text-xs font-black text-naturals-purple">BAE-2026-PREMIUM</span>
+                     </div>
+                     <div className="px-6 py-4 bg-white rounded-2xl border border-naturals-purple/10 flex flex-col gap-1">
+                        <span className="text-[8px] font-black uppercase text-deep-grape/30">Reward Tier</span>
+                        <span className="text-xs font-black text-deep-grape">25% OFF COSMETICS</span>
+                     </div>
+                  </div>
+               </div>
+               <div className="w-full lg:w-72 aspect-square relative rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white rotate-3 group-hover:rotate-0 transition-transform duration-700">
+                  <div className="absolute inset-0 bg-naturals-purple/10 flex items-center justify-center">
+                     <Star className="w-20 h-20 text-naturals-purple/20 animate-pulse" />
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-deep-grape/40 to-transparent" />
+                  <div className="absolute bottom-6 left-6 right-6 text-white">
+                     <p className="text-[10px] font-black uppercase tracking-widest italic">New Arrival</p>
+                     <p className="text-xs font-bold opacity-80">Summer Gloss Kit</p>
+                  </div>
+               </div>
+            </div>
+            <div className="absolute top-[-100px] right-[-100px] w-64 h-64 bg-white/20 rounded-full blur-[80px]" />
          </div>
       </div>
 

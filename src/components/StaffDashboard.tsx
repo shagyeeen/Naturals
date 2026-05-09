@@ -90,9 +90,9 @@ export default function StaffDashboard() {
   
   // Default Tabs based on Role
   const initialTab = isStylist ? 'appointments' : 'stylists';
-  const [activeTab, setActiveTab] = useState<'customers' | 'stylists' | 'managers' | 'franchise' | 'appointments'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'customers' | 'stylists' | 'managers' | 'franchise' | 'appointments' | 'services'>(initialTab);
   
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [stylists, setStylists] = useState<Stylist[]>([]);
   const [managers, setManagers] = useState<Admin[]>([]);
   const [franchiseOwners, setFranchiseOwners] = useState<FranchiseOwner[]>([]);
@@ -168,10 +168,16 @@ export default function StaffDashboard() {
     if (data) setFranchiseOwners(data as unknown as FranchiseOwner[]);
   }
 
+  const fetchServices = async () => {
+    const { data } = await supabase.from('services').select('*').order('category').order('name');
+    if (data) setServices(data as unknown as Service[]);
+  };
+
   useEffect(() => {
     fetchCustomers();
     fetchAppointments();
     fetchFranchiseOwners();
+    fetchServices();
   }, []);
 
   const handleOpenModal = (type: ModalType, id?: string) => {
@@ -400,14 +406,25 @@ export default function StaffDashboard() {
               <Briefcase className="w-3.5 h-3.5" /> Franchise
             </button>
           )}
+          {(isAdmin || isFranchiseOwner) && (
+            <button
+              onClick={() => {
+                alert("Service management logic (Add/Edit) is handled via the Global Services Registry.");
+                setActiveTab('services');
+              }}
+              className="px-4 py-2.5 bg-naturals-purple text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg hover:scale-105 transition-all flex items-center gap-2"
+            >
+              <Sparkles className="w-3.5 h-3.5" /> View Services
+            </button>
+          )}
         </div>
       </div>
 
       <div className="flex gap-1 p-1.5 rounded-2xl w-fit bg-warm-grey/50 border border-black/5 shadow-inner">
-        {(['customers', 'stylists', 'managers', 'franchise', 'appointments'] as const)
+        {(['customers', 'stylists', 'managers', 'franchise', 'appointments', 'services'] as const)
           .filter(tab => {
             if (isAdmin) return true;
-            if (isFranchiseOwner) return ['customers', 'stylists', 'managers', 'appointments'].includes(tab);
+            if (isFranchiseOwner) return ['customers', 'stylists', 'managers', 'appointments', 'services'].includes(tab);
             if (isManager) return ['customers', 'stylists', 'appointments'].includes(tab);
             if (isStylist) return ['customers', 'appointments'].includes(tab);
             return false;
@@ -704,6 +721,56 @@ export default function StaffDashboard() {
             {appointments.length === 0 && (
                <div className="px-6 py-10 text-center text-deep-grape/30 text-xs font-black uppercase tracking-widest">No active deployments found</div>
             )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'services' && (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2 italic">Global Service Registry</h3>
+          </div>
+          <div className="glass-card bg-white border border-black/5 shadow-xl rounded-[2rem] overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-warm-grey/50">
+                    <th className="text-left p-4 text-[10px] font-black uppercase tracking-widest text-deep-grape/60">Category</th>
+                    <th className="text-left p-4 text-[10px] font-black uppercase tracking-widest text-deep-grape/60">Service Name</th>
+                    <th className="text-left p-4 text-[10px] font-black uppercase tracking-widest text-deep-grape/60">Duration</th>
+                    <th className="text-right p-4 text-[10px] font-black uppercase tracking-widest text-deep-grape/60">Price</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black/5">
+                  {services
+                    .filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.category?.toLowerCase().includes(searchQuery.toLowerCase()))
+                    .map((service) => (
+                    <tr key={service.id} className="hover:bg-warm-grey/20 transition-colors">
+                      <td className="p-4">
+                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                          service.category === 'Hair' ? 'bg-naturals-purple/10 text-naturals-purple border-naturals-purple/20' :
+                          service.category === 'Face' ? 'bg-orange-500/10 text-orange-600 border-orange-500/20' :
+                          'bg-pink-500/10 text-pink-600 border-pink-500/20'
+                        }`}>
+                          {service.category}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <p className="font-bold text-sm text-deep-grape">{service.name}</p>
+                        <p className="text-[9px] text-deep-grape/40 font-bold uppercase tracking-tighter">{service.gender_applicability} Applicable</p>
+                      </td>
+                      <td className="p-4 text-xs font-black text-deep-grape/60">{service.duration_minutes} Mins</td>
+                      <td className="p-4 text-right">
+                        <div className="flex flex-col items-end">
+                          <span className="text-sm font-black text-naturals-purple">₹{service.price}</span>
+                          <span className="text-[8px] font-black uppercase text-deep-grape/30">+ taxes</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

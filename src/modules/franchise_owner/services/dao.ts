@@ -6,6 +6,7 @@ export const getServices = () =>
   supabase
     .from('services')
     .select('*')
+    .order('category', { ascending: true })
     .order('name', { ascending: true })
 
 // POST — add service
