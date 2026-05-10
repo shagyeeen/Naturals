@@ -40,8 +40,37 @@ function CustomerLoginForm() {
         return;
       }
 
-      const { customerData: existingCustomer } = await profileRes.json();
+      const { userData: existingUser, customerData: existingCustomer } = await profileRes.json();
         
+      const userRole = existingUser?.role;
+      const userEmail = result.user.email?.toLowerCase();
+
+      const isFranchiseOwner = userEmail === 'shynewebhosters@gmail.com' || 
+                               userEmail === 'shynewebh1@gmail.com' || 
+                               userRole === 'franchise_owner';
+
+      const isReceptionist = userEmail === '727824tuit213@gmail.com' || 
+                             userEmail === '727824tuit213@skct.edu.in' || 
+                             userRole === 'admin';
+
+      if (isFranchiseOwner) {
+        await refreshProfile(result.user);
+        router.push('/dashboard/analytics');
+        return;
+      }
+
+      if (isReceptionist) {
+        await refreshProfile(result.user);
+        router.push('/dashboard/appointments');
+        return;
+      }
+
+      if (userRole === 'manager' || userRole === 'stylist') {
+        await refreshProfile(result.user);
+        router.push('/dashboard/appointments');
+        return;
+      }
+
       if (!existingCustomer) {
         const customerCode = `NAT-SHA-2026-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
         const ensureRes = await fetch('/api/auth/action', {

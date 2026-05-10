@@ -232,7 +232,10 @@ function CustomerOverview({ customerProfile }: { customerProfile: any }) {
                      </div>
                   </div>
                </div>
-               <Link href="/dashboard/booking" className="px-12 py-6 bg-deep-grape text-white rounded-3xl font-black text-sm uppercase tracking-[0.2em] hover:bg-naturals-purple transition-all shadow-2xl shrink-0">
+               <Link 
+                  href="/dashboard/booking?service=ADVANCED SKIN REPAIR&discount=1000" 
+                  className="px-12 py-6 bg-deep-grape text-white rounded-3xl font-black text-sm uppercase tracking-[0.2em] hover:bg-naturals-purple transition-all shadow-2xl shrink-0"
+               >
                   Book Appointment
                </Link>
             </div>

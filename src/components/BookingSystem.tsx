@@ -100,9 +100,22 @@ export default function BookingPage() {
       console.error('Service Fetch Error:', error);
     } else if (data) {
       console.log('Services Found:', data.length);
-      setServices(data);
-      if (data.length > 0 && serviceCategory === 'All') {
-        const firstCat = data[0].category || 'General';
+      // Filter out 'Special' category services
+      const filteredServices = data.filter(s => (s.category || 'General').toLowerCase() !== 'special');
+      setServices(filteredServices);
+      
+      // Auto-select service from URL if provided
+      if (preSelectedServiceName) {
+        const preSelected = filteredServices.find(s => s.name.toUpperCase() === preSelectedServiceName.toUpperCase());
+        if (preSelected) {
+          console.log('[Booking] Auto-selecting service:', preSelected.name);
+          setSelectedServices([preSelected]);
+          if (preSelected.category) {
+            setServiceCategory(preSelected.category);
+          }
+        }
+      } else if (filteredServices.length > 0 && serviceCategory === 'All') {
+        const firstCat = filteredServices[0].category || 'General';
         setServiceCategory(firstCat);
       }
     }
@@ -170,7 +183,8 @@ export default function BookingPage() {
     }
 
     const totalDuration = selectedServices.reduce((sum, s) => sum + s.duration_minutes, 0);
-    const totalPrice = selectedServices.reduce((sum, s) => sum + s.price, 0);
+    const basePrice = selectedServices.reduce((sum, s) => Number(sum) + Number(s.price), 0);
+    const totalPrice = Math.max(0, basePrice - discountAmount);
     const serviceNames = selectedServices.map(s => s.name).join(', ');
 
     const endTime = new Date(`2000-01-01 ${selectedSlot.start_time}`);
@@ -636,10 +650,20 @@ export default function BookingPage() {
                 {new Date(selectedDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })} at {formatTime(selectedSlot.start_time)}
               </span>
             </div>
+
+            {discountAmount > 0 && (
+              <div className="flex justify-between py-2 border-b border-black/5 animate-in fade-in slide-in-from-right-4">
+                <span className="text-green-600 text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5" /> Voucher Reward
+                </span>
+                <span className="font-bold text-green-600">- ₹{discountAmount}</span>
+              </div>
+            )}
+
             <div className="flex justify-between py-2">
               <span className="text-deep-grape font-black uppercase">Total Amount</span>
               <span className="text-2xl font-black text-naturals-purple">
-                ₹{selectedServices.reduce((sum, s) => sum + s.price, 0)}
+                ₹{Math.max(0, selectedServices.reduce((sum, s) => Number(sum) + Number(s.price), 0) - discountAmount)}
               </span>
             </div>
           </div>

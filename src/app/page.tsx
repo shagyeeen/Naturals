@@ -78,104 +78,9 @@ export default function LandingPage() {
         </nav>
       </div>
 
-      {/* Hero Section */}
-      <section className="relative pt-40 pb-20 px-6 overflow-hidden min-h-screen flex items-center bg-gradient-to-b from-[#FDF9FF] to-white">
-        <div className="absolute top-0 right-0 w-[50vw] h-[100vh] bg-[radial-gradient(ellipse_at_top_right,rgba(142,62,150,0.08),transparent_70%)] pointer-events-none" />
-        
-        <div className="max-w-[90rem] mx-auto w-full relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
-          
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="w-full lg:w-[60%] relative z-20 pt-10 pr-4"
-          >
-            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-naturals-purple/5 text-naturals-purple text-[10px] font-black uppercase tracking-[0.2em] mb-10 border border-naturals-purple/10 shadow-sm backdrop-blur-sm">
-              <Sparkles className="w-3.5 h-3.5" /> Redefining Beauty With AI
-            </div>
-            
-            <h1 className="text-[3.5rem] sm:text-[4.5rem] md:text-[5.5rem] lg:text-[6.5rem] xl:text-[7rem] powerful-heading text-[#2F0137] mb-8 flex flex-col pointer-events-none leading-[0.9] tracking-tight relative">
-              <span className="relative z-30 block drop-shadow-sm">YOUR</span>
-              <span className="relative z-30 block drop-shadow-sm">BEAUTY,</span>
-              
-              {/* Background Watermark Text */}
-              <motion.span 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.15 }}
-                transition={{ delay: 0.5, duration: 1.5 }}
-                className="text-stroke-grape absolute top-[25%] left-0 z-0 text-[4rem] md:text-[7rem] lg:text-[9rem] whitespace-nowrap select-none"
-              >
-                INTELLIGENTLY
-              </motion.span>
-              
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#8E3E96] to-[#C59ACD] relative z-10 block">
-                PERSONALISED.
-              </span>
-            </h1>
-            
-            <p className="text-sm md:text-base text-deep-grape/60 max-w-xl mb-12 font-bold uppercase tracking-[0.15em] leading-relaxed">
-              Step into the future of salon experiences. AI-powered consultations, personalized beauty journeys, and premium service standards.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-5">
-              <Link href="/login" className="px-8 py-4 bg-[#8E3E96] text-white rounded-2xl font-black text-xs uppercase tracking-[0.15em] shadow-xl hover:shadow-2xl hover:shadow-[#8E3E96]/30 hover:-translate-y-1 transition-all flex items-center justify-center gap-3">
-                Experience Naturals AI <ArrowRight className="w-4 h-4" />
-              </Link>
-              <a href="#services" className="px-8 py-4 bg-white text-[#2F0137] border border-[#2F0137]/10 rounded-2xl font-black text-xs uppercase tracking-[0.15em] hover:bg-[#2F0137]/5 transition-all flex items-center justify-center">
-                Explore Services
-              </a>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1.2, delay: 0.2, ease: [0.23, 1, 0.32, 1] }}
-            className="w-full lg:w-[40%] relative hidden lg:flex justify-end z-10"
-          >
-            <div className="relative w-full max-w-3xl aspect-[4/3] rounded-[3rem] overflow-hidden shadow-2xl group">
-               <Image 
-                src="/features/ai-diagnosis.png" 
-                alt="AI Diagnosis" 
-                fill 
-                className="object-cover object-top scale-105 group-hover:scale-100 transition-transform duration-[1.5s] ease-out"
-                priority
-               />
-               <div className="absolute inset-0 bg-gradient-to-r from-[#FDF9FF]/80 via-transparent to-transparent opacity-80" />
-               
-               {/* Animated HUD Overlays - Top Right */}
-               <div className="absolute top-10 right-10">
-                  <motion.div 
-                    initial={{ x: 50, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.8 }}
-                    className="p-4 bg-black/40 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl"
-                  >
-                     <div className="flex items-center gap-3 mb-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                        <p className="text-white text-[9px] font-black uppercase tracking-[0.2em]">HAIR FOLLICLE ANALYSIS</p>
-                     </div>
-                     <div className="space-y-1.5">
-                       <div className="flex justify-between items-center gap-8">
-                         <span className="text-white/60 text-[8px] uppercase tracking-wider">HAIR DENSITY:</span>
-                         <span className="text-white text-[9px] font-bold">HIGH</span>
-                       </div>
-                       <div className="w-full h-[1px] bg-white/20" />
-                       <div className="flex justify-between items-center gap-8">
-                         <span className="text-white/60 text-[8px] uppercase tracking-wider">SCALP HEALTH:</span>
-                         <span className="text-white text-[9px] font-bold">94%</span>
-                       </div>
-                     </div>
-                  </motion.div>
-               </div>
-            </div>
-            
-            {/* Ambient Glows */}
-            <div className="absolute top-1/4 -left-10 w-64 h-64 bg-naturals-purple/10 rounded-full blur-[100px] pointer-events-none" />
-            <div className="absolute bottom-1/4 right-20 w-64 h-64 bg-white/40 rounded-full blur-[100px] pointer-events-none" />
-          </motion.div>
-          
-        </div>
+      {/* Full-Screen Auto-Sliding Hero Carousel (Now Primary Hero) */}
+      <section className="relative h-screen w-full overflow-hidden bg-black">
+        <HeroCarousel />
       </section>
 
       {/* Featured AI Benefits */}
@@ -289,34 +194,51 @@ export default function LandingPage() {
                   .map((service) => (
                   <motion.div
                     key={service.id}
-                    layout
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
                     whileHover={{ y: -10 }}
                     onClick={() => setViewingService(service)}
-                    className="bg-white p-8 rounded-[2.5rem] border border-black/5 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden cursor-pointer"
+                    className="relative aspect-[4/3] rounded-[2.5rem] overflow-hidden group cursor-pointer shadow-xl border border-black/5"
                   >
-                    <div className={`absolute top-0 right-0 px-4 py-2 text-[8px] font-black uppercase tracking-widest rounded-bl-2xl ${
-                      service.category === 'Hair' ? 'bg-naturals-purple/10 text-naturals-purple' :
-                      service.category === 'Face' ? 'bg-orange-500/10 text-orange-600' :
-                      'bg-pink-500/10 text-pink-600'
+                    {/* Dynamic Service Image */}
+                    <Image 
+                      src={`/services/${service.id}.png`} 
+                      alt={service.name} 
+                      fill 
+                      className="object-cover transition-transform duration-700 group-hover:scale-110"
+                    />
+                    
+                    {/* Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-deep-grape via-deep-grape/20 to-transparent" />
+                    
+                    {/* Category Tag */}
+                    <div className={`absolute top-6 right-6 px-4 py-1.5 text-[8px] font-black uppercase tracking-[0.2em] rounded-full backdrop-blur-md border border-white/10 ${
+                      service.category === 'Hair' ? 'bg-naturals-purple/20 text-white' :
+                      service.category === 'Face' ? 'bg-orange-500/20 text-white' :
+                      'bg-pink-500/20 text-white'
                     }`}>
                       {service.category}
                     </div>
-                    <div className="w-12 h-12 bg-naturals-purple/5 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-naturals-purple group-hover:text-white transition-colors">
-                      {service.category?.toLowerCase().includes('hair') ? <Scissors className="w-5 h-5" /> : 
-                       service.category?.toLowerCase().includes('face') ? <Sparkles className="w-5 h-5" /> :
-                       <Droplets className="w-5 h-5" />}
-                    </div>
-                    <h3 className="text-lg font-black italic text-deep-grape mb-2">{service.name}</h3>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-deep-grape/40 mb-4">{service.duration_minutes} Minutes</p>
-                    <div className="mt-auto pt-6 border-t border-black/5 flex justify-between items-center">
-                      <div className="flex flex-col">
-                        <span className="text-sm font-black text-naturals-purple">₹{service.price}</span>
-                        <span className="text-[8px] font-black uppercase text-deep-grape/30">+ taxes</span>
-                      </div>
-                      <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all translate-x-[-10px] group-hover:translate-x-0" />
+
+                    <div className="absolute inset-0 p-8 flex flex-col justify-end">
+                       <div className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mb-4 group-hover:bg-naturals-purple transition-colors text-white border border-white/10">
+                          {service.category?.toLowerCase().includes('hair') ? <Scissors className="w-4 h-4" /> : 
+                           service.category?.toLowerCase().includes('face') ? <Sparkles className="w-4 h-4" /> :
+                           <Droplets className="w-4 h-4" />}
+                       </div>
+                       <h3 className="text-xl font-black italic text-white mb-2 leading-tight">{service.name}</h3>
+                       <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-6">{service.duration_minutes} Minutes</p>
+                       
+                       <div className="pt-6 border-t border-white/10 flex justify-between items-center">
+                          <div className="flex flex-col">
+                             <span className="text-lg font-black text-white">₹{service.price}</span>
+                             <span className="text-[8px] font-black uppercase text-white/30">+ taxes</span>
+                          </div>
+                          <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white group-hover:bg-white group-hover:text-naturals-purple transition-all">
+                             <ChevronRight className="w-4 h-4" />
+                          </div>
+                       </div>
                     </div>
                   </motion.div>
                 ))
@@ -344,63 +266,74 @@ export default function LandingPage() {
                 initial={{ scale: 0.9, y: 20 }}
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.9, y: 20 }}
-                className="w-full max-w-lg bg-white rounded-[2rem] p-8 md:p-10 shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto custom-scrollbar"
+                className="w-full max-w-4xl bg-white rounded-[3.5rem] shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto custom-scrollbar flex flex-col md:flex-row"
                 onClick={e => e.stopPropagation()}
               >
-                <div className="absolute top-0 right-0 p-8">
-                   <button 
-                     onClick={() => setViewingService(null)}
-                     className="w-12 h-12 rounded-2xl bg-warm-grey hover:bg-naturals-purple/10 text-deep-grape/40 hover:text-naturals-purple flex items-center justify-center transition-all"
-                   >
-                     <X className="w-6 h-6" />
-                   </button>
+                {/* Image Banner Section */}
+                <div className="relative w-full md:w-[45%] h-72 md:h-auto min-h-[400px]">
+                   <Image 
+                     src={`/services/${viewingService.id}.png`} 
+                     alt={viewingService.name} 
+                     fill 
+                     className="object-cover"
+                   />
+                   <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-deep-grape/80 via-deep-grape/20 to-transparent" />
                 </div>
 
-                <div className="flex items-center gap-4 mb-8">
-                   <div className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl ${
-                      viewingService.category === 'Hair' ? 'bg-naturals-purple/10 text-naturals-purple' :
-                      viewingService.category === 'Face' ? 'bg-orange-500/10 text-orange-600' :
-                      'bg-pink-500/10 text-pink-600'
-                    }`}>
-                      {viewingService.category}
-                    </div>
-                    <span className="text-[10px] font-black text-deep-grape/20 uppercase tracking-[0.3em]">• Professional Service</span>
-                </div>
+                <div className="flex-1 p-10 md:p-16 relative">
+                   <div className="absolute top-0 right-0 p-10">
+                      <button 
+                        onClick={() => setViewingService(null)}
+                        className="w-12 h-12 rounded-2xl bg-warm-grey hover:bg-naturals-purple/10 text-deep-grape/40 hover:text-naturals-purple flex items-center justify-center transition-all border border-black/5"
+                      >
+                        <X className="w-6 h-6" />
+                      </button>
+                   </div>
 
-                <h2 className="text-4xl font-black italic text-deep-grape mb-6 tracking-tight leading-none">
-                  {viewingService.name}
-                </h2>
+                   <div className="flex items-center gap-4 mb-8">
+                      <div className={`px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-full ${
+                         viewingService.category === 'Hair' ? 'bg-naturals-purple/10 text-naturals-purple' :
+                         viewingService.category === 'Face' ? 'bg-orange-500/10 text-orange-600' :
+                         'bg-pink-500/10 text-pink-600'
+                       }`}>
+                         {viewingService.category}
+                       </div>
+                       <span className="text-[10px] font-black text-deep-grape/20 uppercase tracking-[0.4em]">• AI Protocol</span>
+                   </div>
 
-                <div className="grid grid-cols-2 gap-6 mb-10">
-                   <div className="p-6 bg-warm-grey/30 rounded-3xl">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-deep-grape/40 mb-2">Duration</p>
-                      <div className="flex items-center gap-3">
-                         <Clock className="w-5 h-5 text-naturals-purple" />
-                         <span className="text-sm font-black text-deep-grape">{viewingService.duration_minutes} Minutes</span>
+                   <h2 className="text-4xl md:text-5xl font-black italic text-deep-grape mb-8 tracking-tight leading-none">
+                     {viewingService.name}
+                   </h2>
+
+                   <div className="grid grid-cols-2 gap-6 mb-10">
+                      <div className="p-6 bg-warm-grey/30 rounded-3xl border border-black/5">
+                         <p className="text-[9px] font-black uppercase tracking-widest text-deep-grape/40 mb-2">Duration</p>
+                         <div className="flex items-center gap-3">
+                            <Clock className="w-5 h-5 text-naturals-purple" />
+                            <span className="text-sm font-black text-deep-grape">{viewingService.duration_minutes} Minutes</span>
+                         </div>
+                      </div>
+                      <div className="p-6 bg-warm-grey/30 rounded-3xl border border-black/5">
+                         <p className="text-[9px] font-black uppercase tracking-widest text-deep-grape/40 mb-2">Investment</p>
+                         <div className="flex items-center gap-3">
+                            <span className="text-xl font-black text-naturals-purple">₹{viewingService.price}</span>
+                            <span className="text-[9px] font-black uppercase text-deep-grape/30">+ tax</span>
+                         </div>
                       </div>
                    </div>
-                   <div className="p-6 bg-warm-grey/30 rounded-3xl">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-deep-grape/40 mb-2">Investment</p>
-                      <div className="flex items-center gap-3">
-                         <span className="text-lg font-black text-naturals-purple">₹{viewingService.price}</span>
-                         <span className="text-[8px] font-black uppercase text-deep-grape/30">+ taxes</span>
-                      </div>
+
+                   <div className="mb-12">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-deep-grape/40 mb-4 italic">Protocol Intelligence</h4>
+                      <p className="text-sm font-bold text-deep-grape/60 leading-relaxed italic">
+                        {viewingService.description || "Experience the pinnacle of salon precision. This professional service is designed by Naturals AI specialists to deliver optimal aesthetic results tailored to your unique features."}
+                      </p>
                    </div>
-                </div>
 
-                <div className="mb-12">
-                   <h4 className="text-[10px] font-black uppercase tracking-widest text-deep-grape/40 mb-4 italic">Service Details</h4>
-                   <p className="text-sm font-bold text-deep-grape/60 leading-relaxed italic">
-                     {viewingService.description || "Experience the pinnacle of salon precision. This professional service is designed by Naturals AI specialists to deliver optimal aesthetic results tailored to your unique features."}
-                   </p>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-4">
                    <Link 
-                     href="/login"
-                     className="flex-1 py-5 bg-naturals-purple text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-naturals-purple/20 hover:scale-105 active:scale-95 transition-all text-center flex items-center justify-center gap-3"
+                      href="/login"
+                      className="w-full py-6 bg-naturals-purple text-white rounded-[2rem] font-black text-sm uppercase tracking-[0.2em] shadow-xl hover:scale-105 active:scale-95 transition-all text-center flex items-center justify-center gap-3"
                    >
-                     Confirm & Book Appointment <ArrowRight className="w-4 h-4" />
+                      Confirm & Book Appointment <ArrowRight className="w-5 h-5" />
                    </Link>
                 </div>
               </motion.div>
@@ -409,93 +342,6 @@ export default function LandingPage() {
         </AnimatePresence>
       </section>
 
-      {/* Limited Offers Section */}
-      <section id="offers" className="py-32 px-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-naturals-purple/5 rounded-full blur-[120px] -mr-96 -mt-96" />
-        
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center mb-24">
-             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 text-orange-600 text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-orange-500/20">
-              <Flame className="w-3 h-3 animate-pulse" /> Limited Time Specials
-            </div>
-            <h2 className="text-4xl md:text-6xl font-black italic text-deep-grape mb-4 tracking-tighter">Exclusive Offers</h2>
-            <p className="text-xs font-black uppercase tracking-[0.3em] text-deep-grape/40">Claim your rewards before they expire</p>
-          </div>
-
-          <div className="space-y-8">
-            {/* Voucher 1: Signature Hair Glow */}
-            <motion.div 
-              whileHover={{ y: -5 }}
-              className="bg-gradient-to-r from-deep-grape to-black rounded-[4rem] p-12 text-white relative overflow-hidden group shadow-2xl"
-            >
-               <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-12">
-                  <div className="max-w-xl text-left">
-                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-naturals-purple text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-white/5">
-                       <Scissors className="w-3 h-3" /> Signature Service
-                     </div>
-                     <h3 className="text-4xl md:text-5xl font-black italic mb-6 tracking-tight">Hair Detox & Shine</h3>
-                     <p className="text-sm font-bold text-white/40 uppercase tracking-widest leading-relaxed mb-8">
-                        Experience the AI-driven scalp analysis and deep conditioning treatment. Valid for first-time signature bookings.
-                     </p>
-                     <div className="flex flex-wrap gap-4">
-                        <div className="px-6 py-4 bg-white/5 rounded-2xl border border-white/10 flex flex-col gap-1">
-                           <span className="text-[8px] font-black uppercase text-white/30">Voucher Value</span>
-                           <span className="text-xl font-black text-naturals-purple">₹500 OFF</span>
-                        </div>
-                        <div className="px-6 py-4 bg-white/5 rounded-2xl border border-white/10 flex flex-col gap-1">
-                           <span className="text-[8px] font-black uppercase text-white/30">Code</span>
-                           <span className="text-xs font-black text-white">NATURALS-GLOW</span>
-                        </div>
-                     </div>
-                  </div>
-                  <Link 
-                    href={`/dashboard/booking?service=${encodeURIComponent('Anti-Dandruff Hair Spa')}&discount=500`}
-                    className="px-12 py-6 bg-[#8E3E96] text-white rounded-3xl font-black text-sm uppercase tracking-[0.2em] hover:bg-[#6B2D73] transition-all shadow-2xl shrink-0"
-                  >
-                     Claim Voucher
-                  </Link>
-               </div>
-               <div className="absolute top-[-100px] right-[-100px] w-96 h-96 bg-naturals-purple/10 rounded-full blur-[120px]" />
-               <Gift className="absolute bottom-[-40px] left-[-20px] w-64 h-64 text-white/5 -rotate-12 group-hover:rotate-0 transition-transform duration-700" />
-            </motion.div>
-
-            {/* Voucher 2: Face Radiance */}
-            <motion.div 
-              whileHover={{ y: -5 }}
-              className="bg-white border border-black/5 rounded-[4rem] p-12 text-deep-grape relative overflow-hidden group shadow-xl"
-            >
-               <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-12">
-                  <div className="max-w-xl text-left">
-                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 text-orange-600 text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-orange-500/20">
-                       <Sparkles className="w-3 h-3" /> Skin Science
-                     </div>
-                     <h3 className="text-4xl md:text-5xl font-black italic mb-6 tracking-tight text-deep-grape">Elite Face Radiance</h3>
-                     <p className="text-sm font-bold text-deep-grape/40 uppercase tracking-widest leading-relaxed mb-8">
-                        Our premium AI-mapped facial therapy designed for immediate luminosity. Exclusive for Platinum tier members.
-                     </p>
-                     <div className="flex flex-wrap gap-4">
-                        <div className="px-6 py-4 bg-warm-grey rounded-2xl border border-black/5 flex flex-col gap-1">
-                           <span className="text-[8px] font-black uppercase text-deep-grape/30">Voucher Value</span>
-                           <span className="text-xl font-black text-orange-600">30% OFF</span>
-                        </div>
-                        <div className="px-6 py-4 bg-warm-grey rounded-2xl border border-black/5 flex flex-col gap-1">
-                           <span className="text-[8px] font-black uppercase text-deep-grape/30">Code</span>
-                           <span className="text-xs font-black text-deep-grape">ELITE-GLOW-30</span>
-                        </div>
-                     </div>
-                  </div>
-                  <Link 
-                    href={`/dashboard/booking?service=${encodeURIComponent('Microdermabrasion')}&discount=1000`}
-                    className="px-12 py-6 bg-[#8E3E96] text-white rounded-3xl font-black text-sm uppercase tracking-[0.2em] hover:bg-[#6B2D73] transition-all shadow-2xl shrink-0"
-                  >
-                     Claim Voucher
-                  </Link>
-               </div>
-               <div className="absolute top-[-100px] left-[-100px] w-96 h-96 bg-orange-500/5 rounded-full blur-[120px]" />
-            </motion.div>
-          </div>
-        </div>
-      </section>
 
       {/* Modern Call to Action */}
       <section className="py-32 px-6">
@@ -530,6 +376,132 @@ export default function LandingPage() {
          </div>
       </footer>
 
+    </div>
+  );
+}
+
+function HeroCarousel() {
+  const [current, setCurrent] = useState(0);
+  const slides = [
+    {
+      image: "/offers/hair.png",
+      title: "AI HAIR\nTRANSFORMATION",
+      desc: "Experience the pinnacle of hair precision with our AI-driven scalp analysis and deep restoration protocols.",
+      badge: "₹500 OFF",
+      theme: "from-deep-grape/95",
+      btnColor: "bg-naturals-purple"
+    },
+    {
+      image: "/offers/skin.png",
+      title: "ELITE RADIANCE\nPROTOCOL",
+      desc: "Our premium AI-mapped facial therapy designed for immediate luminosity and cellular skin health.",
+      badge: "30% DISCOUNT",
+      theme: "from-orange-950/95",
+      btnColor: "bg-orange-600"
+    },
+    {
+      image: "/offers/bridal.png",
+      title: "BRIDAL SIGNATURE\nGLOW",
+      desc: "Transform your bridal journey with an elite experience curated by our master aesthetic stylists.",
+      badge: "ELITE ACCESS",
+      theme: "from-[#2F0137]/95",
+      btnColor: "bg-[#8E3E96]"
+    }
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % slides.length);
+    }, 7000);
+    return () => clearInterval(timer);
+  }, [slides.length]);
+
+  return (
+    <div className="relative h-full w-full overflow-hidden">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={current}
+          initial={{ opacity: 0, scale: 1.1 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+          className="absolute inset-0"
+        >
+          <Image 
+            src={slides[current].image} 
+            alt="Offer Banner" 
+            fill 
+            className="object-cover"
+            priority
+          />
+          {/* Top Gradient for Navbar Visibility */}
+          <div className="absolute inset-0 bg-gradient-to-b from-naturals-purple/60 via-transparent to-transparent h-1/3" />
+          
+          <div className={`absolute inset-0 bg-gradient-to-t ${slides[current].theme} via-transparent to-transparent`} />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent" />
+        </motion.div>
+      </AnimatePresence>
+
+      <div className="relative z-10 h-full max-w-7xl mx-auto px-6 flex flex-col justify-center">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={current}
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 50 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="max-w-3xl"
+          >
+            <h2 className="text-5xl md:text-6xl lg:text-7xl font-black italic text-white mb-6 tracking-tighter leading-[0.9] whitespace-pre-line">
+              {slides[current].title}
+            </h2>
+            
+            <p className="text-sm md:text-base text-white/60 font-bold uppercase tracking-widest max-w-lg mb-10 leading-relaxed">
+              {slides[current].desc}
+            </p>
+            
+            <div className="flex flex-col sm:flex-row items-center gap-8">
+              <Link 
+                href="/login" 
+                className={`px-10 py-5 ${slides[current].btnColor} text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-4`}
+              >
+                Claim This Offer <ArrowRight className="w-4 h-4" />
+              </Link>
+              
+              <div className="flex flex-col gap-1">
+                 <span className="text-[9px] font-black uppercase text-white/30 tracking-widest">Exclusive Reward</span>
+                 <span className="text-xl font-black text-white">{slides[current].badge}</span>
+              </div>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Progress Indicators - Centered */}
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex gap-4">
+          {slides.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrent(i)}
+              className="group relative h-1 w-16 bg-white/20 rounded-full overflow-hidden transition-all hover:bg-white/40"
+            >
+              {current === i && (
+                <motion.div 
+                  initial={{ x: "-100%" }}
+                  animate={{ x: "0%" }}
+                  transition={{ duration: 7, ease: "linear" }}
+                  className="absolute inset-0 bg-white"
+                />
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Floating Scroll Indicator */}
+      <div className="absolute bottom-10 right-10 flex items-center gap-4 text-white/20">
+         <span className="text-[10px] font-black uppercase tracking-[0.5em]">Discover More</span>
+         <div className="w-px h-12 bg-white/20" />
+      </div>
     </div>
   );
 }

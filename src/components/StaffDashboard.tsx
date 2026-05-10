@@ -91,7 +91,7 @@ export default function StaffDashboard() {
   
   // Default Tabs based on Role
   const initialTab = isStylist ? 'appointments' : 'stylists';
-  const [activeTab, setActiveTab] = useState<'customers' | 'stylists' | 'managers' | 'franchise' | 'appointments' | 'services'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'customers' | 'stylists' | 'managers' | 'franchise' | 'appointments' | 'services' | 'consultations'>(initialTab);
   
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [services, setServices] = useState<Service[]>([]);
@@ -99,6 +99,7 @@ export default function StaffDashboard() {
   const [managers, setManagers] = useState<Admin[]>([]);
   const [franchiseOwners, setFranchiseOwners] = useState<FranchiseOwner[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [consultations, setConsultations] = useState<any[]>([]);
   const [branchAssign, setBranchAssign] = useState<{id: string, table: string, current: string} | null>(null);
   const [branchInput, setBranchInput] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -175,11 +176,25 @@ export default function StaffDashboard() {
     if (data) setServices(data as unknown as Service[]);
   };
 
+  const fetchConsultations = async () => {
+    const { data } = await supabase
+      .from('consultation_requests')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (data) setConsultations(data);
+  };
+
+  const updateConsultationStatus = async (id: string, status: string) => {
+    await supabase.from('consultation_requests').update({ status }).eq('id', id);
+    fetchConsultations();
+  };
+
   useEffect(() => {
     fetchCustomers();
     fetchAppointments();
     fetchFranchiseOwners();
     fetchServices();
+    fetchConsultations();
   }, []);
 
   const handleOpenModal = (type: ModalType, id?: string) => {
@@ -497,12 +512,12 @@ export default function StaffDashboard() {
       </div>
 
       <div className="flex gap-1 p-1.5 rounded-2xl w-fit bg-warm-grey/50 border border-black/5 shadow-inner">
-        {(['customers', 'stylists', 'managers', 'franchise', 'appointments', 'services'] as const)
+        {(['customers', 'stylists', 'managers', 'franchise', 'appointments', 'services', 'consultations'] as const)
           .filter(tab => {
             if (isAdmin) return true;
             if (isFranchiseOwner) return ['customers', 'stylists', 'managers', 'appointments', 'services'].includes(tab);
-            if (isManager) return ['customers', 'stylists', 'appointments'].includes(tab);
-            if (isStylist) return ['customers', 'appointments'].includes(tab);
+            if (isManager) return ['customers', 'stylists', 'appointments', 'consultations'].includes(tab);
+            if (isStylist) return ['customers', 'appointments', 'consultations'].includes(tab);
             return false;
           })
           .map((tab) => (
@@ -532,7 +547,7 @@ export default function StaffDashboard() {
       {activeTab === 'customers' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2 italic">Global Client Directory</h3>
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2 italic">Customer List</h3>
             {(isAdmin || isManager || isFranchiseOwner) && (
               <button
                 onClick={() => handleOpenModal('add-customer')}
@@ -587,7 +602,7 @@ export default function StaffDashboard() {
       {activeTab === 'stylists' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2 italic">Active Analyst Inventory</h3>
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2 italic">Stylist List</h3>
             {(isAdmin || isManager || isFranchiseOwner) && (
               <button
                 onClick={() => handleOpenModal('add-stylist')}
@@ -638,7 +653,7 @@ export default function StaffDashboard() {
       {activeTab === 'managers' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2 italic">Regional Management Assets</h3>
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2 italic">Management Team</h3>
             {(isAdmin || isFranchiseOwner) && (
               <button
                 onClick={() => handleOpenModal('add-manager')}
@@ -687,7 +702,7 @@ export default function StaffDashboard() {
       {activeTab === 'franchise' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2 italic">Corporate Partner Registry</h3>
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2 italic">Franchise Owners</h3>
             {isAdmin && (
               <button
                 onClick={() => handleOpenModal('add-franchise')}
@@ -759,8 +774,8 @@ export default function StaffDashboard() {
           <div className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] px-6 py-3 bg-warm-grey/40 border-b border-black/5">
             <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Date & Slot</span>
             <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Client</span>
-            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Specialist</span>
-            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Protocol</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Stylist</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Service</span>
             <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Status</span>
           </div>
           <div className="divide-y divide-black/5">
@@ -804,52 +819,73 @@ export default function StaffDashboard() {
         </div>
       )}
 
-      {activeTab === 'services' && (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2 italic">Global Service Registry</h3>
+      {activeTab === 'consultations' && (
+        <div className="bg-white border border-black/5 shadow-xl rounded-[2rem] overflow-hidden">
+          <div className="grid grid-cols-[1.5fr_1.5fr_1fr_1.5fr_auto] px-6 py-3 bg-warm-grey/40 border-b border-black/5">
+            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Requested Service</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Customer</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Requested On</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Status</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Action</span>
           </div>
-          <div className="glass-card bg-white border border-black/5 shadow-xl rounded-[2rem] overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-warm-grey/50">
-                    <th className="text-left p-4 text-[10px] font-black uppercase tracking-widest text-deep-grape/60">Category</th>
-                    <th className="text-left p-4 text-[10px] font-black uppercase tracking-widest text-deep-grape/60">Service Name</th>
-                    <th className="text-left p-4 text-[10px] font-black uppercase tracking-widest text-deep-grape/60">Duration</th>
-                    <th className="text-right p-4 text-[10px] font-black uppercase tracking-widest text-deep-grape/60">Price</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-black/5">
-                  {services
-                    .filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.category?.toLowerCase().includes(searchQuery.toLowerCase()))
-                    .map((service) => (
-                    <tr key={service.id} className="hover:bg-warm-grey/20 transition-colors">
-                      <td className="p-4">
-                        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
-                          service.category === 'Hair' ? 'bg-naturals-purple/10 text-naturals-purple border-naturals-purple/20' :
-                          service.category === 'Face' ? 'bg-orange-500/10 text-orange-600 border-orange-500/20' :
-                          'bg-pink-500/10 text-pink-600 border-pink-500/20'
-                        }`}>
-                          {service.category}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <p className="font-bold text-sm text-deep-grape">{service.name}</p>
-                        <p className="text-[9px] text-deep-grape/40 font-bold uppercase tracking-tighter">{service.gender_applicability} Applicable</p>
-                      </td>
-                      <td className="p-4 text-xs font-black text-deep-grape/60">{service.duration_minutes} Mins</td>
-                      <td className="p-4 text-right">
-                        <div className="flex flex-col items-end">
-                          <span className="text-sm font-black text-naturals-purple">₹{service.price}</span>
-                          <span className="text-[8px] font-black uppercase text-deep-grape/30">+ taxes</span>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <div className="divide-y divide-black/5">
+            {consultations
+              .filter(c => {
+                const search = searchQuery.toLowerCase();
+                return c.customer_name?.toLowerCase().includes(search) || 
+                       c.service_name?.toLowerCase().includes(search) ||
+                       c.email?.toLowerCase().includes(search) ||
+                       c.phone?.includes(search);
+              })
+              .map((c) => (
+              <div key={c.id} className="grid grid-cols-[1.5fr_1.5fr_1fr_1.5fr_auto] items-center px-6 py-4 hover:bg-warm-grey/20 transition-colors">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-naturals-purple">{c.service_name}</p>
+                  <p className="text-[8px] text-deep-grape/40 font-bold uppercase mt-1">{c.notes || 'No extra notes'}</p>
+                </div>
+                <div>
+                  <p className="font-bold text-xs text-deep-grape">{c.customer_name}</p>
+                  <p className="text-[9px] text-deep-grape/40 font-bold">{c.email}</p>
+                  <p className="text-[9px] text-naturals-purple font-black">{c.phone}</p>
+                </div>
+                <p className="text-[10px] font-bold text-deep-grape/60">{new Date(c.created_at).toLocaleDateString()}</p>
+                <div>
+                  <select 
+                    value={c.status}
+                    onChange={(e) => updateConsultationStatus(c.id, e.target.value)}
+                    className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border focus:outline-none transition-all cursor-pointer ${
+                      c.status === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                      c.status === 'contacted' ? 'bg-blue-50 text-blue-600 border-blue-200' :
+                      c.status === 'scheduled' ? 'bg-purple-50 text-purple-600 border-purple-200' :
+                      c.status === 'completed' ? 'bg-green-50 text-green-600 border-green-200' :
+                      'bg-red-50 text-red-600 border-red-200'
+                    }`}
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="contacted">Contacted</option>
+                    <option value="scheduled">Scheduled</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+                <div className="flex justify-end">
+                   <button 
+                     onClick={async () => {
+                       if (confirm('Delete this request?')) {
+                         await supabase.from('consultation_requests').delete().eq('id', c.id);
+                         fetchConsultations();
+                       }
+                     }}
+                     className="p-2 hover:bg-red-50 rounded-xl transition-all group"
+                   >
+                     <Trash2 className="w-4 h-4 text-red-400 group-hover:text-red-500" />
+                   </button>
+                </div>
+              </div>
+            ))}
+            {consultations.length === 0 && (
+               <div className="px-6 py-10 text-center text-deep-grape/30 text-xs font-black uppercase tracking-widest">No meeting requests found</div>
+            )}
           </div>
         </div>
       )}
@@ -1055,7 +1091,7 @@ export default function StaffDashboard() {
 
               {(modalType === 'add-customer' || (modalType === 'edit' && activeTab === 'customers')) && (
                 <div className="space-y-6 pt-4 border-t border-black/5">
-                  <h4 className="text-xs font-black text-naturals-purple uppercase tracking-[0.2em]">Service Questionnaire</h4>
+                  <h4 className="text-xs font-black text-naturals-purple uppercase tracking-[0.2em]">Service Details</h4>
                   
                   <div className="grid grid-cols-1 gap-6">
                     {PREDEFINED_QUESTIONS.filter(q => !q.gender || q.gender.includes(formData.gender)).map((q) => (
@@ -1107,7 +1143,7 @@ export default function StaffDashboard() {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Additional Preference Box</label>
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Extra Notes</label>
                     <textarea
                       placeholder="Special instructions, product allergies, or styling notes..."
                       value={formData.notes}

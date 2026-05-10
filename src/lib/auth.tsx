@@ -45,41 +45,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const refreshProfile = async (authUser: FirebaseUser) => {
     if (!authUser || !authUser.email) return;
     try {
-      console.log('Refreshing profile for:', authUser.email);
+      console.log('[Auth] Refreshing profile via API for:', authUser.email);
       
-      // 1. Fetch via API route to bypass RLS and avoid compile-time panics
-      // 1. Fetch via API route with cache: 'no-store' to ensure we get fresh data after onboarding
-      const response = await fetch(`/api/auth/profile?email=${encodeURIComponent(authUser.email)}&t=${Date.now()}`, {
-        cache: 'no-store'
-      });
+      const res = await fetch(`/api/auth/profile?email=${encodeURIComponent(authUser.email)}`);
+      if (!res.ok) throw new Error('Failed to fetch profile from API');
+      
+      const { userData, customerData } = await res.json();
+      console.log('[Auth] API Profile Data:', { hasUser: !!userData, hasCustomer: !!customerData });
 
-      if (!response.ok) {
-        const text = await response.text();
-        console.error(`[Auth] Profile fetch failed with status ${response.status}:`, text.substring(0, 100));
-        return;
-      }
-
-      const data = await response.json();
-      console.log('Profile API response:', data);
-      
-      const { userData, customerData } = data;
-      
       if (userData) {
         setProfile(userData);
-      }
-
-      if (customerData) {
-        // Sync Google Profile Image if the customer doesn't have one
-        if (!customerData.profile_photo_url && authUser.photoURL) {
-          await supabase.from('customers').update({ profile_photo_url: authUser.photoURL }).eq('id', customerData.id);
+        if (customerData) {
+          // Sync Google Profile Image if the customer doesn't have one
+          if (!customerData.profile_photo_url && authUser.photoURL) {
+            await supabase.from('customers').update({ profile_photo_url: authUser.photoURL }).eq('id', customerData.id);
+          }
+          setCustomerProfile(customerData);
+        } else {
+          setCustomerProfile(null);
         }
-
-        setCustomerProfile(customerData);
       } else {
+        console.warn('[Auth] No user record found for:', authUser.email);
+        setProfile(null);
         setCustomerProfile(null);
       }
     } catch (e) {
-      console.error("Could not fetch profile", e)
+      console.error("[Auth] Crash in refreshProfile:", e)
     }
   }
 
@@ -223,9 +214,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const adminCheck = user?.email?.toLowerCase() === 'shynewebhosters@gmail.com' || user?.email?.toLowerCase() === 'shynewebh1@gmail.com' || profile?.role === 'admin';
-  const franchiseOwnerCheck = profile?.role === 'franchise_owner';
-  const managerCheck = profile?.role === 'manager' || profile?.role === 'franchise_owner';
+  const ownerEmails = ['shynewebhosters@gmail.com', 'shynewebh1@gmail.com'];
+  const adminEmails = ['727824tuit213@gmail.com', '727824tuit213@skct.edu.in'];
+  
+  const isFranchiseOwner = ownerEmails.includes(user?.email?.toLowerCase() || '') || profile?.role === 'franchise_owner';
+  const isReceptionist = adminEmails.includes(user?.email?.toLowerCase() || '') || profile?.role === 'admin';
+  
+  const adminCheck = isFranchiseOwner || isReceptionist;
+  const managerCheck = profile?.role === 'manager' || isFranchiseOwner;
   const stylistCheck = profile?.role === 'stylist' || profile?.role === 'manager';
   const customerCheck = (!profile || profile?.role === 'customer') && !adminCheck;
 
@@ -237,8 +233,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signUp,
     signInWithGoogle,
     signOut,
-    isAdmin: adminCheck,
-    isFranchiseOwner: franchiseOwnerCheck,
+    isAdmin: isReceptionist,
+    isFranchiseOwner: isFranchiseOwner,
     isManager: managerCheck,
     isStylist: stylistCheck,
     isCustomer: customerCheck,

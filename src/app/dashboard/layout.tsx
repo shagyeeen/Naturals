@@ -33,6 +33,7 @@ import Image from "next/image";
 const sidebarLinks = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["admin", "manager", "franchise_owner", "stylist", "customer"] },
   { name: "Book Appointment", href: "/dashboard/booking", icon: Calendar, roles: ["customer"] },
+  { name: "Schedule Meeting", href: "/dashboard/meeting", icon: CalendarCheck, roles: ["customer"] },
   { name: "My Appointment", href: "/dashboard/appointments", icon: History, roles: ["customer"] },
   { name: "AI Assistance", href: "/dashboard/assistant", icon: Bot, roles: ["admin", "manager", "franchise_owner", "stylist", "customer"] },
   { name: "Beauty Passport", href: "/dashboard/passport", icon: Target, roles: ["customer"] },
@@ -195,7 +196,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         
         <div className="p-12 text-center bg-white/80 backdrop-blur-3xl rounded-[2.5rem] shadow-2xl border border-black/5 max-w-lg mx-auto w-full relative z-10 animate-in fade-in slide-in-from-bottom-10 duration-700 ease-out">
           <Users className="w-16 h-16 text-naturals-purple/30 mx-auto mb-6" />
-          <h2 className="text-2xl font-black text-deep-grape uppercase tracking-tighter mb-3">Welcome to Naturals AI!</h2>
+          <h2 className="text-2xl font-black text-deep-grape uppercase tracking-tighter mb-1">Welcome to Naturals AI!</h2>
+          <p className="text-[10px] font-black text-naturals-purple mb-4 uppercase tracking-widest">{user?.email}</p>
           <p className="text-xs font-bold text-deep-grape/40 mb-10 uppercase tracking-widest leading-relaxed">
             Let&apos;s set up your personalized beauty profile.<br />
             Please complete your registration below.
