@@ -37,7 +37,8 @@ const sidebarLinks = [
   { name: "AI Assistance", href: "/dashboard/assistant", icon: Bot, roles: ["admin", "manager", "franchise_owner", "stylist", "customer"] },
   { name: "Beauty Passport", href: "/dashboard/passport", icon: Target, roles: ["customer"] },
   { name: "SOP Audit", href: "/dashboard/sop", icon: ShieldCheck, roles: ["admin", "manager"] },
-  { name: "AI Stylist Copilot", href: "/dashboard/stylist", icon: Scissors, roles: ["stylist", "admin"] },
+  { name: "Appointments", href: "/dashboard/appointments", icon: CalendarCheck, roles: ["stylist", "admin"] },
+  { name: "Work Analytics", href: "/dashboard/analytics", icon: LineChart, roles: ["stylist", "admin"] },
   { name: "Trend Engine", href: "/dashboard/trends", icon: LineChart, roles: ["admin", "manager"] },
   { name: "Academy", href: "/dashboard/academy", icon: BookOpen, roles: ["admin"] },
 ];

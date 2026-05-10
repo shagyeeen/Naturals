@@ -8,6 +8,7 @@ import {
   Calendar, 
   Clock, 
   User, 
+  Users,
   Scissors, 
   CheckCircle2, 
   XCircle, 
@@ -24,8 +25,8 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-export default function MyAppointments() {
-  const { customerProfile, loading: authLoading } = useAuth();
+export default function AppointmentsPage() {
+  const { profile, customerProfile, isStylist, isAdmin, loading: authLoading } = useAuth();
   const router = useRouter();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,29 +40,51 @@ export default function MyAppointments() {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   useEffect(() => {
-    if (customerProfile?.id) {
+    if (customerProfile?.id || profile?.id) {
       fetchAppointments();
     } else if (!authLoading) {
       setLoading(false);
     }
-  }, [customerProfile, authLoading]);
+  }, [customerProfile, profile, authLoading]);
 
   const fetchAppointments = async () => {
-    if (!customerProfile?.id) return;
+    if (!customerProfile?.id && !profile?.id) return;
     
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from('appointments')
         .select(`
           *,
+          customer:customer_id(id, full_name, phone),
           stylist:stylist_id(id, full_name, phone),
           service:service_id(id, name, duration_minutes, price, category),
           appointment_services(
             service:service_id(id, name, duration_minutes, price, category)
           )
-        `)
-        .eq('customer_id', customerProfile.id)
+        `);
+
+      if (isStylist && profile?.id) {
+        // We need to get the stylist record ID (not the profile/user ID)
+        const { data: stylistData } = await supabase
+          .from('stylists')
+          .select('id')
+          .eq('user_id', profile.id)
+          .single();
+        
+        if (stylistData) {
+          query = query.eq('stylist_id', stylistData.id);
+        } else {
+          // If no stylist record found, return empty
+          setAppointments([]);
+          setLoading(false);
+          return;
+        }
+      } else if (customerProfile?.id) {
+        query = query.eq('customer_id', customerProfile.id);
+      }
+
+      const { data, error } = await query
         .order('appointment_date', { ascending: false })
         .order('start_time', { ascending: false });
 
@@ -78,7 +101,7 @@ export default function MyAppointments() {
     const matchesFilter = filter === "all" ? true : appt.status === filter;
     const matchesSearch = 
       appt.service?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      appt.appointment_services?.some(s => s.service.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      appt.customer?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       appt.stylist?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       appt.status.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesFilter && matchesSearch;
@@ -168,10 +191,10 @@ export default function MyAppointments() {
             <HistoryIcon className="w-3 h-3" /> Visit History & Schedule
           </div>
           <h1 className="text-4xl font-black text-deep-grape mb-2 italic tracking-tighter">
-            My Appointments
+            {isStylist ? "Staff Appointments" : "My Appointments"}
           </h1>
           <p className="text-deep-grape/40 font-bold uppercase text-xs tracking-widest">
-            Manage your upcoming sessions and review past beauty journeys.
+            {isStylist ? "Manage your daily queue and upcoming service sessions." : "Manage your upcoming sessions and review past beauty journeys."}
           </p>
         </div>
 
@@ -287,11 +310,11 @@ export default function MyAppointments() {
 
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-xl bg-warm-grey flex items-center justify-center text-naturals-purple">
-                        <User className="w-5 h-5" />
+                        {isStylist ? <Users className="w-5 h-5" /> : <User className="w-5 h-5" />}
                       </div>
                       <div>
-                        <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-widest mb-0.5">Assigned Stylist</p>
-                        <p className="text-xs font-black text-deep-grape">{appt.stylist?.full_name || "Any Available"}</p>
+                        <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-widest mb-0.5">{isStylist ? "Customer" : "Assigned Stylist"}</p>
+                        <p className="text-xs font-black text-deep-grape">{isStylist ? (appt.customer?.full_name || "Guest Customer") : (appt.stylist?.full_name || "Any Available")}</p>
                       </div>
                     </div>
 
