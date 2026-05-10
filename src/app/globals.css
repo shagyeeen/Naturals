@@ -41,7 +41,7 @@ body {
 
 /* Stand-out Typography: Ultra Bold & Overlapping */
 .powerful-heading {
-  @apply font-serif italic tracking-[-0.04em] leading-[0.85] uppercase;
+  @apply font-serif tracking-tight leading-[0.9] uppercase;
   text-shadow: 0 10px 30px rgba(47, 1, 55, 0.05);
 }
 

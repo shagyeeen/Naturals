@@ -8,13 +8,9 @@ import { searchCustomer } from "@/modules/admin/customers/service";
 import { User, Activity, Calendar, Award, Droplets, Sun, Sparkles, Map as MapIcon, Leaf, Search, ShieldCheck, Edit2, Loader2, Check } from "lucide-react";
 
 const questionnaireData = [
-  { id: 'hair_wash_preference', question: 'Prefer hairwash', options: ['Before SPA', 'After SPA', 'Both'] },
-  { id: 'hairstyle_male', question: 'Preferred Hairstyle (Male)', options: ['Classic', 'Modern Fade', 'Long Taper', 'Buzz Cut', 'Layered', 'Pompadour', 'Crew Cut'], gender: ['male'] },
-  { id: 'hairstyle_female', question: 'Preferred Hairstyle (Female)', options: ['Layered Cut', 'Straight Bob', 'Pixie Cut', 'Beach Waves', 'Wispy Bangs', 'Shag Cut', 'Wolf Cut'], gender: ['female'] },
-  { id: 'beard_mustache', question: 'Preferred Beard/Mustache', options: ['Clean Shave', 'Stubble', 'Full Beard', 'Trimmed Mustache', 'Goatee'], gender: ['male'] },
-  { id: 'water_temp', question: 'Water Temperature', options: ['Cold', 'Lukewarm', 'Warm'] },
-  { id: 'scalp_massage', question: 'Scalp Massage Intensity', options: ['Soft', 'Medium', 'Strong', 'None'] },
-  { id: 'conversation', question: 'Conversation Level', options: ['Quiet Professional', 'Friendly Chat', 'Social/Engaging'] }
+  { id: 'conversation', question: 'Conversation Level', options: ['Quiet Professional', 'Friendly Chat', 'Social/Engaging'] },
+  { id: 'beverage', question: 'Beverage Preference', options: ['Coffee', 'Green Tea', 'Water', 'None'] },
+  { id: 'reading', question: 'Reading Material', options: ['Fashion', 'News', 'Entertainment', 'None'] }
 ];
 
 export default function BeautyPassport() {
@@ -38,12 +34,9 @@ export default function BeautyPassport() {
   const preferences: Record<string, string | string[]> = isEditingPreferences
     ? draft
     : {
-        hair_wash_preference:  dbPrefs?.hairwash_preference ?? '',
-        hairstyle_male:        (dbPrefs?.preferred_hairstyle && (selectedCustomer?.gender === 'male' || profile?.gender === 'male')) ? [dbPrefs.preferred_hairstyle] : [],
-        hairstyle_female:      (dbPrefs?.preferred_hairstyle && (selectedCustomer?.gender === 'female' || profile?.gender === 'female')) ? [dbPrefs.preferred_hairstyle] : [],
-        water_temp:            dbPrefs?.water_temperature ?? '',
-        scalp_massage:         dbPrefs?.scalp_massage_intensity ?? '',
         conversation:          dbPrefs?.conversation_level ?? '',
+        beverage:              (() => { try { return JSON.parse(dbPrefs?.special_instructions || '{}')?.beverage || ''; } catch { return ''; } })(),
+        reading:               (() => { try { return JSON.parse(dbPrefs?.special_instructions || '{}')?.reading || ''; } catch { return ''; } })(),
       };
 
   const handleEditStart = () => {
@@ -53,17 +46,22 @@ export default function BeautyPassport() {
 
   const handleSavePreferences = async () => {
     if (!selectedCustomer?.id) return;
-    const hairstyle = draft.hairstyle_female?.[0] || draft.hairstyle_male?.[0] || undefined;
     try {
+      const extractSingle = (val: string | string[] | undefined) => Array.isArray(val) ? val[0] : val;
+      
       await savePrefs({
-        hairwash_preference:     (draft.hair_wash_preference as 'Before SPA' | 'After SPA' | 'Both') || undefined,
-        preferred_hairstyle:     (typeof hairstyle === 'string' && hairstyle.length > 0) ? hairstyle : undefined,
-        water_temperature:       (draft.water_temp as 'Cold' | 'Lukewarm' | 'Warm') || undefined,
-        scalp_massage_intensity: (draft.scalp_massage as 'Soft' | 'Medium' | 'Strong' | 'None') || undefined,
-        conversation_level:      (draft.conversation as 'Quiet Professional' | 'Friendly Chat' | 'Social/Engaging') || undefined,
+        hairwash_preference: dbPrefs?.hairwash_preference || 'Both',
+        water_temperature: dbPrefs?.water_temperature || 'Lukewarm',
+        scalp_massage_intensity: dbPrefs?.scalp_massage_intensity || 'None',
+        conversation_level:      (extractSingle(draft.conversation) as 'Quiet Professional' | 'Friendly Chat' | 'Social/Engaging') || 'Quiet Professional',
+        special_instructions: JSON.stringify({
+          beverage: extractSingle(draft.beverage),
+          reading: extractSingle(draft.reading)
+        })
       });
       setIsEditingPreferences(false);
-    } catch {
+    } catch (err) {
+      console.error('Save Prefs Error:', err);
       alert("Error saving preferences. Please try again.");
     }
   };
@@ -104,16 +102,6 @@ export default function BeautyPassport() {
         </div>
         
         <div className="flex gap-4">
-           <form onSubmit={handleSearch} className="flex items-center bg-warm-grey/50 border border-black/5 px-4 py-2 rounded-xl focus-within:bg-white transition-all shadow-inner">
-             {isSearching ? <Loader2 className="w-4 h-4 text-naturals-purple animate-spin" /> : <Search className="w-4 h-4 text-deep-grape/30" />}
-             <input 
-              type="text" 
-              placeholder="CLIENT_ID / MOBILE_LINK" 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent border-none outline-none text-[10px] font-black tracking-widest px-3 w-48 text-deep-grape placeholder:text-deep-grape/30" 
-             />
-           </form>
         </div>
       </div>
 
