@@ -5,7 +5,9 @@ import { supabase, Stylist, Service, Appointment } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Clock, User, Scissors, CreditCard, Check, Search, Award, Star } from "lucide-react";
+import { Calendar, Clock, User, Scissors, CreditCard, Check, Search, Sparkles } from "lucide-react";
+
+import { useSearchParams } from "next/navigation";
 
 interface TimeSlot {
   start_time: string;
@@ -32,6 +34,15 @@ export default function BookingPage() {
   const [success, setSuccess] = useState(false);
   const [serviceCategory, setServiceCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  
+  // Service Preferences State
+  const [prefHairwash, setPrefHairwash] = useState<string>('');
+  const [prefWaterTemp, setPrefWaterTemp] = useState<string>('');
+  const [prefMassage, setPrefMassage] = useState<string>('');
+  
+  const searchParams = useSearchParams();
+  const preSelectedServiceName = searchParams.get('service');
+  const discountAmount = parseInt(searchParams.get('discount') || '0');
 
   useEffect(() => {
     fetchStylists();
@@ -165,11 +176,19 @@ export default function BookingPage() {
     const endTime = new Date(`2000-01-01 ${selectedSlot.start_time}`);
     endTime.setMinutes(endTime.getMinutes() + totalDuration);
 
+    const prefsList = [
+      prefHairwash && `Hairwash: ${prefHairwash}`,
+      prefWaterTemp && `Water: ${prefWaterTemp}`,
+      prefMassage && `Massage: ${prefMassage}`
+    ].filter(Boolean).join(' | ');
+
+    const notesStr = `Multiple Services: ${serviceNames}. Total Duration: ${totalDuration} mins.${discountAmount > 0 ? ` Applied Voucher Discount: ₹${discountAmount}` : ''}${prefsList ? ` | Preferences: ${prefsList}` : ''}`;
+
     const { data: appointmentData, error: appointmentError } = await supabase.from('appointments').insert({
       customer_id: customerProfile.id,
       stylist_id: selectedStylist.id,
-      service_id: selectedServices[0].id, // Keep for compatibility
-      notes: `Protocol Selections: ${serviceNames}. Session Window: ${totalDuration} mins.`,
+      service_id: selectedServices[0].id, // Primary service ID
+      notes: notesStr,
       appointment_date: selectedDate,
       start_time: selectedSlot.start_time,
       end_time: endTime.toTimeString().slice(0, 8),
@@ -473,6 +492,88 @@ export default function BookingPage() {
           </div>
         )}
       </div>
+
+      {/* Service Preferences */}
+      {selectedServices.length > 0 && (() => {
+        const isHairService = selectedServices.some(s => s.name.toLowerCase().includes('hair') || s.category?.toLowerCase().includes('hair') || s.name.toLowerCase().includes('cut'));
+        const isSpaOrFacial = selectedServices.some(s => s.name.toLowerCase().includes('spa') || s.name.toLowerCase().includes('facial') || s.name.toLowerCase().includes('massage'));
+        
+        if (!isHairService && !isSpaOrFacial) return null;
+
+        return (
+          <div className="glass-card p-8 bg-white border border-black/5 shadow-xl rounded-[2rem] space-y-6">
+            <div className="flex items-center gap-3">
+              <Sparkles className="w-5 h-5 text-naturals-purple" />
+              <h3 className="text-sm font-black uppercase tracking-widest text-deep-grape">Service Preferences</h3>
+            </div>
+            
+            <div className="space-y-6">
+              {isHairService && (
+                <>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-deep-grape mb-3">Prefer Hairwash</p>
+                    <div className="flex flex-wrap gap-3">
+                      {['Before Service', 'After Service', 'Both'].map(opt => (
+                        <button
+                          key={opt}
+                          onClick={() => setPrefHairwash(opt)}
+                          className={`px-4 py-2 rounded-xl border-2 text-[10px] font-black uppercase tracking-widest transition-all ${
+                            prefHairwash === opt
+                              ? 'border-[#8E3E96] bg-[#8E3E96] text-white shadow-lg'
+                              : 'border-black/5 bg-white text-deep-grape hover:border-[#8E3E96]/30'
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-deep-grape mb-3">Water Temperature</p>
+                    <div className="flex flex-wrap gap-3">
+                      {['Cold', 'Lukewarm', 'Warm'].map(opt => (
+                        <button
+                          key={opt}
+                          onClick={() => setPrefWaterTemp(opt)}
+                          className={`px-4 py-2 rounded-xl border-2 text-[10px] font-black uppercase tracking-widest transition-all ${
+                            prefWaterTemp === opt
+                              ? 'border-[#8E3E96] bg-[#8E3E96] text-white shadow-lg'
+                              : 'border-black/5 bg-white text-deep-grape hover:border-[#8E3E96]/30'
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {(isSpaOrFacial || isHairService) && (
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-deep-grape mb-3">Massage Intensity</p>
+                  <div className="flex flex-wrap gap-3">
+                    {['Soft', 'Medium', 'Strong', 'None'].map(opt => (
+                      <button
+                        key={opt}
+                        onClick={() => setPrefMassage(opt)}
+                        className={`px-4 py-2 rounded-xl border-2 text-[10px] font-black uppercase tracking-widest transition-all ${
+                          prefMassage === opt
+                            ? 'border-[#8E3E96] bg-[#8E3E96] text-white shadow-lg'
+                            : 'border-black/5 bg-white text-deep-grape hover:border-[#8E3E96]/30'
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Booking Summary & Action */}
       <div className="glass-card p-8 bg-white border border-black/5 shadow-xl rounded-[2rem]">

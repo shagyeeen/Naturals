@@ -38,6 +38,22 @@ body {
   100% { background-position: 0% 50%; }
 }
 
+/* Stand-out Typography: Ultra Bold & Overlapping */
+.powerful-heading {
+  @apply font-serif tracking-tight leading-[0.9] uppercase;
+  text-shadow: 0 10px 30px rgba(47, 1, 55, 0.05);
+}
+
+.text-stroke-white {
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.3);
+  color: transparent;
+}
+
+.text-stroke-grape {
+  -webkit-text-stroke: 1px rgba(47, 1, 55, 0.1);
+  color: transparent;
+}
+
 /* Liquid Glass Effect - Ultra Smooth with Spectral Highlights */
 .liquid-glass {
   background: rgba(255, 255, 255, 0.45);

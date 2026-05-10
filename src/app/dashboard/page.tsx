@@ -185,7 +185,7 @@ function CustomerOverview({ customerProfile }: { customerProfile: any }) {
             <p className="text-xs font-bold text-deep-grape/50 leading-relaxed mb-8">
                Generate style recommendations based on your unique facial features and historical preferences.
             </p>
-            <Link href="/dashboard/assistant" className="text-[9px] font-black uppercase tracking-widest text-naturals-purple flex items-center gap-2 group">
+            <Link href="/dashboard/assistant" className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#8E3E96] text-white text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-[#6B2D73] transition-all shadow-md shadow-[#8E3E96]/20 w-fit group">
                Launch Assistant <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
             </Link>
          </div>
@@ -203,7 +203,7 @@ function CustomerOverview({ customerProfile }: { customerProfile: any }) {
             <p className="text-xs font-bold text-deep-grape/50 leading-relaxed mb-8">
                Review your upcoming salon sessions or re-book past signature services with one click.
             </p>
-            <Link href="/dashboard/appointments" className="text-[9px] font-black uppercase tracking-widest text-naturals-purple flex items-center gap-2 group">
+            <Link href="/dashboard/appointments" className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#8E3E96] text-white text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-[#6B2D73] transition-all shadow-md shadow-[#8E3E96]/20 w-fit group">
                View Schedule <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
             </Link>
          </div>

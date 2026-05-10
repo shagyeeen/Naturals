@@ -54,84 +54,127 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#FDF9FF] text-deep-grape selection:bg-naturals-purple selection:text-white overflow-x-hidden">
       
-      {/* Premium Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/70 backdrop-blur-xl border-b border-naturals-purple/5 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <Link href="/" className="relative w-32 h-10 hover:scale-105 transition-transform duration-300">
-            <Image src="/naturalslogo.png" alt="Naturals Logo" fill className="object-contain" priority />
+      {/* Ultra-Unique Floating Navigation */}
+      <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] w-[90%] max-w-6xl">
+        <nav className="glass-card !rounded-full px-8 py-4 flex justify-between items-center bg-white/80 backdrop-blur-3xl border-white/60 shadow-[0_20px_40px_-15px_rgba(47,1,55,0.05)]">
+          <Link href="/" className="relative w-40 h-10 hover:scale-105 transition-transform duration-500">
+            <Image src="/naturalslogo.png" alt="Naturals Logo" fill className="object-contain object-left" priority />
           </Link>
-          <div className="hidden md:flex items-center gap-10">
-            <a href="#services" className="text-[10px] font-black uppercase tracking-[0.2em] hover:text-naturals-purple transition-colors">Services</a>
-            <a href="#offers" className="text-[10px] font-black uppercase tracking-[0.2em] hover:text-naturals-purple transition-colors">Limited Offers</a>
-            <a href="#features" className="text-[10px] font-black uppercase tracking-[0.2em] hover:text-naturals-purple transition-colors">AI Features</a>
+          <div className="hidden lg:flex items-center gap-14">
+            {['Services', 'Offers', 'AI Features'].map(item => (
+              <a 
+                key={item} 
+                href={`#${item.toLowerCase().replace(' ', '')}`} 
+                className="text-[11px] font-extrabold uppercase tracking-[0.25em] text-deep-grape/70 hover:text-naturals-purple transition-colors relative group"
+              >
+                {item}
+                <span className="absolute -bottom-2 left-0 w-0 h-[2px] bg-naturals-purple transition-all duration-300 group-hover:w-full" />
+              </a>
+            ))}
           </div>
-          <div className="flex items-center gap-4">
-            <Link href="/login" className="px-8 py-3 bg-naturals-purple text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-naturals-purple/20 hover:bg-deep-grape hover:shadow-deep-grape/30 transition-all">
-              Sign In
-            </Link>
-          </div>
-        </div>
-      </nav>
+          <Link href="/login" className="px-8 py-3.5 bg-[#8E3E96] text-white rounded-full text-[11px] font-extrabold uppercase tracking-[0.2em] hover:bg-[#6B2D73] hover:shadow-lg transition-all">
+            Sign In
+          </Link>
+        </nav>
+      </div>
 
       {/* Hero Section */}
-      <section className="relative pt-40 pb-20 px-6 overflow-hidden min-h-[90vh] flex items-center">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(142,62,150,0.1),rgba(255,255,255,0))]" />
+      <section className="relative pt-40 pb-20 px-6 overflow-hidden min-h-screen flex items-center bg-gradient-to-b from-[#FDF9FF] to-white">
+        <div className="absolute top-0 right-0 w-[50vw] h-[100vh] bg-[radial-gradient(ellipse_at_top_right,rgba(142,62,150,0.08),transparent_70%)] pointer-events-none" />
         
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center relative z-10 w-full">
+        <div className="max-w-[90rem] mx-auto w-full relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
+          
           <motion.div
-            initial={{ opacity: 0, x: -50 }}
+            initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
+            className="w-full lg:w-[60%] relative z-20 pt-10 pr-4"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-naturals-purple/10 text-naturals-purple text-[10px] font-black uppercase tracking-[0.2em] mb-8 border border-naturals-purple/10">
-              <Sparkles className="w-3 h-3" /> Redefining Beauty with AI
+            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-naturals-purple/5 text-naturals-purple text-[10px] font-black uppercase tracking-[0.2em] mb-10 border border-naturals-purple/10 shadow-sm backdrop-blur-sm">
+              <Sparkles className="w-3.5 h-3.5" /> Redefining Beauty With AI
             </div>
-            <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-8 leading-[0.9] text-deep-grape italic">
-              Your Beauty, <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-naturals-purple to-deep-grape">Intelligently</span> <br />
-              Personalised.
+            
+            <h1 className="text-[3.5rem] sm:text-[4.5rem] md:text-[5.5rem] lg:text-[6.5rem] xl:text-[7rem] powerful-heading text-[#2F0137] mb-8 flex flex-col pointer-events-none leading-[0.9] tracking-tight relative">
+              <span className="relative z-30 block drop-shadow-sm">YOUR</span>
+              <span className="relative z-30 block drop-shadow-sm">BEAUTY,</span>
+              
+              {/* Background Watermark Text */}
+              <motion.span 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.15 }}
+                transition={{ delay: 0.5, duration: 1.5 }}
+                className="text-stroke-grape absolute top-[25%] left-0 z-0 text-[4rem] md:text-[7rem] lg:text-[9rem] whitespace-nowrap select-none"
+              >
+                INTELLIGENTLY
+              </motion.span>
+              
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#8E3E96] to-[#C59ACD] relative z-10 block">
+                PERSONALISED.
+              </span>
             </h1>
-            <p className="text-lg text-deep-grape/60 max-w-xl mb-12 font-bold uppercase tracking-widest leading-relaxed">
+            
+            <p className="text-sm md:text-base text-deep-grape/60 max-w-xl mb-12 font-bold uppercase tracking-[0.15em] leading-relaxed">
               Step into the future of salon experiences. AI-powered consultations, personalized beauty journeys, and premium service standards.
             </p>
-            <div className="flex flex-col sm:flex-row gap-6">
-              <Link href="/login" className="px-10 py-5 bg-naturals-purple text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl shadow-naturals-purple/30 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3">
+            
+            <div className="flex flex-col sm:flex-row gap-5">
+              <Link href="/login" className="px-8 py-4 bg-[#8E3E96] text-white rounded-2xl font-black text-xs uppercase tracking-[0.15em] shadow-xl hover:shadow-2xl hover:shadow-[#8E3E96]/30 hover:-translate-y-1 transition-all flex items-center justify-center gap-3">
                 Experience Naturals AI <ArrowRight className="w-4 h-4" />
               </Link>
-              <a href="#services" className="px-10 py-5 bg-white text-deep-grape border border-black/5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg hover:bg-gray-50 transition-all flex items-center justify-center">
-                Explore Services
+              <a href="#services" className="px-8 py-4 bg-white text-[#2F0137] border border-[#2F0137]/10 rounded-2xl font-black text-xs uppercase tracking-[0.15em] hover:bg-[#2F0137]/5 transition-all flex items-center justify-center">
+                Explore Protocols
               </a>
             </div>
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, scale: 0.8, rotate: 5 }}
-            animate={{ opacity: 1, scale: 1, rotate: 0 }}
-            transition={{ duration: 1, ease: "easeOut" }}
-            className="relative hidden lg:block"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1.2, delay: 0.2, cubicBezier: [0.23, 1, 0.32, 1] }}
+            className="w-full lg:w-[40%] relative hidden lg:flex justify-end z-10"
           >
-            <div className="relative w-full aspect-square rounded-[4rem] overflow-hidden shadow-[0_50px_100px_-20px_rgba(142,62,150,0.3)] group">
+            <div className="relative w-full max-w-3xl aspect-[4/3] rounded-[3rem] overflow-hidden shadow-2xl group">
                <Image 
                 src="/features/ai-diagnosis.png" 
                 alt="AI Diagnosis" 
                 fill 
-                className="object-cover group-hover:scale-110 transition-transform duration-1000"
+                className="object-cover object-center scale-105 group-hover:scale-100 transition-transform duration-[1.5s] ease-out"
+                priority
                />
-               <div className="absolute inset-0 bg-gradient-to-t from-deep-grape/60 to-transparent" />
-               <div className="absolute bottom-12 left-12 right-12">
-                  <div className="p-6 bg-white/10 backdrop-blur-md rounded-3xl border border-white/20">
-                     <p className="text-white text-xs font-black uppercase tracking-widest mb-2 flex items-center gap-2">
-                       <ShieldCheck className="w-4 h-4 text-naturals-purple" /> AR Diagnosis Active
-                     </p>
-                     <p className="text-white/80 text-[10px] font-bold uppercase tracking-widest">Scanning facial geometry for optimal hairstyle alignment...</p>
-                  </div>
+               <div className="absolute inset-0 bg-gradient-to-r from-[#FDF9FF]/80 via-transparent to-transparent opacity-80" />
+               
+               {/* Animated HUD Overlays - Top Right */}
+               <div className="absolute top-10 right-10">
+                  <motion.div 
+                    initial={{ x: 50, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.8 }}
+                    className="p-4 bg-black/40 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl"
+                  >
+                     <div className="flex items-center gap-3 mb-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                        <p className="text-white text-[9px] font-black uppercase tracking-[0.2em]">HAIR FOLLICLE ANALYSIS</p>
+                     </div>
+                     <div className="space-y-1.5">
+                       <div className="flex justify-between items-center gap-8">
+                         <span className="text-white/60 text-[8px] uppercase tracking-wider">HAIR DENSITY:</span>
+                         <span className="text-white text-[9px] font-bold">HIGH</span>
+                       </div>
+                       <div className="w-full h-[1px] bg-white/20" />
+                       <div className="flex justify-between items-center gap-8">
+                         <span className="text-white/60 text-[8px] uppercase tracking-wider">SCALP HEALTH:</span>
+                         <span className="text-white text-[9px] font-bold">94%</span>
+                       </div>
+                     </div>
+                  </motion.div>
                </div>
             </div>
             
-            {/* Decorative Elements */}
-            <div className="absolute -top-10 -right-10 w-40 h-40 bg-naturals-purple/20 rounded-full blur-3xl animate-pulse" />
-            <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-lavender/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+            {/* Ambient Glows */}
+            <div className="absolute top-1/4 -left-10 w-64 h-64 bg-naturals-purple/10 rounded-full blur-[100px] pointer-events-none" />
+            <div className="absolute bottom-1/4 right-20 w-64 h-64 bg-white/40 rounded-full blur-[100px] pointer-events-none" />
           </motion.div>
+          
         </div>
       </section>
 
@@ -177,6 +220,7 @@ export default function LandingPage() {
                 <h2 className="text-4xl md:text-6xl font-black italic text-deep-grape mb-4 tracking-tighter">Services Offered</h2>
                 <p className="text-xs font-black uppercase tracking-[0.3em] text-deep-grape/40">Select a category to explore our protocols</p>
               </div>
+<<<<<<< HEAD
               <div className="relative w-full max-w-md">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-deep-grape/20" />
                 <input 
@@ -192,6 +236,10 @@ export default function LandingPage() {
               </div>
               <Link href="/login" className="hidden md:flex px-8 py-4 bg-white border border-black/5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-naturals-purple hover:text-white transition-all shadow-sm">
                 Book Your Session
+=======
+               <Link href="/login" className="hidden md:flex px-10 py-5 bg-[#8E3E96] text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-[#6B2D73] transition-all shadow-2xl shadow-[#8E3E96]/20">
+                Book Session Now
+>>>>>>> 23954c1e46a4e47dd30c14886f58395dfac1367e
               </Link>
             </div>
 
@@ -405,7 +453,10 @@ export default function LandingPage() {
                         </div>
                      </div>
                   </div>
-                  <Link href="/login" className="px-12 py-6 bg-white text-deep-grape rounded-3xl font-black text-sm uppercase tracking-[0.2em] hover:bg-naturals-purple hover:text-white transition-all shadow-2xl shrink-0">
+                  <Link 
+                    href={`/dashboard/booking?service=${encodeURIComponent('Anti-Dandruff Hair Spa')}&discount=500`}
+                    className="px-12 py-6 bg-[#8E3E96] text-white rounded-3xl font-black text-sm uppercase tracking-[0.2em] hover:bg-[#6B2D73] transition-all shadow-2xl shrink-0"
+                  >
                      Claim Voucher
                   </Link>
                </div>
@@ -438,7 +489,10 @@ export default function LandingPage() {
                         </div>
                      </div>
                   </div>
-                  <Link href="/login" className="px-12 py-6 bg-deep-grape text-white rounded-3xl font-black text-sm uppercase tracking-[0.2em] hover:bg-naturals-purple transition-all shadow-2xl shrink-0">
+                  <Link 
+                    href={`/dashboard/booking?service=${encodeURIComponent('Microdermabrasion')}&discount=1000`}
+                    className="px-12 py-6 bg-[#8E3E96] text-white rounded-3xl font-black text-sm uppercase tracking-[0.2em] hover:bg-[#6B2D73] transition-all shadow-2xl shrink-0"
+                  >
                      Claim Voucher
                   </Link>
                </div>
@@ -458,7 +512,7 @@ export default function LandingPage() {
                 Join thousands of customers experiencing the precision of Naturals AI.
               </p>
               <div className="flex flex-col sm:flex-row gap-8 justify-center items-center">
-                 <Link href="/login" className="px-12 py-6 bg-white text-deep-grape rounded-3xl font-black text-sm uppercase tracking-[0.2em] shadow-2xl hover:scale-105 active:scale-95 transition-all">
+                 <Link href="/login" className="px-12 py-6 bg-[#8E3E96] text-white rounded-3xl font-black text-sm uppercase tracking-[0.2em] shadow-2xl hover:scale-105 active:scale-95 hover:bg-[#6B2D73] transition-all">
                     Experience Naturals AI
                  </Link>
               </div>

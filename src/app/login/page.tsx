@@ -140,7 +140,7 @@ function CustomerLoginForm() {
             type="button"
             onClick={handleGoogleSignIn}
             disabled={isSubmitting}
-            className="w-full py-5 bg-white border border-black/5 text-deep-grape font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-gray-50 hover:shadow-xl transition-all flex items-center justify-center gap-4 disabled:opacity-50"
+            className="w-full py-5 bg-[#8E3E96] text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-[#6B2D73] hover:shadow-xl shadow-md transition-all flex items-center justify-center gap-4 disabled:opacity-50"
           >
             <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M23.766 12.2764C23.766 11.4607 23.6999 10.6406 23.5588 9.83807H12.24V14.4591H18.7217C18.4528 15.9494 17.5885 17.2678 16.323 18.1056V21.1039H20.19C22.4608 19.0139 23.766 15.9274 23.766 12.2764Z" fill="#4285F4"/>
