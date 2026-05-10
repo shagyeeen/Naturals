@@ -401,17 +401,51 @@ export default function StaffDashboard() {
 
   return (
     <div className="space-y-8">
+      {/* Stylist Banner */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full h-48 rounded-[2.5rem] relative overflow-hidden shadow-2xl mb-8 group"
+      >
+        <div 
+          className="absolute inset-0 z-0 transition-transform duration-1000"
+          style={{ 
+            backgroundImage: 'url(/banner.png)', 
+            backgroundSize: 'cover', 
+            backgroundPosition: 'center' 
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-deep-grape/90 via-deep-grape/40 to-transparent z-1" />
+        
+        {/* Shine Effect */}
+        <div className="absolute inset-0 z-2 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
+          <div className="absolute inset-0 transform -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-[-25deg]" />
+        </div>
+
+        <div className="relative z-10 h-full flex flex-col justify-center px-12">
+           <div className="flex items-center gap-4 mb-2">
+              <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
+                 <Scissors className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-white/60 text-[10px] font-black uppercase tracking-[0.3em]">
+                 {isAdmin ? "Management Center" : isFranchiseOwner ? "Franchise Oversight" : isManager ? "Branch Operations" : "Specialist Terminal"}
+              </span>
+           </div>
+           <h2 className="text-4xl font-black text-white italic tracking-tight drop-shadow-lg">
+             {isAdmin ? "Central Command" : isFranchiseOwner ? "Executive Portal" : isManager ? "Operations Hub" : "Stylist Workspace"}
+           </h2>
+           <p className="text-white/40 text-[9px] font-bold uppercase tracking-widest mt-2">
+              Authorized {isAdmin ? "Administrator" : isFranchiseOwner ? "Owner" : isManager ? "Manager" : "Stylist"} Access Only
+           </p>
+        </div>
+      </motion.div>
+
       <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-6">
         <div>
-          <h2 className="text-3xl font-black text-deep-grape italic tracking-tight">
-            {isAdmin ? "Management Center" : 
-             isFranchiseOwner ? "Franchise Oversight" :
-             isManager ? "Branch Operations" :
-             isStylist ? "Stylist Terminal" : "Staff Portal"}
+          {/* Keep original titles for structure but make them subtle since banner is above */}
+          <h2 className="text-xl font-black text-deep-grape italic tracking-tight opacity-0 h-0 overflow-hidden">
+            Dashboard
           </h2>
-          <p className="text-deep-grape/60 text-xs font-bold uppercase tracking-widest mt-1 italic">
-            Authorized {isAdmin ? "Administrator" : isFranchiseOwner ? "Owner" : isManager ? "Manager" : "Stylist"} Dashboard
-          </p>
         </div>
         
         <div className="flex flex-wrap gap-3">

@@ -23,7 +23,9 @@ import {
   Bot,
   History,
   CalendarCheck,
-  Star
+  Star,
+  MapPin,
+  ChevronDown
 } from "lucide-react";
 import { Tooltip } from "@/components/Tooltip";
 import Image from "next/image";
@@ -48,6 +50,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [upcomingCount, setUpcomingCount] = useState(0);
   const [isNotificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isBranchSelectorOpen, setBranchSelectorOpen] = useState(false);
+  const [availableBranches, setAvailableBranches] = useState<string[]>([]);
+  const [selectedBranch, setSelectedBranch] = useState("Adyar Branch");
 
   // Use the verified role flags from the auth context
   const userRole = isAdmin ? "admin" : (profile?.role || "customer");
@@ -99,6 +105,39 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       generateNotifications();
     }
   }, [upcomingCount, user, loading]);
+
+  useEffect(() => {
+    const savedBranch = localStorage.getItem('selectedBranch');
+    if (savedBranch) setSelectedBranch(savedBranch);
+
+    const fetchBranches = async () => {
+      // Fetch unique locations from active users as the source of truth for branches
+      const { data } = await supabase
+        .from('users')
+        .select('location')
+        .not('location', 'is', null)
+        .eq('is_active', true);
+
+      if (data && data.length > 0) {
+        // Force unique list with aggressive trimming and filtering
+        const uniqueNames = Array.from(new Set(data
+          .map(u => (u.location || '').trim())
+          .filter(loc => loc.length > 0)
+          .map(loc => loc + (loc.toLowerCase().includes('branch') ? '' : ' Branch'))
+        ));
+        setAvailableBranches(uniqueNames);
+      }
+    };
+    fetchBranches();
+  }, []);
+
+  const handleBranchChange = (branch: string) => {
+    setSelectedBranch(branch);
+    localStorage.setItem('selectedBranch', branch);
+    setBranchSelectorOpen(false);
+    // Refresh page or trigger data update if needed
+    window.dispatchEvent(new CustomEvent('branchChanged', { detail: branch }));
+  };
 
   useEffect(() => {
     if (!loading && !user) {
@@ -254,11 +293,38 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <Menu className="w-5 h-5" />
               </button>
               
-              <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-naturals-purple/5 border border-naturals-purple/10">
-                <div className="w-1.5 h-1.5 rounded-full bg-naturals-purple animate-pulse" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-naturals-purple italic">
-                  {isAdmin ? "Central Command" : (profile?.branch_name || (isFranchiseOwner ? "Adayar Branch" : "Adayar Branch"))}
-                </span>
+              <div className="relative">
+                <button 
+                  onClick={() => setBranchSelectorOpen(!isBranchSelectorOpen)}
+                  className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-naturals-purple/5 border border-naturals-purple/10 hover:bg-naturals-purple hover:text-white transition-all group cursor-pointer"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-naturals-purple group-hover:text-white" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-naturals-purple italic group-hover:text-white">
+                    {isAdmin ? "Central Command" : (selectedBranch || profile?.branch_name || "Adyar Branch")}
+                  </span>
+                  <ChevronDown className={`w-3 h-3 text-naturals-purple/30 group-hover:text-white transition-transform ${isBranchSelectorOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {isBranchSelectorOpen && (
+                  <div className="absolute top-full left-0 mt-4 w-56 bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-black/5 z-[100] p-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-deep-grape/30 mb-3 px-2">Switch Branch</p>
+                    <div className="space-y-1">
+                      {availableBranches.map((branch, idx) => (
+                        <button
+                          key={`branch-selector-${branch.toLowerCase().replace(/\s+/g, '-')}-${idx}`}
+                          onClick={() => handleBranchChange(branch)}
+                          className={`w-full text-left px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                            selectedBranch === branch 
+                              ? 'bg-naturals-purple text-white shadow-lg shadow-naturals-purple/20' 
+                              : 'text-deep-grape/60 hover:bg-naturals-purple/5 hover:text-naturals-purple'
+                          }`}
+                        >
+                          {branch}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -312,7 +378,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div className="flex items-center gap-4 pl-6 border-l border-black/5">
                 <div className="text-right hidden sm:block">
                   <p className="text-[10px] font-black uppercase tracking-widest opacity-30 leading-none mb-1 text-right">
-                    {isAdmin ? "Command Center" : (profile?.branch_name || (isFranchiseOwner ? "Adayar Branch" : "Adayar Branch"))}
+                    {isAdmin ? "Command Center" : (selectedBranch || profile?.branch_name || "Adyar Branch")}
                   </p>
                   <p className="text-[11px] font-black text-deep-grape italic text-right">
                     {isAdmin ? "ADMINISTRATOR" : (profile?.full_name?.toUpperCase() || customerProfile?.full_name?.toUpperCase() || (user?.displayName?.toUpperCase()) || "GUEST")}

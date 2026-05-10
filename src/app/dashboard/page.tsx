@@ -81,51 +81,92 @@ function CustomerOverview({ customerProfile }: { customerProfile: any }) {
       {/* Primary Action: Book Now */}
       <motion.div 
         whileHover={{ y: -5 }}
-        className="md:col-span-2 bg-naturals-purple rounded-[3rem] p-10 text-white relative overflow-hidden shadow-2xl shadow-naturals-purple/30 group"
+        className="md:col-span-2 rounded-[3rem] p-10 text-white relative overflow-hidden shadow-2xl shadow-black/20 group min-h-[350px] flex flex-col"
       >
-        <div className="absolute top-[-50px] right-[-50px] w-64 h-64 bg-white/10 rounded-full blur-[80px]" />
-        <div className="relative z-10 h-full flex flex-col justify-between">
+        {/* Background Image with Overlay */}
+        <div 
+          className="absolute inset-0 z-0 transition-transform duration-700"
+          style={{ 
+            backgroundImage: 'url(/banner.png)', 
+            backgroundSize: 'cover', 
+            backgroundPosition: 'center' 
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-naturals-purple/80 via-naturals-purple/40 to-transparent z-1" />
+        <div className="absolute inset-0 bg-black/20 z-1" />
+
+        {/* Shine Effect */}
+        <div className="absolute inset-0 z-2 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
+          <div className="absolute inset-0 transform -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-[-25deg]" />
+        </div>
+
+        <div className="relative z-10 h-full flex flex-col justify-between flex-grow">
            <div>
-              <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-xl flex items-center justify-center mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-xl flex items-center justify-center mb-6 border border-white/30">
                  <Calendar className="w-6 h-6" />
               </div>
-              <h2 className="text-3xl font-black italic mb-4">Book Your Next Look</h2>
-              <p className="text-white/60 text-xs font-bold uppercase tracking-widest max-w-xs leading-relaxed">
+              <h2 className="text-4xl font-black italic mb-4 drop-shadow-lg">Book Your Next Look</h2>
+              <p className="text-white/90 text-xs font-bold uppercase tracking-widest max-w-xs leading-relaxed drop-shadow-md">
                 Choose from our elite stylists and signature services.
               </p>
            </div>
-           <Link href="/dashboard/booking" className="mt-12 inline-flex items-center gap-3 px-8 py-4 bg-white text-naturals-purple rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-lavender transition-all w-fit">
+           <Link href="/dashboard/booking" className="mt-12 inline-flex items-center gap-3 px-8 py-4 bg-white text-naturals-purple rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-lavender transition-all w-fit shadow-xl hover:scale-105">
               Schedule Appointment <ArrowRight className="w-4 h-4" />
            </Link>
         </div>
-        <Scissors className="absolute bottom-[-20px] right-[-10px] w-48 h-48 text-white/5 rotate-[15deg] group-hover:rotate-[25deg] transition-transform duration-700" />
       </motion.div>
 
       {/* Quick Stats Sidebar */}
       <div className="space-y-8">
-         <motion.div whileHover={{ scale: 1.02 }} className="bg-white border border-black/5 rounded-[2.5rem] p-8 shadow-xl shadow-black/5">
-            <div className="flex items-center justify-between mb-6">
-               <div className="w-10 h-10 rounded-xl bg-lavender/50 text-naturals-purple flex items-center justify-center">
-                  <Star className="w-5 h-5" />
-               </div>
-               <span className="text-[10px] font-black text-naturals-purple bg-naturals-purple/10 px-3 py-1 rounded-full uppercase">Loyalty</span>
+         <motion.div 
+           whileHover={{ scale: 1.02, y: -5 }} 
+           className="bg-[#E2E2E2] border border-white/20 rounded-[2.5rem] p-8 shadow-2xl shadow-black/10 relative overflow-hidden group/card"
+         >
+            {/* Silver Metallic Texture & Shine */}
+            <div className="absolute inset-0 z-0 opacity-40 bg-gradient-to-br from-[#f5f5f5] via-[#c0c0c0] to-[#e0e0e0]" />
+            <div className="absolute inset-0 opacity-[0.15] pointer-events-none z-1" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }} />
+            <div className="absolute inset-0 z-1 opacity-20" style={{ backgroundImage: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%)', backgroundSize: '200% 100%' }} />
+            
+            <div className="absolute inset-0 z-2 opacity-0 group-hover/card:opacity-100 transition-opacity duration-700 pointer-events-none">
+              <div className="absolute inset-0 transform -translate-x-full group-hover/card:translate-x-full transition-transform duration-1000 ease-in-out bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-[-25deg]" />
             </div>
-            <p className="text-[8px] font-black text-deep-grape/30 uppercase tracking-[0.2em] mb-1">Membership</p>
-            <h3 className="text-xl font-black text-deep-grape italic uppercase">Platinum Elite</h3>
+
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-6">
+                 <div className="w-10 h-10 rounded-xl bg-white/40 backdrop-blur-md text-deep-grape flex items-center justify-center shadow-lg border border-white/50">
+                    <Star className="w-5 h-5 fill-deep-grape/10" />
+                 </div>
+                 <span className="text-[10px] font-black text-deep-grape bg-white/30 backdrop-blur-md px-4 py-1.5 rounded-full uppercase tracking-widest border border-white/40 shadow-sm">Loyalty</span>
+              </div>
+              <p className="text-[8px] font-black text-deep-grape/40 uppercase tracking-[0.3em] mb-1">Membership</p>
+              <h3 className="text-xl font-black text-deep-grape italic uppercase tracking-tight drop-shadow-sm">Platinum Elite</h3>
+            </div>
          </motion.div>
 
-         <motion.div whileHover={{ scale: 1.02 }} className="bg-deep-grape rounded-[2.5rem] p-8 text-white shadow-2xl">
-            <div className="flex items-center justify-between mb-6">
-               <div className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center">
-                  <Target className="w-5 h-5" />
-               </div>
-               <ChevronRight className="w-4 h-4 text-white/30" />
+         <motion.div 
+           whileHover={{ scale: 1.02, y: -5 }} 
+           className="bg-deep-grape rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group/card border border-white/5"
+         >
+            {/* Digital Texture & Shine */}
+            <div className="absolute inset-0 opacity-[0.1] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.4' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='0.5'/%3E%3C/g%3E%3C/svg%3E")` }} />
+            <div className="absolute inset-0 bg-gradient-to-br from-deep-grape via-naturals-purple/20 to-black/40 z-0" />
+            <div className="absolute inset-0 z-2 opacity-0 group-hover/card:opacity-100 transition-opacity duration-700 pointer-events-none">
+              <div className="absolute inset-0 transform -translate-x-full group-hover/card:translate-x-full transition-transform duration-1000 ease-in-out bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-[-25deg]" />
             </div>
-            <p className="text-[8px] font-black text-white/40 uppercase tracking-[0.2em] mb-1">Style Insight</p>
-            <h3 className="text-xl font-black italic uppercase">Beauty Passport</h3>
-            <Link href="/dashboard/passport" className="mt-6 text-[9px] font-black uppercase tracking-widest text-naturals-purple flex items-center gap-2">
-               View Profile
-            </Link>
+
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-6">
+                 <div className="w-10 h-10 rounded-xl bg-white/10 text-white flex items-center justify-center border border-white/10 shadow-lg">
+                    <Target className="w-5 h-5" />
+                 </div>
+                 <ChevronRight className="w-4 h-4 text-white/30 group-hover/card:translate-x-1 transition-transform" />
+              </div>
+              <p className="text-[8px] font-black text-white/40 uppercase tracking-[0.3em] mb-1">Style Insight</p>
+              <h3 className="text-xl font-black italic uppercase tracking-tight">Beauty Passport</h3>
+              <Link href="/dashboard/passport" className="mt-6 text-[9px] font-black uppercase tracking-widest text-naturals-purple flex items-center gap-2 group/link">
+                 View Profile <div className="w-1 h-1 bg-naturals-purple rounded-full animate-pulse" />
+              </Link>
+            </div>
          </motion.div>
       </div>
 

@@ -29,10 +29,11 @@ export default function MyAppointments() {
   const router = useRouter();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | AppointmentStatus>("all");
+  const [filter, setFilter] = useState<AppointmentStatus | "all">("confirmed");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedAppt, setSelectedAppt] = useState<Appointment | null>(null);
   const [isReviewModalOpen, setReviewModalOpen] = useState(false);
+  const [isDetailsModalOpen, setDetailsModalOpen] = useState(false);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewText, setReviewText] = useState("");
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
@@ -55,7 +56,10 @@ export default function MyAppointments() {
         .select(`
           *,
           stylist:stylist_id(id, full_name, phone),
-          service:service_id(id, name, duration_minutes, price, category)
+          service:service_id(id, name, duration_minutes, price, category),
+          appointment_services(
+            service:service_id(id, name, duration_minutes, price, category)
+          )
         `)
         .eq('customer_id', customerProfile.id)
         .order('appointment_date', { ascending: false })
@@ -74,6 +78,7 @@ export default function MyAppointments() {
     const matchesFilter = filter === "all" || appt.status === filter;
     const matchesSearch = 
       appt.service?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      appt.appointment_services?.some(s => s.service.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
       appt.stylist?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       appt.status.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesFilter && matchesSearch;
@@ -192,7 +197,7 @@ export default function MyAppointments() {
 
       {/* Tabs / Filters */}
       <div className="flex items-center gap-2 bg-warm-grey/50 p-1.5 rounded-[1.5rem] border border-naturals-purple/5 w-fit">
-        {(["all", "confirmed", "completed", "cancelled"] as const).map((tab) => (
+        {(["confirmed", "completed", "cancelled"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setFilter(tab)}
@@ -244,11 +249,17 @@ export default function MyAppointments() {
                     </span>
                   </div>
 
-                  <h3 className="text-xl font-black text-deep-grape italic mb-1 group-hover:text-naturals-purple transition-colors">
-                    {appt.service?.name || "Premium Service"}
+                  <h3 className="text-xl font-black text-deep-grape italic mb-1 group-hover:text-naturals-purple transition-colors line-clamp-2">
+                    {appt.appointment_services && appt.appointment_services.length > 0
+                      ? appt.appointment_services.map(s => s.service.name).join(' + ')
+                      : appt.service?.name || "Premium Service"}
                   </h3>
                   <p className="text-[10px] font-black text-deep-grape/40 uppercase tracking-[0.2em] mb-6">
-                    {appt.service?.category || "Salon"} • {appt.service?.duration_minutes || 60} Mins
+                    {appt.appointment_services && appt.appointment_services.length > 0
+                      ? `${appt.appointment_services[0].service.category || 'Salon'}`
+                      : appt.service?.category || "Salon"} • {appt.appointment_services && appt.appointment_services.length > 0
+                        ? appt.appointment_services.reduce((acc, curr) => acc + (curr.service.duration_minutes || 0), 0)
+                        : appt.service?.duration_minutes || 60} Mins
                   </p>
 
                   <div className="space-y-4 mb-8">
@@ -354,7 +365,10 @@ export default function MyAppointments() {
                     </button>
                   ) : (
                     <button 
-                      onClick={() => alert("Viewing full details...")}
+                      onClick={() => {
+                        setSelectedAppt(appt);
+                        setDetailsModalOpen(true);
+                      }}
                       className="flex-1 py-3 bg-deep-grape text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:scale-105 transition-transform"
                     >
                       View Details
@@ -449,6 +463,120 @@ export default function MyAppointments() {
                     {isSubmittingReview ? "SUBMITTING..." : "SUBMIT REVIEW"}
                   </button>
                 </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Details Modal */}
+      <AnimatePresence>
+        {isDetailsModalOpen && selectedAppt && (
+          <div className="fixed inset-0 z-50 flex items-start justify-center p-6 overflow-y-auto pt-24">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-deep-grape/40 backdrop-blur-md" 
+              onClick={() => setDetailsModalOpen(false)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="w-full max-w-lg bg-white rounded-[2.5rem] p-8 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.3)] relative z-10 border border-black/5 max-h-[85vh] overflow-y-auto"
+            >
+              <div className="flex justify-between items-center mb-8 pb-6 border-b border-black/5">
+                <div>
+                  <h3 className="text-3xl font-black text-deep-grape italic tracking-tighter mb-0.5">Session Details</h3>
+                  <p className="text-[9px] font-black uppercase tracking-[0.2em] text-naturals-purple/60">Service Analysis</p>
+                </div>
+                <button 
+                  onClick={() => setDetailsModalOpen(false)} 
+                  className="w-10 h-10 bg-warm-grey/50 rounded-xl flex items-center justify-center hover:bg-red-500 hover:text-white transition-all group shadow-sm shrink-0"
+                >
+                  <XCircle className="w-5 h-5 text-deep-grape/40 group-hover:text-white transition-colors" />
+                </button>
+              </div>
+              
+              <div className="space-y-8">
+                <div className="bg-warm-grey/30 p-6 rounded-[2rem] border border-black/5">
+                  <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-[0.2em] mb-4">Included Services</p>
+                  <div className="space-y-3">
+                    {selectedAppt.appointment_services?.map((as, i) => (
+                      <div key={i} className="flex justify-between items-center p-4 bg-white rounded-2xl border border-black/5 shadow-sm group/item hover:border-naturals-purple/20 transition-all">
+                        <div>
+                          <p className="text-xs font-black text-deep-grape italic uppercase tracking-tight">{as.service.name}</p>
+                          <p className="text-[8px] font-black text-deep-grape/20 uppercase tracking-[0.2em]">{as.service.category}</p>
+                        </div>
+                        <p className="text-xs font-black text-naturals-purple tracking-tighter">₹{as.service.price}</p>
+                      </div>
+                    )) || (
+                      <div className="flex justify-between items-center p-6 bg-white rounded-3xl border border-black/5 shadow-sm">
+                        <div>
+                          <p className="text-sm font-black text-deep-grape italic uppercase tracking-tight">{selectedAppt.service?.name}</p>
+                          <p className="text-[9px] font-black text-deep-grape/20 uppercase tracking-[0.2em]">{selectedAppt.service?.category || 'Service'}</p>
+                        </div>
+                        <p className="text-sm font-black text-naturals-purple tracking-tighter">₹{selectedAppt.service?.price}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-6 bg-warm-grey/30 border border-black/5 rounded-[2rem] relative overflow-hidden group/box">
+                    <p className="text-[9px] font-black text-deep-grape/30 uppercase tracking-[0.3em] mb-1">Total Amount</p>
+                    <p className="text-2xl font-black text-deep-grape italic tracking-tight">₹{selectedAppt.total_amount || 0}</p>
+                    <CreditCard className="absolute top-4 right-6 w-8 h-8 text-deep-grape/5 group-hover/box:text-naturals-purple/10 transition-colors" />
+                  </div>
+                  <div className="p-6 bg-warm-grey/30 border border-black/5 rounded-[2rem] relative overflow-hidden group/box">
+                    <p className="text-[9px] font-black text-deep-grape/30 uppercase tracking-[0.3em] mb-1">Service Duration</p>
+                    <p className="text-2xl font-black text-deep-grape italic tracking-tight">
+                      {selectedAppt.appointment_services?.reduce((acc, curr) => acc + (curr.service.duration_minutes || 0), 0) || selectedAppt.service?.duration_minutes || 60}m
+                    </p>
+                    <Clock className="absolute top-4 right-6 w-8 h-8 text-deep-grape/5 group-hover/box:text-naturals-purple/10 transition-colors" />
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-2">
+                  <div className="flex items-center gap-4 p-4 bg-white rounded-[1.5rem] border border-black/5 shadow-sm group hover:border-naturals-purple/20 transition-all">
+                    <div className="w-12 h-12 rounded-xl bg-naturals-purple/5 flex items-center justify-center text-naturals-purple shadow-inner">
+                      <Clock className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-black text-deep-grape/20 uppercase tracking-[0.2em] mb-0.5">Timeline</p>
+                      <p className="text-xs font-black text-deep-grape italic tracking-tight">
+                        {new Date(selectedAppt.appointment_date).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
+                        <span className="mx-2 opacity-10">|</span>
+                        {selectedAppt.start_time.slice(0, 5)} - {selectedAppt.end_time.slice(0, 5)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 p-4 bg-white rounded-[1.5rem] border border-black/5 shadow-sm group hover:border-naturals-purple/20 transition-all">
+                    <div className="w-12 h-12 rounded-xl bg-naturals-purple/5 flex items-center justify-center text-naturals-purple shadow-inner">
+                      <User className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-black text-deep-grape/20 uppercase tracking-[0.2em] mb-0.5">Assigned Stylist</p>
+                      <p className="text-xs font-black text-deep-grape italic tracking-tight">{selectedAppt.stylist?.full_name || "Any Available"}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {selectedAppt.notes && (
+                  <div className="p-5 bg-deep-grape/5 rounded-[1.5rem] border border-black/5">
+                    <p className="text-[9px] font-black text-deep-grape/40 uppercase tracking-widest mb-1">Technical Notes</p>
+                    <p className="text-[10px] font-bold text-deep-grape/60 leading-relaxed italic">{selectedAppt.notes}</p>
+                  </div>
+                )}
+
+                <button 
+                  onClick={() => setDetailsModalOpen(false)}
+                  className="w-full py-4 bg-deep-grape text-white font-black text-[10px] uppercase tracking-[0.3em] rounded-xl transition-all hover:bg-naturals-purple shadow-lg"
+                >
+                  Close Details
+                </button>
               </div>
             </motion.div>
           </div>

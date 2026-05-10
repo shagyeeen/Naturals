@@ -5,7 +5,7 @@ import { supabase, Stylist, Service, Appointment } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Clock, User, Scissors, CreditCard, Check } from "lucide-react";
+import { Calendar, Clock, User, Scissors, CreditCard, Check, Search, Award, Star } from "lucide-react";
 
 interface TimeSlot {
   start_time: string;
@@ -19,12 +19,19 @@ export default function BookingPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [selectedStylist, setSelectedStylist] = useState<Stylist | null>(null);
   const [selectedServices, setSelectedServices] = useState<Service[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  });
   const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [serviceCategory, setServiceCategory] = useState<string>('All');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
     fetchStylists();
@@ -37,12 +44,31 @@ export default function BookingPage() {
     }
   }, [selectedStylist, selectedServices, selectedDate]);
 
+  useEffect(() => {
+    const handleBranchChange = () => {
+      fetchStylists();
+      setSelectedStylist(null);
+      setSelectedSlot(null);
+    };
+    window.addEventListener('branchChanged', handleBranchChange);
+    return () => window.removeEventListener('branchChanged', handleBranchChange);
+  }, []);
+
   const fetchStylists = async () => {
     console.log('Fetching stylists...');
-    const { data, error } = await supabase
+    const savedBranch = localStorage.getItem('selectedBranch')?.replace(' Branch', '').trim();
+    
+    let query = supabase
       .from('stylists')
       .select('*')
       .eq('is_active', true);
+    
+    if (savedBranch) {
+      console.log('Filtering by branch:', savedBranch);
+      query = query.ilike('branch_location', `%${savedBranch}%`);
+    }
+
+    const { data, error } = await query;
     
     if (error) {
       console.error('Stylist Fetch Error:', error);
@@ -64,6 +90,10 @@ export default function BookingPage() {
     } else if (data) {
       console.log('Services Found:', data.length);
       setServices(data);
+      if (data.length > 0 && serviceCategory === 'All') {
+        const firstCat = data[0].category || 'General';
+        setServiceCategory(firstCat);
+      }
     }
   };
 
@@ -81,14 +111,20 @@ export default function BookingPage() {
       p_service_duration: totalDuration
     });
 
-    if (!error && data && data.length > 0) {
-      console.log('Intelligent scheduling active.');
-      setAvailableSlots(data);
+    if (!error && data) {
+      if (data.length > 0) {
+        console.log('Intelligent scheduling active.');
+        setAvailableSlots(data);
+      } else {
+        console.log('No slots available for the selected duration/specialist.');
+        setAvailableSlots([]);
+      }
     } else {
-      // Professional Fallback: Generate standard slots from 9 AM to 8 PM
+      if (error) console.error('Scheduling Intelligence Error:', error);
+      // Professional Fallback: Generate standard slots from 10 AM to 7 PM
       console.log('Scheduling through standard availability protocol...');
       const fallbackSlots: TimeSlot[] = [];
-      for (let h = 9; h < 20; h++) {
+      for (let h = 10; h < 19; h++) {
         const hour = h.toString().padStart(2, '0');
         fallbackSlots.push({ start_time: `${hour}:00:00`, end_time: `${hour}:30:00` });
         fallbackSlots.push({ start_time: `${hour}:30:00`, end_time: `${(h+1).toString().padStart(2, '0')}:00:00` });
@@ -129,23 +165,36 @@ export default function BookingPage() {
     const endTime = new Date(`2000-01-01 ${selectedSlot.start_time}`);
     endTime.setMinutes(endTime.getMinutes() + totalDuration);
 
-    const { error } = await supabase.from('appointments').insert({
+    const { data: appointmentData, error: appointmentError } = await supabase.from('appointments').insert({
       customer_id: customerProfile.id,
       stylist_id: selectedStylist.id,
-      service_id: selectedServices[0].id, // Primary service ID
-      notes: `Multiple Services: ${serviceNames}. Total Duration: ${totalDuration} mins.`,
+      service_id: selectedServices[0].id, // Keep for compatibility
+      notes: `Protocol Selections: ${serviceNames}. Session Window: ${totalDuration} mins.`,
       appointment_date: selectedDate,
       start_time: selectedSlot.start_time,
       end_time: endTime.toTimeString().slice(0, 8),
       status: 'confirmed',
       total_amount: totalPrice
-    });
+    }).select().single();
 
-    if (error) {
-      console.error('Deployment Failure:', error);
-      alert(`System Error: ${error.message}. Please verify Supabase RLS policies.`);
-    } else {
-      console.log('Appointment Successfully Registered.');
+    if (appointmentError) {
+      console.error('Deployment Failure:', appointmentError);
+      alert(`System Error: ${appointmentError.message}. Please verify Supabase RLS policies.`);
+    } else if (appointmentData) {
+      console.log('Main Appointment Registry Confirmed. Synchronizing individual service nodes...');
+      
+      const serviceInserts = selectedServices.map(s => ({
+        appointment_id: appointmentData.id,
+        service_id: s.id
+      }));
+
+      const { error: servicesError } = await supabase.from('appointment_services').insert(serviceInserts);
+      
+      if (servicesError) {
+        console.error('Service Sync Failure:', servicesError);
+      }
+
+      console.log('Appointment Successfully Registered with Multiple Services.');
       setSuccess(true);
       if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
       setTimeout(() => setSuccess(false), 3000);
@@ -158,8 +207,11 @@ export default function BookingPage() {
     const today = new Date();
     for (let i = 0; i < 14; i++) {
       const date = new Date(today);
-      date.setDate(date.getDate() + i);
-      dates.push(date.toISOString().split('T')[0]);
+      date.setDate(today.getDate() + i);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      dates.push(`${year}-${month}-${day}`);
     }
     return dates;
   };
@@ -219,15 +271,34 @@ export default function BookingPage() {
             <button
               key={stylist.id}
               onClick={() => { setSelectedStylist(stylist); setSelectedSlot(null); }}
-              className={`p-4 rounded-2xl border-2 transition-all text-left ${
+              className={`p-5 rounded-[2rem] transition-all text-left relative overflow-hidden group ${
                 selectedStylist?.id === stylist.id
-                  ? 'border-naturals-purple bg-naturals-purple/5'
-                  : 'border-black/5 hover:border-naturals-purple/30'
+                  ? 'bg-naturals-purple/5 ring-2 ring-naturals-purple shadow-xl shadow-naturals-purple/10 scale-[1.02] z-10'
+                  : 'bg-black/[0.04] border border-black/[0.05] hover:bg-naturals-purple/10 hover:border-naturals-purple/30 hover:shadow-lg'
               }`}
             >
-              <div className="w-12 h-12 rounded-xl bg-warm-grey mb-3" />
-              <p className="font-black text-sm text-deep-grape">{stylist.full_name}</p>
-              <p className="text-xs text-deep-grape/50">{stylist.experience_years} years exp</p>
+              <div className="flex items-start justify-between mb-4">
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm transition-colors ${
+                  selectedStylist?.id === stylist.id ? 'bg-naturals-purple/5 border border-naturals-purple/10' : 'bg-white border border-black/[0.05]'
+                }`}>
+                  <User className={`w-6 h-6 transition-colors ${selectedStylist?.id === stylist.id ? 'text-naturals-purple' : 'text-deep-grape/10'}`} />
+                </div>
+                {selectedStylist?.id === stylist.id && (
+                  <div className="w-6 h-6 rounded-full bg-naturals-purple flex items-center justify-center shadow-lg shadow-naturals-purple/20">
+                    <Check className="w-3.5 h-3.5 text-white" />
+                  </div>
+                )}
+              </div>
+              
+              <h4 className="font-black text-sm text-deep-grape mb-1">{stylist.full_name}</h4>
+              <p className="text-[8px] font-black uppercase tracking-widest text-naturals-purple mb-3">{stylist.specialty || 'Master Stylist'}</p>
+              
+              <div className={`flex items-center gap-1.5 py-1.5 px-3 rounded-xl border transition-colors w-fit ${
+                selectedStylist?.id === stylist.id ? 'bg-naturals-purple/5 border-naturals-purple/10' : 'bg-white border-black/[0.03]'
+              }`}>
+                <Star className="w-2.5 h-2.5 text-amber-500 fill-amber-500" />
+                <span className="text-[9px] font-black text-deep-grape/40 uppercase tracking-tighter">{stylist.experience_years} YRS EXP</span>
+              </div>
             </button>
           ))}
         </div>
@@ -240,27 +311,41 @@ export default function BookingPage() {
             <h3 className="text-sm font-black uppercase tracking-widest text-deep-grape">Select Service</h3>
           </div>
           
-          <div className="flex items-center gap-2 bg-warm-grey/50 p-1 rounded-2xl border border-black/5 overflow-x-auto no-scrollbar">
-            {['All', ...Array.from(new Set(services.map(s => s.category || 'General')))].map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setServiceCategory(cat)}
-                className={`px-5 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
-                  serviceCategory === cat 
-                    ? 'bg-naturals-purple text-white shadow-lg' 
-                    : 'text-deep-grape/40 hover:text-deep-grape'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
+          <div className="flex flex-col md:flex-row items-center gap-4">
+            <div className="flex items-center gap-2 bg-warm-grey/50 p-1 rounded-2xl border border-black/5 overflow-x-auto no-scrollbar w-full md:w-auto">
+              {Array.from(new Set(services.map(s => s.category || 'General'))).map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setServiceCategory(cat)}
+                  className={`px-5 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                    serviceCategory === cat 
+                      ? 'bg-naturals-purple text-white shadow-lg' 
+                      : 'text-deep-grape/40 hover:text-deep-grape'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+            
+            <div className="relative w-full md:w-64 group">
+              <input 
+                type="text"
+                placeholder="SEARCH SERVICE..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-warm-grey/40 border border-black/5 rounded-2xl py-2 px-10 text-[9px] font-black uppercase tracking-widest focus:bg-white focus:border-naturals-purple transition-all outline-none"
+              />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-deep-grape/20 group-focus-within:text-naturals-purple transition-colors" />
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <AnimatePresence mode="popLayout">
             {services
               .filter(s => serviceCategory === 'All' || (s.category || 'General') === serviceCategory)
+              .filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()))
               .map((service) => {
                 const isSelected = selectedServices.some(s => s.id === service.id);
                 return (
@@ -278,7 +363,7 @@ export default function BookingPage() {
                       }
                       setSelectedSlot(null); 
                     }}
-                    className={`p-6 rounded-2xl border-2 transition-all text-left relative group ${
+                    className={`p-6 rounded-2xl border-2 transition-all text-left relative group aspect-[4/3] flex flex-col justify-between ${
                       isSelected
                         ? 'border-naturals-purple bg-naturals-purple/5 shadow-lg shadow-naturals-purple/5'
                         : 'border-black/5 hover:border-naturals-purple/30 bg-[#fafafa]/50'
@@ -343,6 +428,14 @@ export default function BookingPage() {
         {loading ? (
           <div className="text-center py-8">
             <div className="w-8 h-8 border-2 border-naturals-purple border-t-transparent rounded-full animate-spin mx-auto" />
+          </div>
+        ) : availableSlots.length === 0 ? (
+          <div className="text-center py-12 bg-warm-grey/20 rounded-[2rem] border border-black/5">
+            <Clock className="w-8 h-8 text-deep-grape/20 mx-auto mb-4" />
+            <p className="text-xs font-black uppercase tracking-widest text-deep-grape/40 italic">
+              Specialist Fully Booked or Duration Too Long for Available Windows
+            </p>
+            <p className="text-[10px] text-deep-grape/20 mt-2">Try another date or specialist for this protocol.</p>
           </div>
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">

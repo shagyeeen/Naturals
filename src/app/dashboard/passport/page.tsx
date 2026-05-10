@@ -21,7 +21,7 @@ export default function BeautyPassport() {
   const { profile, customerProfile } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [isScanning, setIsScanning] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(customerProfile);
   const [isSearching, setIsSearching] = useState(false);
   
   const [isEditingPreferences, setIsEditingPreferences] = useState(false);
@@ -29,21 +29,23 @@ export default function BeautyPassport() {
   const [draft, setDraft] = useState<Record<string, string | string[]>>({});
 
   useEffect(() => {
-    if (customerProfile) setSelectedCustomer(customerProfile);
-  }, [customerProfile]);
+    if (customerProfile && !selectedCustomer) {
+      setSelectedCustomer(customerProfile);
+    }
+  }, [customerProfile, selectedCustomer]);
 
-  const { preferences: dbPrefs, saving: isSaving, save: savePrefs } = usePreferences(selectedCustomer?.id);
+  const { preferences: dbPrefs, saving: isSaving, save: savePrefs } = usePreferences(selectedCustomer?.id || customerProfile?.id);
 
   // Sync draft from DB when preferences load
   const preferences: Record<string, string | string[]> = isEditingPreferences
     ? draft
     : {
-        hair_wash_preference:  dbPrefs?.hairwash_preference ?? '',
-        hairstyle_male:        (dbPrefs?.preferred_hairstyle && (selectedCustomer?.gender === 'male' || profile?.gender === 'male')) ? [dbPrefs.preferred_hairstyle] : [],
-        hairstyle_female:      (dbPrefs?.preferred_hairstyle && (selectedCustomer?.gender === 'female' || profile?.gender === 'female')) ? [dbPrefs.preferred_hairstyle] : [],
-        water_temp:            dbPrefs?.water_temperature ?? '',
-        scalp_massage:         dbPrefs?.scalp_massage_intensity ?? '',
-        conversation:          dbPrefs?.conversation_level ?? '',
+        hair_wash_preference:  dbPrefs?.hairwash_preference || '',
+        hairstyle_male:        (dbPrefs?.preferred_hairstyle && (selectedCustomer?.gender === 'male' || profile?.gender === 'male' || customerProfile?.gender === 'male')) ? [dbPrefs.preferred_hairstyle] : [],
+        hairstyle_female:      (dbPrefs?.preferred_hairstyle && (selectedCustomer?.gender === 'female' || profile?.gender === 'female' || customerProfile?.gender === 'female')) ? [dbPrefs.preferred_hairstyle] : [],
+        water_temp:            dbPrefs?.water_temperature || '',
+        scalp_massage:         dbPrefs?.scalp_massage_intensity || '',
+        conversation:          dbPrefs?.conversation_level || '',
       };
 
   const handleEditStart = () => {
@@ -104,16 +106,7 @@ export default function BeautyPassport() {
         </div>
         
         <div className="flex gap-4">
-           <form onSubmit={handleSearch} className="flex items-center bg-warm-grey/50 border border-black/5 px-4 py-2 rounded-xl focus-within:bg-white transition-all shadow-inner">
-             {isSearching ? <Loader2 className="w-4 h-4 text-naturals-purple animate-spin" /> : <Search className="w-4 h-4 text-deep-grape/30" />}
-             <input 
-              type="text" 
-              placeholder="CLIENT_ID / MOBILE_LINK" 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent border-none outline-none text-[10px] font-black tracking-widest px-3 w-48 text-deep-grape placeholder:text-deep-grape/30" 
-             />
-           </form>
+           {/* Search functionality removed as requested */}
         </div>
       </div>
 

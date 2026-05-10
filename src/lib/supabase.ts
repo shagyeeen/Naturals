@@ -77,6 +77,7 @@ export interface Stylist {
   email?: string
   gender?: Gender
   experience_years: number
+  specialty?: string
   is_active: boolean
   created_at: string
   updated_at: string
@@ -178,6 +179,7 @@ export interface Appointment {
   customer?: Pick<Customer, 'id' | 'full_name' | 'phone' | 'email' | 'customer_code'>
   stylist?: Pick<Stylist, 'id' | 'full_name' | 'phone'>
   service?: Pick<Service, 'id' | 'name' | 'duration_minutes' | 'price' | 'category'>
+  appointment_services?: { service: Pick<Service, 'id' | 'name' | 'duration_minutes' | 'price' | 'category'> }[]
 }
 
 export interface CustomerHistory {
