@@ -85,17 +85,17 @@ body {
 
 /* Custom scrollbar to match the theme */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--naturals-purple);
+  background: rgba(142, 62, 150, 0.2);
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--deep-grape);
+  background: var(--naturals-purple);
 }
 
 /* AOS Styles integration */

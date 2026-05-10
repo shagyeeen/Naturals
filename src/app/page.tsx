@@ -122,7 +122,7 @@ export default function LandingPage() {
                 Experience Naturals AI <ArrowRight className="w-4 h-4" />
               </Link>
               <a href="#services" className="px-8 py-4 bg-white text-[#2F0137] border border-[#2F0137]/10 rounded-2xl font-black text-xs uppercase tracking-[0.15em] hover:bg-[#2F0137]/5 transition-all flex items-center justify-center">
-                Explore Protocols
+                Explore Services
               </a>
             </div>
           </motion.div>
@@ -138,7 +138,7 @@ export default function LandingPage() {
                 src="/features/ai-diagnosis.png" 
                 alt="AI Diagnosis" 
                 fill 
-                className="object-cover object-center scale-105 group-hover:scale-100 transition-transform duration-[1.5s] ease-out"
+                className="object-cover object-top scale-105 group-hover:scale-100 transition-transform duration-[1.5s] ease-out"
                 priority
                />
                <div className="absolute inset-0 bg-gradient-to-r from-[#FDF9FF]/80 via-transparent to-transparent opacity-80" />
@@ -349,7 +349,7 @@ export default function LandingPage() {
                 initial={{ scale: 0.9, y: 20 }}
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.9, y: 20 }}
-                className="w-full max-w-xl bg-white rounded-[3rem] p-10 shadow-2xl relative overflow-hidden"
+                className="w-full max-w-lg bg-white rounded-[2rem] p-8 md:p-10 shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto custom-scrollbar"
                 onClick={e => e.stopPropagation()}
               >
                 <div className="absolute top-0 right-0 p-8">
@@ -369,7 +369,7 @@ export default function LandingPage() {
                     }`}>
                       {viewingService.category}
                     </div>
-                    <span className="text-[10px] font-black text-deep-grape/20 uppercase tracking-[0.3em]">• Professional Protocol</span>
+                    <span className="text-[10px] font-black text-deep-grape/20 uppercase tracking-[0.3em]">• Professional Service</span>
                 </div>
 
                 <h2 className="text-4xl font-black italic text-deep-grape mb-6 tracking-tight leading-none">
@@ -394,9 +394,9 @@ export default function LandingPage() {
                 </div>
 
                 <div className="mb-12">
-                   <h4 className="text-[10px] font-black uppercase tracking-widest text-deep-grape/40 mb-4 italic">Protocol Overview</h4>
+                   <h4 className="text-[10px] font-black uppercase tracking-widest text-deep-grape/40 mb-4 italic">Service Details</h4>
                    <p className="text-sm font-bold text-deep-grape/60 leading-relaxed italic">
-                     {viewingService.description || "Experience the pinnacle of salon precision. This professional protocol is designed by Naturals AI specialists to deliver optimal aesthetic results tailored to your unique features."}
+                     {viewingService.description || "Experience the pinnacle of salon precision. This professional service is designed by Naturals AI specialists to deliver optimal aesthetic results tailored to your unique features."}
                    </p>
                 </div>
 
@@ -436,7 +436,7 @@ export default function LandingPage() {
                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-12">
                   <div className="max-w-xl text-left">
                      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-naturals-purple text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-white/5">
-                       <Scissors className="w-3 h-3" /> Signature Protocol
+                       <Scissors className="w-3 h-3" /> Signature Service
                      </div>
                      <h3 className="text-4xl md:text-5xl font-black italic mb-6 tracking-tight">Hair Detox & Shine</h3>
                      <p className="text-sm font-bold text-white/40 uppercase tracking-widest leading-relaxed mb-8">

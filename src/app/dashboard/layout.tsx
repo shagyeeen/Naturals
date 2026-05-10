@@ -111,21 +111,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (savedBranch) setSelectedBranch(savedBranch);
 
     const fetchBranches = async () => {
-      // Fetch unique locations from active users as the source of truth for branches
+      // Fetch unique locations from stylists as the source of truth for branches
       const { data } = await supabase
-        .from('users')
-        .select('location')
-        .not('location', 'is', null)
+        .from('stylists')
+        .select('branch_location')
+        .not('branch_location', 'is', null)
         .eq('is_active', true);
 
       if (data && data.length > 0) {
         // Force unique list with aggressive trimming and filtering
         const uniqueNames = Array.from(new Set(data
-          .map(u => (u.location || '').trim())
+          .map(s => (s.branch_location || '').trim())
           .filter(loc => loc.length > 0)
           .map(loc => loc + (loc.toLowerCase().includes('branch') ? '' : ' Branch'))
         ));
         setAvailableBranches(uniqueNames);
+        if (!localStorage.getItem('selectedBranch') && uniqueNames.length > 0) {
+          setSelectedBranch(uniqueNames[0]);
+        }
       }
     };
     fetchBranches();
