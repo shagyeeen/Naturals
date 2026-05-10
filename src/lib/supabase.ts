@@ -127,6 +127,7 @@ export interface Service {
   duration_minutes: number
   price: number
   is_active: boolean
+  image_url?: string
   created_at: string
 }
 

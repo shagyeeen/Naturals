@@ -382,28 +382,62 @@ export default function BookingPage() {
                       }
                       setSelectedSlot(null); 
                     }}
-                    className={`p-6 rounded-2xl border-2 transition-all text-left relative group aspect-[4/3] flex flex-col justify-between ${
+                    className={`rounded-[2.5rem] border-2 transition-all text-left relative group aspect-[4/3] flex flex-col overflow-hidden ${
                       isSelected
-                        ? 'border-naturals-purple bg-naturals-purple/5 shadow-lg shadow-naturals-purple/5'
-                        : 'border-black/5 hover:border-naturals-purple/30 bg-[#fafafa]/50'
+                        ? 'border-naturals-purple shadow-2xl shadow-naturals-purple/20'
+                        : 'border-black/5 hover:border-naturals-purple/30'
                     }`}
                   >
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex-1">
-                        <span className="text-[8px] font-black uppercase tracking-widest text-naturals-purple/60 mb-1 block">{service.category}</span>
-                        <p className="font-black text-deep-grape text-sm leading-tight group-hover:text-naturals-purple transition-colors">{service.name}</p>
-                      </div>
-                      <p className="font-black text-naturals-purple text-lg">₹{service.price}</p>
+                    {/* Background Image with Overlay */}
+                    <div className="absolute inset-0 z-0">
+                      <img 
+                        src={service.image_url || '/placeholder-service.jpg'} 
+                        alt={service.name}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      />
+                      <div className={`absolute inset-0 transition-opacity duration-500 ${
+                        isSelected 
+                          ? 'bg-gradient-to-br from-naturals-purple/90 via-naturals-purple/60 to-transparent opacity-90' 
+                          : 'bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-70 group-hover:opacity-85'
+                      }`} />
                     </div>
-                    <div className="flex items-center gap-3 mt-4">
-                      <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-black/5 text-[9px] font-bold text-deep-grape/40">
-                        <Clock className="w-3 h-3" />
-                        {service.duration_minutes} MINS
+
+                    <div className="relative z-10 p-6 h-full flex flex-col justify-end">
+                      {/* Price Tag - Floating Top Right */}
+                      <div className="absolute top-6 right-6">
+                        <p className={`font-black text-xl px-4 py-2 rounded-2xl backdrop-blur-md border transition-all ${
+                          isSelected ? 'bg-white text-naturals-purple border-white/20' : 'bg-black/40 text-white border-white/10'
+                        }`}>
+                          ₹{service.price}
+                        </p>
+                      </div>
+
+                      <div className="space-y-1">
+                        <span className={`text-[9px] font-black uppercase tracking-[0.2em] transition-colors ${
+                          isSelected ? 'text-white/60' : 'text-naturals-purple'
+                        }`}>
+                          {service.category}
+                        </span>
+                        <h4 className="font-black text-lg leading-tight text-white drop-shadow-lg">
+                          {service.name}
+                        </h4>
+                        
+                        <div className="flex items-center gap-3 pt-3">
+                          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest backdrop-blur-md border ${
+                            isSelected 
+                              ? 'bg-white/20 border-white/20 text-white' 
+                              : 'bg-black/30 border-white/10 text-white/90'
+                          }`}>
+                            <Clock className="w-3.5 h-3.5" />
+                            {service.duration_minutes} MINS
+                          </div>
+                        </div>
                       </div>
                     </div>
+
                     {isSelected && (
-                      <div className="absolute top-4 right-4 w-5 h-5 bg-naturals-purple rounded-full flex items-center justify-center text-white shadow-lg">
-                        <Check className="w-3 h-3" />
+                      <div className="absolute top-6 left-6 w-8 h-8 bg-white rounded-full flex items-center justify-center text-naturals-purple shadow-2xl z-20 animate-in zoom-in-50 duration-300">
+                        <Check className="w-5 h-5 stroke-[3]" />
                       </div>
                     )}
                   </motion.button>
