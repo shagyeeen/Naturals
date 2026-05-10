@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log('[Auth] Refreshing profile via API for:', authUser.email);
       
-      const res = await fetch(`/api/auth/profile?email=${encodeURIComponent(authUser.email)}`);
+      const res = await fetch(`/api/profile?email=${encodeURIComponent(authUser.email)}`);
       if (!res.ok) throw new Error('Failed to fetch profile from API');
       
       const { userData, customerData } = await res.json();
