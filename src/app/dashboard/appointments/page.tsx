@@ -75,7 +75,7 @@ export default function MyAppointments() {
   };
 
   const filteredAppointments = appointments.filter(appt => {
-    const matchesFilter = filter === "all" || appt.status === filter;
+    const matchesFilter = filter === "all" ? true : appt.status === filter;
     const matchesSearch = 
       appt.service?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       appt.appointment_services?.some(s => s.service.name.toLowerCase().includes(searchQuery.toLowerCase())) ||

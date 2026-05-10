@@ -130,7 +130,7 @@ export default function LandingPage() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1.2, delay: 0.2, cubicBezier: [0.23, 1, 0.32, 1] }}
+            transition={{ duration: 1.2, delay: 0.2, ease: [0.23, 1, 0.32, 1] }}
             className="w-full lg:w-[40%] relative hidden lg:flex justify-end z-10"
           >
             <div className="relative w-full max-w-3xl aspect-[4/3] rounded-[3rem] overflow-hidden shadow-2xl group">
@@ -220,7 +220,6 @@ export default function LandingPage() {
                 <h2 className="text-4xl md:text-6xl font-black italic text-deep-grape mb-4 tracking-tighter">Services Offered</h2>
                 <p className="text-xs font-black uppercase tracking-[0.3em] text-deep-grape/40">Select a category to explore our protocols</p>
               </div>
-<<<<<<< HEAD
               <div className="relative w-full max-w-md">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-deep-grape/20" />
                 <input 
@@ -234,12 +233,8 @@ export default function LandingPage() {
                   className="w-full bg-white border border-black/5 rounded-2xl py-4 pl-12 pr-6 text-sm font-bold text-deep-grape shadow-sm focus:outline-none focus:border-naturals-purple transition-all"
                 />
               </div>
-              <Link href="/login" className="hidden md:flex px-8 py-4 bg-white border border-black/5 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-naturals-purple hover:text-white transition-all shadow-sm">
-                Book Your Session
-=======
                <Link href="/login" className="hidden md:flex px-10 py-5 bg-[#8E3E96] text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-[#6B2D73] transition-all shadow-2xl shadow-[#8E3E96]/20">
                 Book Session Now
->>>>>>> 23954c1e46a4e47dd30c14886f58395dfac1367e
               </Link>
             </div>
 

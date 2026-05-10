@@ -5,7 +5,7 @@ import { supabase, Stylist, Service, Appointment } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Clock, User, Scissors, CreditCard, Check, Search, Sparkles } from "lucide-react";
+import { Calendar, Clock, User, Scissors, CreditCard, Check, Search, Sparkles, Star, AlertCircle, History } from "lucide-react";
 
 import { useSearchParams } from "next/navigation";
 

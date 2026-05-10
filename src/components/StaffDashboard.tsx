@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { supabase, Customer, Stylist, Admin, FranchiseOwner, Appointment, Service } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
-import { UserPlus, Search, Edit, Trash2, Eye, X, Briefcase, Users, UserCheck, Scissors, Calendar } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { UserPlus, Search, Edit, Trash2, Eye, X, Briefcase, Users, UserCheck, Scissors, Calendar, Sparkles } from "lucide-react";
 
 // Modular Hooks
 import { useAdminCustomers } from "@/modules/admin/customers/hooks";

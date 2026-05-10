@@ -7,7 +7,14 @@ import { usePreferences } from "@/modules/customer/preferences/hooks";
 import { searchCustomer } from "@/modules/admin/customers/service";
 import { User, Activity, Calendar, Award, Droplets, Sun, Sparkles, Map as MapIcon, Leaf, Search, ShieldCheck, Edit2, Loader2, Check } from "lucide-react";
 
-const questionnaireData = [
+interface Question {
+  id: string;
+  question: string;
+  options: string[];
+  gender?: string[];
+}
+
+const questionnaireData: Question[] = [
   { id: 'conversation', question: 'Conversation Level', options: ['Quiet Professional', 'Friendly Chat', 'Social/Engaging'] },
   { id: 'beverage', question: 'Beverage Preference', options: ['Coffee', 'Green Tea', 'Water', 'None'] },
   { id: 'reading', question: 'Reading Material', options: ['Fashion', 'News', 'Entertainment', 'None'] }
