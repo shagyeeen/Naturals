@@ -38,6 +38,7 @@ export default function AppointmentsPage() {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewText, setReviewText] = useState("");
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [cancelModalId, setCancelModalId] = useState<string | null>(null);
 
   useEffect(() => {
     if (customerProfile?.id || profile?.id) {
@@ -110,8 +111,6 @@ export default function AppointmentsPage() {
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   const handleCancel = async (id: string) => {
-    if (!confirm("Are you sure you want to cancel this appointment?")) return;
-    
     try {
       setCancellingId(id);
       const { error } = await supabase
@@ -123,6 +122,7 @@ export default function AppointmentsPage() {
       
       // Success feedback
       setAppointments(prev => prev.map(a => a.id === id ? { ...a, status: 'cancelled' as AppointmentStatus } : a));
+      setCancelModalId(null);
     } catch (error: any) {
       console.error("Error cancelling appointment:", error);
       alert(`Failed to cancel appointment: ${error.message || "Unknown error"}`);
@@ -368,11 +368,10 @@ export default function AppointmentsPage() {
                   </div>
                 )}
 
-                {/* Actions */}
                 <div className="px-8 pb-8 flex gap-3 mt-auto">
                   {appt.status === 'confirmed' && (
                     <button 
-                      onClick={() => handleCancel(appt.id)}
+                      onClick={() => setCancelModalId(appt.id)}
                       disabled={cancellingId === appt.id}
                       className="flex-1 py-3 bg-red-500/10 text-red-500 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-red-500 hover:text-white transition-all disabled:opacity-50"
                     >
@@ -421,6 +420,49 @@ export default function AppointmentsPage() {
           </button>
         </div>
       )}
+
+      {/* Cancel Modal */}
+      <AnimatePresence>
+        {cancelModalId && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-deep-grape/40 backdrop-blur-md" 
+              onClick={() => setCancelModalId(null)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="w-full max-w-sm bg-white rounded-[2.5rem] p-8 shadow-2xl relative z-10 border border-black/5 text-center"
+            >
+              <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <AlertCircle className="w-8 h-8 text-red-500" />
+              </div>
+              <h3 className="text-3xl font-black text-deep-grape italic tracking-tighter mb-2">Cancel Appointment?</h3>
+              <p className="text-deep-grape/40 font-black uppercase text-[10px] tracking-[0.2em] mb-10">This action cannot be undone.</p>
+              
+              <div className="flex gap-4">
+                <button 
+                  onClick={() => setCancelModalId(null)}
+                  className="flex-1 py-4 border-2 border-black/5 text-deep-grape font-black text-[10px] uppercase tracking-[0.3em] rounded-xl hover:bg-warm-grey transition-all"
+                >
+                  Go Back
+                </button>
+                <button 
+                  onClick={() => handleCancel(cancelModalId)}
+                  disabled={cancellingId === cancelModalId}
+                  className="flex-1 py-4 bg-red-500 text-white font-black text-[10px] uppercase tracking-[0.3em] rounded-xl shadow-xl shadow-red-500/20 hover:scale-[1.02] transition-transform disabled:opacity-50"
+                >
+                  {cancellingId === cancelModalId ? "CANCELLING..." : "YES, CANCEL"}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Review Modal */}
       <AnimatePresence>
