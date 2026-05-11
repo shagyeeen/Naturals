@@ -35,6 +35,7 @@ const sidebarLinks = [
   { name: "Book Appointment", href: "/dashboard/booking", icon: Calendar, roles: ["customer"] },
   { name: "Schedule Meeting", href: "/dashboard/meeting", icon: CalendarCheck, roles: ["customer"] },
   { name: "My Appointment", href: "/dashboard/appointments", icon: History, roles: ["customer"] },
+  { name: "Meeting Requests", href: "/dashboard/meeting-requests", icon: CalendarCheck, roles: ["admin", "manager", "franchise_owner", "stylist"] },
   { name: "AI Assistance", href: "/dashboard/assistant", icon: Bot, roles: ["admin", "manager", "franchise_owner", "stylist", "customer"] },
   { name: "Beauty Passport", href: "/dashboard/passport", icon: Target, roles: ["customer"] },
   { name: "SOP Audit", href: "/dashboard/sop", icon: ShieldCheck, roles: ["admin", "manager"] },
