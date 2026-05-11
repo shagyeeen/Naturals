@@ -47,8 +47,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log('[Auth] Refreshing profile via API for:', authUser.email);
       
-      const res = await fetch(`/api/profile?email=${encodeURIComponent(authUser.email)}`);
-      const fullData = await res.json();
+      const res = await fetch(`/api/profile-sync?email=${encodeURIComponent(authUser.email)}`);
+      
+      let fullData;
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        fullData = await res.json();
+      } else {
+        const rawText = await res.text();
+        console.error('[Auth] API returned non-JSON response:', {
+          status: res.status,
+          contentType,
+          rawText: rawText.substring(0, 200) + '...'
+        });
+        throw new Error(`API returned ${res.status} ${res.statusText}`);
+      }
+
       console.log('[Auth] API Response Detail:', { 
         status: res.status, 
         ok: res.ok, 
