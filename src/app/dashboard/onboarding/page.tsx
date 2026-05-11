@@ -72,7 +72,6 @@ export default function OnboardingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({})
-  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false)
   
   const [formData, setFormData] = useState<FormData>({
     fullName: '',
@@ -85,11 +84,7 @@ export default function OnboardingPage() {
     notes: ''
   })
 
-  const formatDateForInput = (dateStr: string) => {
-    if (!dateStr) return ''
-    const [y, m, d] = dateStr.split('-')
-    return `${d}-${m}-${y}`
-  }
+
 
   useEffect(() => {
     if (!loading && !user) {
@@ -108,7 +103,7 @@ export default function OnboardingPage() {
       setFormData({
         fullName: customerProfile.full_name || user?.displayName || '',
         phone: customerProfile.phone || '',
-        dateOfBirth: customerProfile.date_of_birth ? formatDateForInput(customerProfile.date_of_birth) : '',
+        dateOfBirth: customerProfile.date_of_birth || '',
         gender: customerProfile.gender || '',
         preferences: customerProfile.ai_hairstyle_analysis?.questionnaire_results || {},
         profilePhotoUrl: customerProfile.profile_photo_url || user?.photoURL || '',
@@ -119,16 +114,12 @@ export default function OnboardingPage() {
   }, [user, customerProfile])
 
   const formatDateForDB = (dob: string) => {
-    if (dob && dob.length === 10) {
-      const [d, m, y] = dob.split('-').map(Number)
-      return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-    }
-    return null
+    return dob || null
   }
 
   const calculateAge = (dob: string) => {
     if (!dob || dob.length !== 10) return null
-    const [d, m, y] = dob.split('-').map(Number)
+    const [y, m, d] = dob.split('-').map(Number)
     if (!d || !m || !y || y < 1900) return null
     const birthDate = new Date(y, m - 1, d)
     const today = new Date()
@@ -352,28 +343,14 @@ export default function OnboardingPage() {
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Date of Birth</label>
                   <div className="relative">
                     <input
-                      type="text"
-                      placeholder="DD-MM-YYYY"
+                      type="date"
                       value={formData.dateOfBirth}
-                      onChange={(e) => {
-                        let val = e.target.value.replace(/\D/g, '')
-                        if (val.length > 8) val = val.slice(0, 8)
-                        if (val.length > 4) val = val.slice(0, 2) + '-' + val.slice(2, 4) + '-' + val.slice(4)
-                        else if (val.length > 2) val = val.slice(0, 2) + '-' + val.slice(2)
-                        setFormData({ ...formData, dateOfBirth: val })
-                      }}
-                      className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-4 pl-6 pr-12 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
+                      onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                      className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-4 pl-6 pr-12 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none appearance-none cursor-pointer"
                     />
-                    <button 
-                      type="button"
-                      onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-naturals-purple/10 rounded-lg transition-all"
-                    >
-                      <Calendar className="w-5 h-5 text-naturals-purple/60" />
-                    </button>
                     
-                    {formData.dateOfBirth.length === 10 && (
-                      <span className="absolute right-12 top-1/2 -translate-y-1/2 bg-naturals-purple text-white text-[8px] font-black px-2 py-1 rounded-lg uppercase tracking-widest">
+                    {formData.dateOfBirth && formData.dateOfBirth.length === 10 && (
+                      <span className="absolute right-12 top-1/2 -translate-y-1/2 bg-naturals-purple text-white text-[8px] font-black px-2 py-1 rounded-lg uppercase tracking-widest pointer-events-none">
                         Age: {calculateAge(formData.dateOfBirth)}
                       </span>
                     )}
@@ -462,19 +439,19 @@ export default function OnboardingPage() {
 
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2 italic text-naturals-purple">Profile Photo</label>
-                <div className="flex items-center gap-6 p-4 bg-warm-grey/40 rounded-[2rem] border border-naturals-purple/10">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 p-4 bg-warm-grey/40 rounded-[2rem] border border-naturals-purple/10">
                   <div className="relative w-20 h-20 rounded-[1.5rem] overflow-hidden bg-white shadow-xl flex-shrink-0 border-4 border-white">
                     {formData.profilePhotoUrl ? (
-                      <img src={formData.profilePhotoUrl} alt="Preview" className="w-full h-full object-cover" />
+                      <img src={formData.profilePhotoUrl} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     ) : user?.photoURL ? (
-                      <img src={user.photoURL} alt="Google Profile" className="w-full h-full object-cover" />
+                      <img src={user.photoURL} alt="Google Profile" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-naturals-purple/5">
                         <UserPlus className="w-8 h-8 text-naturals-purple/20" />
                       </div>
                     )}
                   </div>
-                  <div className="space-y-2 flex-1">
+                  <div className="space-y-3 flex-1">
                     <p className="text-[10px] font-black text-deep-grape uppercase tracking-widest">Upload Profile Image</p>
                     <input
                       type="file"
@@ -483,12 +460,23 @@ export default function OnboardingPage() {
                       onChange={handleFileChange}
                       className="hidden"
                     />
-                    <label
-                      htmlFor="profile-upload"
-                      className="inline-block px-5 py-2.5 bg-naturals-purple text-white font-black text-[9px] uppercase tracking-widest rounded-xl cursor-pointer hover:bg-deep-grape transition-all active:scale-95 shadow-lg shadow-naturals-purple/20"
-                    >
-                      {formData.profilePhotoFile ? 'Update Portrait' : 'Choose File'}
-                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      <label
+                        htmlFor="profile-upload"
+                        className="inline-block px-5 py-2.5 bg-naturals-purple text-white font-black text-[9px] uppercase tracking-widest rounded-xl cursor-pointer hover:bg-deep-grape transition-all active:scale-95 shadow-lg shadow-naturals-purple/20"
+                      >
+                        {formData.profilePhotoFile ? 'Update Portrait' : 'Choose File'}
+                      </label>
+                      {user?.photoURL && formData.profilePhotoUrl !== user.photoURL && (
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, profilePhotoUrl: user.photoURL || '', profilePhotoFile: null })}
+                          className="px-5 py-2.5 border border-naturals-purple/20 text-naturals-purple font-black text-[9px] uppercase tracking-widest rounded-xl hover:bg-naturals-purple/5 transition-all"
+                        >
+                          Use Google Photo
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

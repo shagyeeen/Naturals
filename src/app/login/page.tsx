@@ -105,7 +105,11 @@ function CustomerLoginForm() {
     }
 
     if (result.error) {
-      setError(result.error);
+      if (result.error.includes('popup-closed-by-user')) {
+        // User intentionally closed the popup, silently ignore
+      } else {
+        setError(result.error);
+      }
     }
     setIsSubmitting(false);
   };
