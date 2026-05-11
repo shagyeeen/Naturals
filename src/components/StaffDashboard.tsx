@@ -228,7 +228,7 @@ export default function StaffDashboard() {
     setShowModal(true);
   };
 
-  const handleEdit = (type: 'customer' | 'stylist' | 'admin' | 'franchise', data: any) => {
+  const handleEdit = (type: 'customer' | 'stylist' | 'admin' | 'franchise' | 'service', data: any) => {
     setModalType('edit');
     setEditingId(data.id);
     
@@ -424,7 +424,7 @@ export default function StaffDashboard() {
     setIsSubmitting(false);
   };
 
-  const handleDelete = async (type: 'customer' | 'stylist' | 'admin' | 'franchise', id: string) => {
+  const handleDelete = async (type: 'customer' | 'stylist' | 'admin' | 'franchise' | 'service', id: string) => {
     if (!confirm('Are you sure you want to delete this record?')) return;
     const tableMap: Record<string, string> = { customer: 'customers', stylist: 'stylists', admin: 'admins', franchise: 'franchise_owners', service: 'services' };
     const table = tableMap[type];
