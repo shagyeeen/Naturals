@@ -27,46 +27,46 @@ import Image from "next/image";
 
 const SPECIAL_SERVICES = [
   {
-    id: 'bridal-makeup',
+    id: '45f02079-0f21-464d-9877-9a7fe5182654',
     name: 'Bridal Makeup (Women)',
     description: 'Elite consultation and full trial session for your special day.',
     price: '₹20,000',
-    image: 'https://images.unsplash.com/photo-1595152772835-219674b2a8a6?q=80&w=800'
+    image: '/services/45f02079-0f21-464d-9877-9a7fe5182654.png'
   },
   {
-    id: 'bridal-makeup-men',
+    id: '74a587dd-0a3b-4533-bdf5-12e10a9cecc2',
     name: 'Bridal Makeup (Men)',
     description: 'Signature groom grooming and facial architecture mapping.',
     price: '₹15,000',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=800'
+    image: '/services/74a587dd-0a3b-4533-bdf5-12e10a9cecc2.png'
   },
   {
-    id: 'bridal-combo',
+    id: '633893e2-23f6-4f0c-98b7-565a4edc8a14',
     name: 'Bridal Combo (Bride & Groom)',
     description: 'The ultimate couple package for synchronized aesthetic perfection.',
     price: '₹30,000',
-    image: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?q=80&w=800'
+    image: '/services/633893e2-23f6-4f0c-98b7-565a4edc8a14.png'
   },
   {
-    id: 'hairdo-women',
+    id: 'ef7a8f50-0aa8-4b91-a33c-5ab600fbfc42',
     name: 'Hairdo (Women)',
     description: 'Intricate architectural hairstyling for high-profile events.',
     price: '₹15,000',
-    image: 'https://images.unsplash.com/photo-1560869713-7d0a29430863?q=80&w=800'
+    image: '/services/ef7a8f50-0aa8-4b91-a33c-5ab600fbfc42.png'
   },
   {
-    id: 'hairdo-men',
+    id: '241aa8d1-5e47-4d9f-80b9-3de762eb776a',
     name: 'Hairdo (Men)',
     description: 'Precision sculpture and high-fashion grooming for grooms.',
     price: '₹10,000',
-    image: 'https://images.unsplash.com/photo-1621605815971-fbc98d665033?q=80&w=800'
+    image: '/services/241aa8d1-5e47-4d9f-80b9-3de762eb776a.png'
   },
   {
-    id: 'hairdo-combo',
+    id: 'b90a8431-d32c-47d2-b0ee-6ee97112eeae',
     name: 'Hairdo Combo (Bride & Groom)',
     description: 'Coordinated event hairstyling for the perfect visual harmony.',
     price: '₹20,000',
-    image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=800'
+    image: '/services/b90a8431-d32c-47d2-b0ee-6ee97112eeae.png'
   }
 ];
 
