@@ -59,6 +59,7 @@ function CompanyLoginForm() {
                 src="/naturalslogo.png" 
                 alt="Logo" 
                 fill 
+                sizes="160px"
                 className="object-contain" 
               />
             </div>

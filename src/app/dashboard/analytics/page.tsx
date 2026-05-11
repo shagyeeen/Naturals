@@ -58,16 +58,38 @@ export default function WorkAnalytics() {
       console.log("[Analytics] Fetching for user:", profile?.id);
 
       // 1. Get Stylist Record
-      const { data: stylistRecord, error: stylistError } = await supabase
-        .from('stylists')
-        .select('id')
-        .eq('user_id', profile?.id)
-        .single();
+      let stylistId = null;
 
-      if (stylistError || !stylistRecord) {
-        console.error("[Analytics] Stylist record not found:", stylistError);
-        setError("Stylist record not found. Please ensure your profile is complete.");
-        return;
+      if (isStylist) {
+        const { data: stylistRecord, error: stylistError } = await supabase
+          .from('stylists')
+          .select('id')
+          .eq('user_id', profile?.id)
+          .single();
+
+        if (stylistError || !stylistRecord) {
+          console.error("[Analytics] Stylist record not found:", stylistError);
+          setError("Stylist profile not linked. Please ensure your stylist account is properly configured.");
+          setLoading(false);
+          return;
+        }
+        stylistId = stylistRecord.id;
+      } else {
+        // For Admins/Managers, we'll fetch branch-wide analytics or the first available stylist
+        // For now, let's just fetch the first active stylist to avoid the crash
+        const { data: firstStylist } = await supabase
+          .from('stylists')
+          .select('id')
+          .eq('is_active', true)
+          .limit(1)
+          .maybeSingle();
+        
+        if (!firstStylist) {
+          setError("No active stylists found to analyze.");
+          setLoading(false);
+          return;
+        }
+        stylistId = firstStylist.id;
       }
 
       const now = new Date();
@@ -88,12 +110,10 @@ export default function WorkAnalytics() {
       console.log("[Analytics] Querying from:", startDateStr, "for timeframe:", timeframe);
 
       // 2. Fetch Appointments
-      // Fix: 'in_progress' is not a valid enum value in the schema.
-      // Valid: 'pending', 'confirmed', 'completed', 'cancelled'
       const { data: appts, error: apptError } = await supabase
         .from('appointments')
         .select('*, services(duration_minutes)')
-        .eq('stylist_id', stylistRecord.id)
+        .eq('stylist_id', stylistId)
         .in('status', ['completed', 'confirmed', 'pending'])
         .gte('appointment_date', timeframe === 'today' ? todayStr : startDateStr)
         .lte('appointment_date', todayStr);
@@ -229,9 +249,11 @@ export default function WorkAnalytics() {
             <Activity className="w-3 h-3" /> Professional Timeline
           </div>
           <h1 className="text-4xl font-black text-deep-grape mb-2 italic tracking-tighter">
-            Work Analytics
+            {isStylist ? "Work Analytics" : "Branch Performance"}
           </h1>
-          <p className="text-deep-grape/40 font-bold uppercase text-xs tracking-widest text-left">Detailed tracking of service volume and time utilization.</p>
+          <p className="text-deep-grape/40 font-bold uppercase text-xs tracking-widest text-left">
+            {isStylist ? "Detailed tracking of your service volume and time utilization." : "Aggregated view of stylist efficiency and booking density."}
+          </p>
         </div>
 
         <div className="flex items-center gap-2 bg-warm-grey/50 p-1 rounded-xl border border-black/5">

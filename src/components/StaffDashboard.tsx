@@ -23,6 +23,13 @@ interface FormData {
   franchiseName?: string;
   franchiseAddress?: string;
   franchiseOwnerId: string;
+  // Service fields
+  serviceName?: string;
+  serviceDescription?: string;
+  serviceCategory?: string;
+  serviceDuration?: string;
+  servicePrice?: string;
+  serviceIsActive?: boolean;
   preferences: { [key: string]: string | string[] };
 }
 
@@ -84,7 +91,7 @@ function calculateAge(dob: string) {
   return age;
 }
 
-type ModalType = 'add-customer' | 'add-stylist' | 'add-admin' | 'add-franchise' | 'edit';
+type ModalType = 'add-customer' | 'add-stylist' | 'add-admin' | 'add-franchise' | 'add-service' | 'edit';
 
 export default function StaffDashboard() {
   const { isAdmin, isManager, isFranchiseOwner, isStylist, profile } = useAuth();
@@ -116,6 +123,12 @@ export default function StaffDashboard() {
     franchiseName: '',
     franchiseAddress: '',
     franchiseOwnerId: '',
+    serviceName: '',
+    serviceDescription: '',
+    serviceCategory: '',
+    serviceDuration: '',
+    servicePrice: '',
+    serviceIsActive: true,
     preferences: {},
   });
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -207,7 +220,10 @@ export default function StaffDashboard() {
     setFormData({ 
       fullName: '', phone: '', email: '', dateOfBirth: '', gender: '', 
       experienceYears: '', notes: '', 
-      franchiseName: '', franchiseAddress: '', franchiseOwnerId: '', preferences: {}
+      franchiseName: '', franchiseAddress: '', franchiseOwnerId: '',
+      serviceName: '', serviceDescription: '', serviceCategory: '',
+      serviceDuration: '', servicePrice: '', serviceIsActive: true,
+      preferences: {}
     });
     setShowModal(true);
   };
@@ -234,6 +250,12 @@ export default function StaffDashboard() {
       franchiseName: data.franchise_name || '',
       franchiseAddress: data.branch_address || '',
       franchiseOwnerId: data.franchise_owner_id || '',
+      serviceName: data.name || '',
+      serviceDescription: data.description || '',
+      serviceCategory: data.category || '',
+      serviceDuration: data.duration_minutes?.toString() || '',
+      servicePrice: data.price?.toString() || '',
+      serviceIsActive: data.is_active ?? true,
       preferences: data.ai_hairstyle_analysis?.questionnaire_results || {},
     });
     setShowModal(true);
@@ -241,8 +263,13 @@ export default function StaffDashboard() {
 
   const validateForm = () => {
     const errors: { [key: string]: string } = {};
-    if (!formData.fullName) errors.fullName = "Full Legal Name is required";
-    if (!formData.phone) errors.phone = "Phone number is required";
+    if (modalType === 'add-service' || (modalType === 'edit' && activeTab === 'services')) {
+      if (!formData.serviceName) errors.serviceName = "Service name is required";
+      if (!formData.servicePrice) errors.servicePrice = "Price is required";
+    } else {
+      if (!formData.fullName) errors.fullName = "Full Legal Name is required";
+      if (!formData.phone) errors.phone = "Phone number is required";
+    }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -275,12 +302,15 @@ export default function StaffDashboard() {
       return null;
     };
 
-    const basePayload = {
+    const basePayload: any = {
       full_name: formData.fullName,
       phone: formData.phone,
       email: formData.email || null,
-      date_of_birth: formatDate(formData.dateOfBirth),
     };
+
+    if (modalType === 'add-customer' || (modalType === 'edit' && activeTab === 'customers')) {
+      basePayload.date_of_birth = formatDate(formData.dateOfBirth);
+    }
 
 
     if (modalType === 'add-customer' || (modalType === 'edit' && activeTab === 'customers')) {
@@ -314,6 +344,16 @@ export default function StaffDashboard() {
         franchise_name: formData.franchiseName || null,
         branch_address: formData.franchiseAddress || null,
       };
+    } else if (modalType === 'add-service' || (modalType === 'edit' && activeTab === 'services')) {
+      table = 'services';
+      payload = {
+        name: formData.serviceName,
+        description: formData.serviceDescription,
+        category: formData.serviceCategory,
+        duration_minutes: parseInt(formData.serviceDuration || '60'),
+        price: parseFloat(formData.servicePrice || '0'),
+        is_active: formData.serviceIsActive,
+      };
     }
 
     if (editingId) {
@@ -346,6 +386,7 @@ export default function StaffDashboard() {
         alert("Updated successfully!");
         if (table === 'customers') fetchCustomers();
         else if (table === 'stylists') fetchStylists();
+        else if (table === 'services') fetchServices();
         setShowModal(false);
       }
     } else {
@@ -385,13 +426,14 @@ export default function StaffDashboard() {
 
   const handleDelete = async (type: 'customer' | 'stylist' | 'admin' | 'franchise', id: string) => {
     if (!confirm('Are you sure you want to delete this record?')) return;
-    const tableMap: Record<string, string> = { customer: 'customers', stylist: 'stylists', admin: 'admins', franchise: 'franchise_owners' };
+    const tableMap: Record<string, string> = { customer: 'customers', stylist: 'stylists', admin: 'admins', franchise: 'franchise_owners', service: 'services' };
     const table = tableMap[type];
     await supabase.from(table).delete().eq('id', id);
     if (type === 'customer') fetchCustomers();
     else if (type === 'stylist') fetchStylists();
     else if (type === 'admin') fetchAdmins();
     else if (type === 'franchise') fetchFranchiseOwners();
+    else if (type === 'service') fetchServices();
   };
 
   const handleAssignBranch = async () => {
@@ -443,14 +485,14 @@ export default function StaffDashboard() {
                  <Scissors className="w-5 h-5 text-white" />
               </div>
               <span className="text-white/60 text-[10px] font-black uppercase tracking-[0.3em]">
-                 {isAdmin ? "Management Center" : isFranchiseOwner ? "Franchise Oversight" : isManager ? "Branch Operations" : "Specialist Terminal"}
+                 {isFranchiseOwner ? "Franchise Oversight" : (isAdmin ? "Management Center" : (isManager ? "Branch Operations" : "Specialist Terminal"))}
               </span>
            </div>
            <h2 className="text-4xl font-black text-white italic tracking-tight drop-shadow-lg">
-             {isAdmin ? "Central Command" : isFranchiseOwner ? "Executive Portal" : isManager ? "Operations Hub" : "Stylist Workspace"}
+             {isFranchiseOwner ? "Executive Portal" : (isAdmin ? "Central Command" : (isManager ? "Operations Hub" : "Stylist Workspace"))}
            </h2>
            <p className="text-white/40 text-[9px] font-bold uppercase tracking-widest mt-2">
-              Authorized {isAdmin ? "Administrator" : isFranchiseOwner ? "Owner" : isManager ? "Manager" : "Stylist"} Access Only
+              Authorized {isFranchiseOwner ? "Franchise Owner" : (isAdmin ? "Administrator" : (isManager ? "Manager" : "Stylist"))} Access Only
            </p>
         </div>
       </motion.div>
@@ -507,13 +549,10 @@ export default function StaffDashboard() {
           )}
           {(isAdmin || isFranchiseOwner) && (
             <button
-              onClick={() => {
-                alert("Service management logic (Add/Edit) is handled via the Global Services Registry.");
-                setActiveTab('services');
-              }}
-              className="px-4 py-2.5 bg-naturals-purple text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg hover:scale-105 transition-all flex items-center gap-2"
+              onClick={() => handleOpenModal('add-service')}
+              className="px-4 py-2.5 bg-lavender text-deep-grape font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg hover:scale-105 transition-all flex items-center gap-2"
             >
-              <Sparkles className="w-3.5 h-3.5" /> View Services
+              <Sparkles className="w-3.5 h-3.5" /> Add Service
             </button>
           )}
         </div>
@@ -662,7 +701,7 @@ export default function StaffDashboard() {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2 italic">Administrative Team</h3>
-            {(isAdmin || isFranchiseOwner) && (
+            {isFranchiseOwner && (
               <button
                 onClick={() => handleOpenModal('add-admin')}
                 className="px-4 py-2 bg-deep-grape text-white font-black text-[9px] uppercase tracking-widest rounded-xl hover:scale-105 transition-all flex items-center gap-2 shadow-lg shadow-deep-grape/20"
@@ -689,16 +728,21 @@ export default function StaffDashboard() {
                   </div>
                   <p className="text-xs text-deep-grape/60 font-semibold">{m.email}</p>
                   <button
-                    onClick={() => { setBranchAssign({id: m.id, table: 'admins', current: m.branch_location || ''}); setBranchInput(m.branch_location || ''); }}
-                    className="px-2 py-0.5 bg-naturals-purple/5 text-naturals-purple rounded-md text-[9px] font-black uppercase hover:bg-naturals-purple hover:text-white transition-all"
+                    disabled={!isFranchiseOwner}
+                    onClick={() => { if (!isFranchiseOwner) return; setBranchAssign({id: m.id, table: 'admins', current: m.branch_location || ''}); setBranchInput(m.branch_location || ''); }}
+                    className={`px-2 py-0.5 bg-naturals-purple/5 text-naturals-purple rounded-md text-[9px] font-black uppercase transition-all ${isFranchiseOwner ? 'hover:bg-naturals-purple hover:text-white cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
                   >{m.branch_location || 'Assign Branch'}</button>
                   <div className="flex items-center gap-1">
-                    <button onClick={() => handleEdit('admin', m)} className="p-2 hover:bg-naturals-purple/10 rounded-xl transition-all group">
-                      <Edit className="w-4 h-4 text-naturals-purple/60 group-hover:text-naturals-purple" />
-                    </button>
-                    <button onClick={() => handleDelete('admin', m.id)} className="p-2 hover:bg-red-50 rounded-xl transition-all group">
-                      <Trash2 className="w-4 h-4 text-red-500 group-hover:text-red-600" />
-                    </button>
+                    {isFranchiseOwner && (
+                      <>
+                        <button onClick={() => handleEdit('admin', m)} className="p-2 hover:bg-naturals-purple/10 rounded-xl transition-all group">
+                          <Edit className="w-4 h-4 text-naturals-purple/60 group-hover:text-naturals-purple" />
+                        </button>
+                        <button onClick={() => handleDelete('admin', m.id)} className="p-2 hover:bg-red-50 rounded-xl transition-all group">
+                          <Trash2 className="w-4 h-4 text-red-500 group-hover:text-red-600" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
@@ -711,7 +755,7 @@ export default function StaffDashboard() {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2 italic">Franchise Owners</h3>
-            {isAdmin && (
+            {isFranchiseOwner && (
               <button
                 onClick={() => handleOpenModal('add-franchise')}
                 className="px-4 py-2 bg-deep-grape text-white font-black text-[9px] uppercase tracking-widest rounded-xl hover:scale-105 transition-all flex items-center gap-2 shadow-lg shadow-deep-grape/20"
@@ -738,16 +782,21 @@ export default function StaffDashboard() {
                   </div>
                   <p className="text-xs text-deep-grape/60 font-semibold">{fo.email}</p>
                   <button
-                    onClick={() => { setBranchAssign({id: fo.id, table: 'franchise_owners', current: fo.branch_name || ''}); setBranchInput(fo.branch_name || ''); }}
-                    className="px-2 py-0.5 bg-deep-grape/5 text-deep-grape rounded-md text-[9px] font-black uppercase hover:bg-deep-grape hover:text-white transition-all"
+                    disabled={!isFranchiseOwner}
+                    onClick={() => { if (!isFranchiseOwner) return; setBranchAssign({id: fo.id, table: 'franchise_owners', current: fo.branch_name || ''}); setBranchInput(fo.branch_name || ''); }}
+                    className={`px-2 py-0.5 bg-deep-grape/5 text-deep-grape rounded-md text-[9px] font-black uppercase transition-all ${isFranchiseOwner ? 'hover:bg-deep-grape hover:text-white cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
                   >{fo.branch_name || 'Assign Branch'}</button>
                   <div className="flex items-center gap-1">
-                    <button onClick={() => handleEdit('franchise', fo)} className="p-2 hover:bg-naturals-purple/10 rounded-xl transition-all group">
-                      <Edit className="w-4 h-4 text-naturals-purple/60 group-hover:text-naturals-purple" />
-                    </button>
-                    <button onClick={() => handleDelete('franchise', fo.id)} className="p-2 hover:bg-red-50 rounded-xl transition-all group">
-                      <Trash2 className="w-4 h-4 text-red-500 group-hover:text-red-600" />
-                    </button>
+                    {isFranchiseOwner && (
+                      <>
+                        <button onClick={() => handleEdit('franchise', fo)} className="p-2 hover:bg-naturals-purple/10 rounded-xl transition-all group">
+                          <Edit className="w-4 h-4 text-naturals-purple/60 group-hover:text-naturals-purple" />
+                        </button>
+                        <button onClick={() => handleDelete('franchise', fo.id)} className="p-2 hover:bg-red-50 rounded-xl transition-all group">
+                          <Trash2 className="w-4 h-4 text-red-500 group-hover:text-red-600" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
@@ -823,6 +872,74 @@ export default function StaffDashboard() {
             {appointments.length === 0 && (
                <div className="px-6 py-10 text-center text-deep-grape/30 text-xs font-black uppercase tracking-widest">No active deployments found</div>
             )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'services' && (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2 italic">Global Service Registry</h3>
+            {(isAdmin || isFranchiseOwner) && (
+              <button
+                onClick={() => handleOpenModal('add-service')}
+                className="px-4 py-2 bg-naturals-purple text-white font-black text-[9px] uppercase tracking-widest rounded-xl hover:scale-105 transition-all flex items-center gap-2 shadow-lg shadow-naturals-purple/20"
+              >
+                <Sparkles className="w-3.5 h-3.5" /> Add Service
+              </button>
+            )}
+          </div>
+          <div className="bg-white border border-black/5 shadow-xl rounded-[2rem] overflow-hidden">
+            <div className="grid grid-cols-[1.5fr_1fr_100px_100px_120px_100px] px-6 py-3 bg-warm-grey/40 border-b border-black/5">
+              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Service Name</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Category</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Duration</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Price</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Status</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50 text-right">Actions</span>
+            </div>
+            <div className="divide-y divide-black/5">
+              {services
+                .filter(s => {
+                  const search = searchQuery.toLowerCase();
+                  return s.name.toLowerCase().includes(search) || 
+                         s.category?.toLowerCase().includes(search);
+                })
+                .map((s) => (
+                <div key={s.id} className="grid grid-cols-[1.5fr_1fr_100px_100px_120px_100px] items-center px-6 py-4 hover:bg-warm-grey/20 transition-colors">
+                  <div>
+                    <p className="font-bold text-sm text-deep-grape">{s.name}</p>
+                    <p className="text-[9px] text-deep-grape/40 font-bold uppercase truncate max-w-[200px]">{s.description || 'No description'}</p>
+                  </div>
+                  <span className="px-2 py-0.5 bg-naturals-purple/5 text-naturals-purple rounded-md text-[9px] font-black uppercase tracking-wide w-fit">
+                    {s.category || 'General'}
+                  </span>
+                  <p className="text-[10px] font-black text-deep-grape/60">{s.duration_minutes} MIN</p>
+                  <p className="text-[10px] font-black text-naturals-purple italic">₹{s.price}</p>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-1.5 h-1.5 rounded-full ${s.is_active ? 'bg-green-500' : 'bg-red-400'}`} />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-deep-grape/40">
+                      {s.is_active ? 'Active' : 'Hidden'}
+                    </span>
+                  </div>
+                  <div className="flex justify-end gap-1">
+                    {(isAdmin || isFranchiseOwner) && (
+                      <>
+                        <button onClick={() => handleEdit('service', s)} className="p-2 hover:bg-naturals-purple/10 rounded-xl transition-all group">
+                          <Edit className="w-4 h-4 text-naturals-purple/60 group-hover:text-naturals-purple" />
+                        </button>
+                        <button onClick={() => handleDelete('service', s.id)} className="p-2 hover:bg-red-50 rounded-xl transition-all group">
+                          <Trash2 className="w-4 h-4 text-red-500 group-hover:text-red-600" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {services.length === 0 && (
+                 <div className="px-6 py-10 text-center text-deep-grape/30 text-xs font-black uppercase tracking-widest">No services available in registry</div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -961,319 +1078,408 @@ export default function StaffDashboard() {
                 <X className="w-6 h-6 text-deep-grape/40" />
               </button>
             </div>
-
             <form onSubmit={handleSubmit} noValidate className="space-y-5">
-              <div className="space-y-1 relative">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Full Legal Name</label>
-                <input
-                  type="text"
-                  value={formData.fullName}
-                  onChange={(e) => {
-                    setFormData({ ...formData, fullName: e.target.value });
-                    if (formErrors.fullName) setFormErrors({ ...formErrors, fullName: '' });
-                  }}
-                  className={`w-full bg-warm-grey/40 border rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold transition-all outline-none ${
-                     formErrors.fullName ? 'border-red-500 bg-red-50/10' : 'border-naturals-purple/20 focus:bg-white focus:border-naturals-purple'
-                  }`}
-                />
-                <ValidationError field="fullName" />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1 relative">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Phone</label>
+              {(modalType === 'add-service' || (modalType === 'edit' && activeTab === 'services')) ? (
+                <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                  <div className="space-y-1 relative">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Service Name</label>
                     <input
-                      type="tel"
-                      value={formData.phone}
+                      type="text"
+                      value={formData.serviceName}
                       onChange={(e) => {
-                        setFormData({ ...formData, phone: e.target.value });
-                        if (formErrors.phone) setFormErrors({ ...formErrors, phone: '' });
+                        setFormData({ ...formData, serviceName: e.target.value });
+                        if (formErrors.serviceName) setFormErrors({ ...formErrors, serviceName: '' });
                       }}
                       className={`w-full bg-warm-grey/40 border rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold transition-all outline-none ${
-                        formErrors.phone ? 'border-red-500 bg-red-50/10' : 'border-naturals-purple/20 focus:bg-white focus:border-naturals-purple'
+                        formErrors.serviceName ? 'border-red-500 bg-red-50/10' : 'border-naturals-purple/20 focus:bg-white focus:border-naturals-purple'
                       }`}
                     />
-                    <ValidationError field="phone" />
+                    <ValidationError field="serviceName" />
                   </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Email</label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
-                  />
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Date of Birth</label>
-                  <div className="relative group">
-                    <input
-                      type="text"
-                      placeholder="DD-MM-YYYY"
-                      value={formData.dateOfBirth}
-                      onChange={(e) => {
-                        let val = e.target.value.replace(/\D/g, '');
-                        if (val.length > 8) val = val.slice(0, 8);
-                        // Auto formatting DD-MM-YYYY
-                        if (val.length > 4) val = val.slice(0, 2) + '-' + val.slice(2, 4) + '-' + val.slice(4);
-                        else if (val.length > 2) val = val.slice(0, 2) + '-' + val.slice(2);
-                        setFormData({ ...formData, dateOfBirth: val });
-                      }}
-                      className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 pl-6 pr-12 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Description</label>
+                    <textarea
+                      value={formData.serviceDescription}
+                      onChange={(e) => setFormData({ ...formData, serviceDescription: e.target.value })}
+                      className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none min-h-[80px] resize-none"
                     />
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-naturals-purple z-10">
-                      <button 
-                        type="button"
-                        onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
-                        className="p-1 hover:bg-naturals-purple/10 rounded-lg transition-all"
-                      >
-                        <Calendar className="w-5 h-5 opacity-60 group-hover:opacity-100 transition-opacity" />
-                      </button>
-                    </div>
-
-                    {isDatePickerOpen && (
-                      <div className="absolute top-full left-0 right-0 mt-2 p-6 bg-white border border-naturals-purple/20 rounded-[2rem] shadow-2xl z-[150] animate-in fade-in slide-in-from-top-4 duration-300">
-                        <div className="flex justify-between items-center mb-6">
-                          <span className="text-[10px] font-black text-naturals-purple uppercase tracking-widest">Select Birth Date</span>
-                          <button onClick={() => setIsDatePickerOpen(false)} className="text-deep-grape/40 hover:text-red-500 transition-colors">
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <label className="text-[8px] font-black uppercase text-deep-grape/40 ml-1">Year</label>
-                            <div className="relative group/sel">
-                              <select 
-                                className="w-full bg-warm-grey/50 border border-naturals-purple/10 rounded-xl py-2.5 px-3 text-[10px] font-black uppercase tracking-widest outline-none focus:border-naturals-purple focus:bg-white transition-all appearance-none cursor-pointer"
-                                onChange={(e) => {
-                                  const [d, m] = (formData.dateOfBirth.split('-').length === 3 ? formData.dateOfBirth.split('-') : ['01', '01']);
-                                  setFormData({ ...formData, dateOfBirth: `${d}-${m}-${e.target.value}` });
-                                }}
-                                value={formData.dateOfBirth.split('-')[2] || '2000'}
-                              >
-                                {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map(y => (
-                                  <option key={y} value={y}>{y}</option>
-                                ))}
-                              </select>
-                              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-naturals-purple/40 group-hover/sel:text-naturals-purple transition-colors">
-                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" /></svg>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="space-y-2">
-                            <label className="text-[8px] font-black uppercase text-deep-grape/40 ml-1">Month</label>
-                            <div className="relative group/sel">
-                              <select 
-                                className="w-full bg-warm-grey/50 border border-naturals-purple/10 rounded-xl py-2.5 px-3 text-[10px] font-black uppercase tracking-widest outline-none focus:border-naturals-purple focus:bg-white transition-all appearance-none cursor-pointer"
-                                onChange={(e) => {
-                                  const parts = formData.dateOfBirth.split('-');
-                                  const d = parts[0] || '01';
-                                  const y = parts[2] || '2000';
-                                  setFormData({ ...formData, dateOfBirth: `${d}-${e.target.value}-${y}` });
-                                }}
-                                value={formData.dateOfBirth.split('-')[1] || '01'}
-                              >
-                                {['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'].map(m => (
-                                  <option key={m} value={m}>{new Date(2000, parseInt(m)-1).toLocaleString('default', { month: 'long' })}</option>
-                                ))}
-                              </select>
-                              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-naturals-purple/40 group-hover/sel:text-naturals-purple transition-colors">
-                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" /></svg>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="mt-4 grid grid-cols-7 gap-1">
-                          {Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0')).map((day) => (
-                            <button
-                              key={day}
-                              type="button"
-                              onClick={() => {
-                                const parts = formData.dateOfBirth.split('-');
-                                const m = parts[1] || '01';
-                                const y = parts[2] || '2000';
-                                setFormData({ ...formData, dateOfBirth: `${day}-${m}-${y}` });
-                                setIsDatePickerOpen(false);
-                              }}
-                              className={`aspect-square flex items-center justify-center text-[10px] font-black rounded-lg transition-all ${
-                                formData.dateOfBirth.startsWith(day) 
-                                  ? 'bg-naturals-purple text-white shadow-lg' 
-                                  : 'hover:bg-naturals-purple/10 text-deep-grape/60'
-                              }`}
-                            >
-                              {day}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {formData.dateOfBirth.length === 10 && (
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 bg-naturals-purple text-white text-[8px] font-black px-2 py-1 rounded-lg uppercase tracking-widest">
-                        Age: {(() => {
-                          const [d, m, y] = formData.dateOfBirth.split('-').map(Number);
-                          if (!d || !m || !y || y < 1900) return '---';
-                          const birthDate = new Date(y, m - 1, d);
-                          const today = new Date();
-                          let age = today.getFullYear() - birthDate.getFullYear();
-                          const monthDiff = today.getMonth() - birthDate.getMonth();
-                          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) age--;
-                          return age;
-                        })()}
-                      </span>
-                    )}
                   </div>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Gender</label>
-                  <div className="flex bg-warm-grey/40 rounded-2xl p-1 border border-naturals-purple/20">
-                    {['male', 'female', 'other'].map((g) => (
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Category</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. FACE, HAIR"
+                        value={formData.serviceCategory}
+                        onChange={(e) => setFormData({ ...formData, serviceCategory: e.target.value })}
+                        className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Duration (Min)</label>
+                      <input
+                        type="number"
+                        value={formData.serviceDuration}
+                        onChange={(e) => setFormData({ ...formData, serviceDuration: e.target.value })}
+                        className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1 relative">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Price (₹)</label>
+                      <input
+                        type="number"
+                        value={formData.servicePrice}
+                        onChange={(e) => {
+                          setFormData({ ...formData, servicePrice: e.target.value });
+                          if (formErrors.servicePrice) setFormErrors({ ...formErrors, servicePrice: '' });
+                        }}
+                        className={`w-full bg-warm-grey/40 border rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold transition-all outline-none ${
+                          formErrors.servicePrice ? 'border-red-500 bg-red-50/10' : 'border-naturals-purple/20 focus:bg-white focus:border-naturals-purple'
+                        }`}
+                      />
+                      <ValidationError field="servicePrice" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Active Status</label>
                       <button
-                        key={g}
                         type="button"
-                        onClick={() => setFormData({ ...formData, gender: g })}
-                        className={`flex-1 py-2 text-[8px] font-black uppercase tracking-widest rounded-xl transition-all ${
-                          formData.gender === g ? 'bg-naturals-purple text-white shadow-md' : 'text-deep-grape/40'
+                        onClick={() => setFormData({ ...formData, serviceIsActive: !formData.serviceIsActive })}
+                        className={`w-full py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest border transition-all ${
+                          formData.serviceIsActive 
+                            ? 'bg-green-500 border-green-500 text-white shadow-lg shadow-green-500/20' 
+                            : 'bg-warm-grey border-black/5 text-deep-grape/40'
                         }`}
                       >
-                        {g}
+                        {formData.serviceIsActive ? 'ACTIVE' : 'HIDDEN'}
                       </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {(modalType === 'add-customer' || (modalType === 'edit' && activeTab === 'customers')) && (
-                <div className="space-y-6 pt-4 border-t border-black/5">
-                  <h4 className="text-xs font-black text-naturals-purple uppercase tracking-[0.2em]">Service Details</h4>
-                  
-                  <div className="grid grid-cols-1 gap-6">
-                    {PREDEFINED_QUESTIONS.filter(q => !q.gender || q.gender.includes(formData.gender)).map((q) => (
-                      <div key={q.id} className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-wider text-deep-grape/60 ml-1 italic">{q.question}</label>
-                        <div className="flex flex-wrap gap-2">
-                          {q.options.map((opt) => {
-                            const currentSelections = (Array.isArray(formData.preferences[q.id]) 
-                              ? formData.preferences[q.id] 
-                              : (formData.preferences[q.id] ? [formData.preferences[q.id]] : [])) as string[];
-                            const isSelected = currentSelections.includes(opt);
-
-                            return (
-                              <button
-                                key={opt}
-                                type="button"
-                                onClick={() => {
-                                  if (isSelected) {
-                                    setFormData({
-                                      ...formData,
-                                      preferences: { 
-                                        ...formData.preferences, 
-                                        [q.id]: currentSelections.filter((item: string) => item !== opt) 
-                                      }
-                                    });
-                                  } else {
-                                    setFormData({
-                                      ...formData,
-                                      preferences: { 
-                                        ...formData.preferences, 
-                                        [q.id]: [...currentSelections, opt] 
-                                      }
-                                    });
-                                  }
-                                }}
-                                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 ${
-                                  isSelected 
-                                    ? 'bg-naturals-purple border-naturals-purple text-white shadow-lg' 
-                                    : 'border-warm-grey text-deep-grape/40 hover:border-naturals-purple/20'
-                                }`}
-                              >
-                                {opt}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Extra Notes</label>
-                    <textarea
-                      placeholder="Special instructions, product allergies, or styling notes..."
-                      value={formData.notes}
-                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-4 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none min-h-[100px] resize-none"
-                    />
-                  </div>
-                </div>
-              )}
-
-
-              {(modalType === 'add-franchise' || (modalType === 'edit' && activeTab === 'franchise')) && (
-                <div className="space-y-4 pt-2">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Franchise Name</label>
-                    <input
-                      type="text"
-                      value={formData.franchiseName}
-                      onChange={(e) => setFormData({ ...formData, franchiseName: e.target.value })}
-                      className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Franchise Address</label>
-                    <input
-                      type="text"
-                      value={formData.franchiseAddress}
-                      onChange={(e) => setFormData({ ...formData, franchiseAddress: e.target.value })}
-                      className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {(modalType === 'add-admin' || (modalType === 'edit' && activeTab === 'admins')) && (
-                <div className="space-y-4 pt-2">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Associated Franchise Owner</label>
-                    <div className="relative group/sel">
-                        <select 
-                            className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none appearance-none cursor-pointer"
-                            value={formData.franchiseOwnerId}
-                            onChange={(e) => setFormData({ ...formData, franchiseOwnerId: e.target.value })}
-                        >
-                            <option value="">Independent / None</option>
-                            {franchiseOwners.map(fo => (
-                                <option key={fo.id} value={fo.id}>{fo.full_name} ({fo.franchise_name || 'No Name'})</option>
-                            ))}
-                        </select>
-                        <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-naturals-purple/40 group-hover/sel:text-naturals-purple transition-colors">
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" /></svg>
-                        </div>
                     </div>
                   </div>
                 </div>
-              )}
+              ) : (
+                <>
+                <div className="space-y-1 relative">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Full Legal Name</label>
+                  <input
+                    type="text"
+                    value={formData.fullName}
+                    onChange={(e) => {
+                      setFormData({ ...formData, fullName: e.target.value });
+                      if (formErrors.fullName) setFormErrors({ ...formErrors, fullName: '' });
+                    }}
+                    className={`w-full bg-warm-grey/40 border rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold transition-all outline-none ${
+                       formErrors.fullName ? 'border-red-500 bg-red-50/10' : 'border-naturals-purple/20 focus:bg-white focus:border-naturals-purple'
+                    }`}
+                  />
+                  <ValidationError field="fullName" />
+                </div>
 
-              {(modalType === 'add-stylist' || (modalType === 'edit' && activeTab === 'stylists')) && (
-                <div className="space-y-4 pt-2">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1 relative">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Phone</label>
+                      <input
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => {
+                          setFormData({ ...formData, phone: e.target.value });
+                          if (formErrors.phone) setFormErrors({ ...formErrors, phone: '' });
+                        }}
+                        className={`w-full bg-warm-grey/40 border rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold transition-all outline-none ${
+                          formErrors.phone ? 'border-red-500 bg-red-50/10' : 'border-naturals-purple/20 focus:bg-white focus:border-naturals-purple'
+                        }`}
+                      />
+                      <ValidationError field="phone" />
+                    </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Experience Years</label>
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Email</label>
                     <input
-                      type="number"
-                      placeholder="e.g. 5"
-                      value={formData.experienceYears}
-                      onChange={(e) => setFormData({ ...formData, experienceYears: e.target.value })}
-                      className="w-full bg-warm-grey/50 border-2 border-transparent rounded-2xl py-4 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple/30 transition-all outline-none"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
                     />
                   </div>
                 </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {(modalType === 'add-customer' || (modalType === 'edit' && activeTab === 'customers')) && (
+                    <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Date of Birth</label>
+                    <div className="relative group">
+                      <input
+                        type="text"
+                        placeholder="DD-MM-YYYY"
+                        value={formData.dateOfBirth}
+                        onChange={(e) => {
+                          let val = e.target.value.replace(/\D/g, '');
+                          if (val.length > 8) val = val.slice(0, 8);
+                          // Auto formatting DD-MM-YYYY
+                          if (val.length > 4) val = val.slice(0, 2) + '-' + val.slice(2, 4) + '-' + val.slice(4);
+                          else if (val.length > 2) val = val.slice(0, 2) + '-' + val.slice(2);
+                          setFormData({ ...formData, dateOfBirth: val });
+                        }}
+                        className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 pl-6 pr-12 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
+                      />
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-naturals-purple z-10">
+                        <button 
+                          type="button"
+                          onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
+                          className="p-1 hover:bg-naturals-purple/10 rounded-lg transition-all"
+                        >
+                          <Calendar className="w-5 h-5 opacity-60 group-hover:opacity-100 transition-opacity" />
+                        </button>
+                      </div>
+
+                      {isDatePickerOpen && (
+                        <div className="absolute top-full left-0 right-0 mt-2 p-6 bg-white border border-naturals-purple/20 rounded-[2rem] shadow-2xl z-[150] animate-in fade-in slide-in-from-top-4 duration-300">
+                          <div className="flex justify-between items-center mb-6">
+                            <span className="text-[10px] font-black text-naturals-purple uppercase tracking-widest">Select Birth Date</span>
+                            <button onClick={() => setIsDatePickerOpen(false)} className="text-deep-grape/40 hover:text-red-500 transition-colors">
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="text-[8px] font-black uppercase text-deep-grape/40 ml-1">Year</label>
+                              <div className="relative group/sel">
+                                <select 
+                                  className="w-full bg-warm-grey/50 border border-naturals-purple/10 rounded-xl py-2.5 px-3 text-[10px] font-black uppercase tracking-widest outline-none focus:border-naturals-purple focus:bg-white transition-all appearance-none cursor-pointer"
+                                  onChange={(e) => {
+                                    const [d, m] = (formData.dateOfBirth.split('-').length === 3 ? formData.dateOfBirth.split('-') : ['01', '01']);
+                                    setFormData({ ...formData, dateOfBirth: `${d}-${m}-${e.target.value}` });
+                                  }}
+                                  value={formData.dateOfBirth.split('-')[2] || '2000'}
+                                >
+                                  {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map(y => (
+                                    <option key={y} value={y}>{y}</option>
+                                  ))}
+                                </select>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-naturals-purple/40 group-hover/sel:text-naturals-purple transition-colors">
+                                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" /></svg>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-[8px] font-black uppercase text-deep-grape/40 ml-1">Month</label>
+                              <div className="relative group/sel">
+                                <select 
+                                  className="w-full bg-warm-grey/50 border border-naturals-purple/10 rounded-xl py-2.5 px-3 text-[10px] font-black uppercase tracking-widest outline-none focus:border-naturals-purple focus:bg-white transition-all appearance-none cursor-pointer"
+                                  onChange={(e) => {
+                                    const parts = formData.dateOfBirth.split('-');
+                                    const d = parts[0] || '01';
+                                    const y = parts[2] || '2000';
+                                    setFormData({ ...formData, dateOfBirth: `${d}-${e.target.value}-${y}` });
+                                  }}
+                                  value={formData.dateOfBirth.split('-')[1] || '01'}
+                                >
+                                  {['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'].map(m => (
+                                    <option key={m} value={m}>{new Date(2000, parseInt(m)-1).toLocaleString('default', { month: 'long' })}</option>
+                                  ))}
+                                </select>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-naturals-purple/40 group-hover/sel:text-naturals-purple transition-colors">
+                                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" /></svg>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 grid grid-cols-7 gap-1">
+                            {Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0')).map((day) => (
+                              <button
+                                key={day}
+                                type="button"
+                                onClick={() => {
+                                  const parts = formData.dateOfBirth.split('-');
+                                  const m = parts[1] || '01';
+                                  const y = parts[2] || '2000';
+                                  setFormData({ ...formData, dateOfBirth: `${day}-${m}-${y}` });
+                                  setIsDatePickerOpen(false);
+                                }}
+                                className={`aspect-square flex items-center justify-center text-[10px] font-black rounded-lg transition-all ${
+                                  formData.dateOfBirth.startsWith(day) 
+                                    ? 'bg-naturals-purple text-white shadow-lg' 
+                                    : 'hover:bg-naturals-purple/10 text-deep-grape/60'
+                                }`}
+                              >
+                                {day}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {formData.dateOfBirth.length === 10 && (
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 bg-naturals-purple text-white text-[8px] font-black px-2 py-1 rounded-lg uppercase tracking-widest">
+                          Age: {(() => {
+                            const [d, m, y] = formData.dateOfBirth.split('-').map(Number);
+                            if (!d || !m || !y || y < 1900) return '---';
+                            const birthDate = new Date(y, m - 1, d);
+                            const today = new Date();
+                            let age = today.getFullYear() - birthDate.getFullYear();
+                            const monthDiff = today.getMonth() - birthDate.getMonth();
+                            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) age--;
+                            return age;
+                          })()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  )}
+                  {(modalType === 'add-customer' || modalType === 'add-stylist' || (modalType === 'edit' && (activeTab === 'customers' || activeTab === 'stylists'))) && (
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Gender</label>
+                      <div className="flex bg-warm-grey/40 rounded-2xl p-1 border border-naturals-purple/20">
+                        {['male', 'female', 'other'].map((g) => (
+                          <button
+                            key={g}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, gender: g })}
+                            className={`flex-1 py-2 text-[8px] font-black uppercase tracking-widest rounded-xl transition-all ${
+                              formData.gender === g ? 'bg-naturals-purple text-white shadow-md' : 'text-deep-grape/40'
+                            }`}
+                          >
+                            {g}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {(modalType === 'add-customer' || (modalType === 'edit' && activeTab === 'customers')) && (
+                  <div className="space-y-6 pt-4 border-t border-black/5">
+                    <h4 className="text-xs font-black text-naturals-purple uppercase tracking-[0.2em]">Service Details</h4>
+                    
+                    <div className="grid grid-cols-1 gap-6">
+                      {PREDEFINED_QUESTIONS.filter(q => !q.gender || q.gender.includes(formData.gender)).map((q) => (
+                        <div key={q.id} className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-wider text-deep-grape/60 ml-1 italic">{q.question}</label>
+                          <div className="flex flex-wrap gap-2">
+                            {q.options.map((opt) => {
+                              const currentSelections = (Array.isArray(formData.preferences[q.id]) 
+                                ? formData.preferences[q.id] 
+                                : (formData.preferences[q.id] ? [formData.preferences[q.id]] : [])) as string[];
+                              const isSelected = currentSelections.includes(opt);
+
+                              return (
+                                <button
+                                  key={opt}
+                                  type="button"
+                                  onClick={() => {
+                                    if (isSelected) {
+                                      setFormData({
+                                        ...formData,
+                                        preferences: { 
+                                          ...formData.preferences, 
+                                          [q.id]: currentSelections.filter((item: string) => item !== opt) 
+                                        }
+                                      });
+                                    } else {
+                                      setFormData({
+                                        ...formData,
+                                        preferences: { 
+                                          ...formData.preferences, 
+                                          [q.id]: [...currentSelections, opt] 
+                                        }
+                                      });
+                                    }
+                                  }}
+                                  className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 ${
+                                    isSelected 
+                                      ? 'bg-naturals-purple border-naturals-purple text-white shadow-lg' 
+                                      : 'border-warm-grey text-deep-grape/40 hover:border-naturals-purple/20'
+                                  }`}
+                                >
+                                  {opt}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Extra Notes</label>
+                      <textarea
+                        placeholder="Special instructions, product allergies, or styling notes..."
+                        value={formData.notes}
+                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                        className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-4 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none min-h-[100px] resize-none"
+                      />
+                    </div>
+                  </div>
+                )}
+
+
+                {(modalType === 'add-franchise' || (modalType === 'edit' && activeTab === 'franchise')) && (
+                  <div className="space-y-4 pt-2">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Franchise Name</label>
+                      <input
+                        type="text"
+                        value={formData.franchiseName}
+                        onChange={(e) => setFormData({ ...formData, franchiseName: e.target.value })}
+                        className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Franchise Address</label>
+                      <input
+                        type="text"
+                        value={formData.franchiseAddress}
+                        onChange={(e) => setFormData({ ...formData, franchiseAddress: e.target.value })}
+                        className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {(modalType === 'add-admin' || (modalType === 'edit' && activeTab === 'admins')) && (
+                  <div className="space-y-4 pt-2">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Associated Franchise Owner</label>
+                      <div className="relative group/sel">
+                          <select 
+                              className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none appearance-none cursor-pointer"
+                              value={formData.franchiseOwnerId}
+                              onChange={(e) => setFormData({ ...formData, franchiseOwnerId: e.target.value })}
+                          >
+                              <option value="">Independent / None</option>
+                              {franchiseOwners.map(fo => (
+                                  <option key={fo.id} value={fo.id}>{fo.full_name} ({fo.franchise_name || 'No Name'})</option>
+                              ))}
+                          </select>
+                          <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-naturals-purple/40 group-hover/sel:text-naturals-purple transition-colors">
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" /></svg>
+                          </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {(modalType === 'add-stylist' || (modalType === 'edit' && activeTab === 'stylists')) && (
+                  <div className="space-y-4 pt-2">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Experience Years</label>
+                      <input
+                        type="number"
+                        placeholder="e.g. 5"
+                        value={formData.experienceYears}
+                        onChange={(e) => setFormData({ ...formData, experienceYears: e.target.value })}
+                        className="w-full bg-warm-grey/50 border-2 border-transparent rounded-2xl py-4 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple/30 transition-all outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+                </>
               )}
+
               <button
                 type="submit"
                 disabled={isSubmitting}

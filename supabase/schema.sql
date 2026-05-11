@@ -468,7 +468,7 @@ CREATE OR REPLACE FUNCTION is_franchise_owner() RETURNS BOOLEAN AS $$
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
 CREATE OR REPLACE FUNCTION is_admin() RETURNS BOOLEAN AS $$
-    SELECT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin');
+    SELECT EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role IN ('admin', 'franchise_owner'));
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
 CREATE OR REPLACE FUNCTION is_stylist() RETURNS BOOLEAN AS $$

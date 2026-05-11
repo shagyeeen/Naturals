@@ -58,7 +58,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [selectedBranch, setSelectedBranch] = useState("Adyar Branch");
 
   // Use the verified role flags from the auth context
-  const userRole = isAdmin ? "admin" : (profile?.role || "customer");
+  const userRole = profile?.role || (isAdmin ? "admin" : "customer");
   const needsOnboarding = userRole === 'customer' && customerProfile && (!customerProfile.phone || customerProfile.phone === 'PENDING');
 
   useEffect(() => {
@@ -171,7 +171,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const filteredLinks = sidebarLinks.filter(link => {
     if (userRole === "customer" && !customerProfile) return false;
     if (needsOnboarding) return false;
-    return link.roles.includes(userRole);
+    return link.roles.includes(userRole) || (isAdmin && link.roles.includes("admin"));
   });
 
   if (loading) return null;
@@ -228,7 +228,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 src="/naturalslogo.png" 
                 alt="Naturals Logo" 
                 fill 
-                sizes="192px"
+                sizes="(max-width: 768px) 40px, 192px"
                 className={`object-contain ${isSidebarOpen ? 'object-left' : 'object-center'}`}
                 priority
               />
@@ -269,8 +269,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="mb-6 px-4">
               <p className="text-[9px] font-black uppercase tracking-[0.2em] opacity-30 mb-1">Authenticated As</p>
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <p className="text-xs font-black text-naturals-purple italic">{userRole.replace('_', ' ').toUpperCase()}</p>
+                <p className="text-xs font-black text-naturals-purple italic">
+                  {isFranchiseOwner ? "FRANCHISE OWNER" : (isAdmin ? "ADMIN" : userRole.replace('_', ' ').toUpperCase())}
+                </p>
               </div>
             </div>
           )}
@@ -387,7 +388,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     {isAdmin ? "Command Center" : (selectedBranch || profile?.branch_name || "Adyar Branch")}
                   </p>
                   <p className="text-[11px] font-black text-deep-grape italic text-right">
-                    {isAdmin ? "ADMINISTRATOR" : (profile?.full_name?.toUpperCase() || customerProfile?.full_name?.toUpperCase() || (user?.displayName?.toUpperCase()) || "GUEST")}
+                    {isFranchiseOwner ? "FRANCHISE OWNER" : (isAdmin ? "ADMINISTRATOR" : (isManager ? "MANAGER" : (profile?.full_name?.toUpperCase() || customerProfile?.full_name?.toUpperCase() || (user?.displayName?.toUpperCase()) || "GUEST")))}
                   </p>
                 </div>
                 <div className="relative group/avatar">

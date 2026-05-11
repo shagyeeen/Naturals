@@ -30,7 +30,7 @@ function CustomerLoginForm() {
     const result = await signInWithGoogle();
     
     if (result.user && !result.error) {
-      const profileRes = await fetch(`/api/profile?email=${encodeURIComponent(result.user.email || '')}`);
+      const profileRes = await fetch(`/api/profile-sync?email=${encodeURIComponent(result.user.email || '')}`);
       
       if (!profileRes.ok) {
         const text = await profileRes.text();
@@ -135,6 +135,7 @@ function CustomerLoginForm() {
                 src="/naturalslogo.png" 
                 alt="Logo" 
                 fill 
+                sizes="160px"
                 className="object-contain" 
               />
             </div>

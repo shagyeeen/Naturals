@@ -58,7 +58,14 @@ export default function LandingPage() {
       <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] w-[90%] max-w-6xl">
         <nav className="glass-card !rounded-full px-8 py-4 flex justify-between items-center bg-white/80 backdrop-blur-3xl border-white/60 shadow-[0_20px_40px_-15px_rgba(47,1,55,0.05)]">
           <Link href="/" className="relative w-40 h-10 hover:scale-105 transition-transform duration-500">
-            <Image src="/naturalslogo.png" alt="Naturals Logo" fill className="object-contain object-left" priority />
+            <Image 
+              src="/naturalslogo.png" 
+              alt="Naturals Logo" 
+              fill 
+              sizes="(max-width: 768px) 160px, 160px"
+              className="object-contain object-left" 
+              priority 
+            />
           </Link>
           <div className="hidden lg:flex items-center gap-14">
             {['Services', 'Offers', 'AI Features'].map(item => (
@@ -206,6 +213,7 @@ export default function LandingPage() {
                       src={`/services/${service.id}.png`} 
                       alt={service.name} 
                       fill 
+                      sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                       className="object-cover transition-transform duration-700 group-hover:scale-110"
                     />
                     
@@ -275,6 +283,7 @@ export default function LandingPage() {
                      src={`/services/${viewingService.id}.png`} 
                      alt={viewingService.name} 
                      fill 
+                     sizes="(max-width: 768px) 100vw, 45vw"
                      className="object-cover"
                    />
                    <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-deep-grape/80 via-deep-grape/20 to-transparent" />
@@ -365,7 +374,13 @@ export default function LandingPage() {
       <footer className="py-20 px-6 bg-white border-t border-black/5">
          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-12">
             <div className="relative w-48 h-12">
-               <Image src="/naturalslogo.png" alt="Logo" fill className="object-contain object-left" />
+               <Image 
+                 src="/naturalslogo.png" 
+                 alt="Logo" 
+                 fill 
+                 sizes="192px"
+                 className="object-contain object-left" 
+               />
             </div>
             <div className="flex gap-10">
                {['Instagram', 'Twitter', 'LinkedIn'].map(social => (
@@ -431,6 +446,7 @@ function HeroCarousel() {
             src={slides[current].image} 
             alt="Offer Banner" 
             fill 
+            sizes="100vw"
             className="object-cover"
             priority
           />
@@ -516,7 +532,13 @@ function FeatureCard({ img, title, desc, icon, delay = 0 }: { img: string, title
       className="group relative"
     >
       <div className="relative w-full aspect-square rounded-[3.5rem] overflow-hidden mb-8 shadow-2xl border border-black/5">
-        <Image src={img} alt={title} fill className="object-cover group-hover:scale-110 transition-transform duration-1000" />
+        <Image 
+          src={img} 
+          alt={title} 
+          fill 
+          sizes="(max-width: 768px) 100vw, 33vw"
+          className="object-cover group-hover:scale-110 transition-transform duration-1000" 
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-deep-grape/80 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
         <div className="absolute top-8 left-8 w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-white border border-white/20">
           {icon}

@@ -251,7 +251,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signUp,
     signInWithGoogle,
     signOut,
-    isAdmin: isReceptionist,
+    isAdmin: adminCheck,
     isFranchiseOwner: isFranchiseOwner,
     isManager: managerCheck,
     isStylist: stylistCheck,

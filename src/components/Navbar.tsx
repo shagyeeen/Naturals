@@ -35,6 +35,7 @@ export default function Navbar() {
                 src="/naturalslogo.png" 
                 alt="Naturals Logo" 
                 fill 
+                sizes="(max-width: 768px) 144px, 192px"
                 className={`object-contain object-left`}
                 priority
               />
