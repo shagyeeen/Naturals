@@ -104,7 +104,7 @@ export async function POST(req: Request) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
+        model: 'llama-3.3-70b-versatile',
         messages: [
           {
             role: 'system',
@@ -166,9 +166,9 @@ export async function POST(req: Request) {
       const errorData = await response.json();
       console.error('Groq API Error:', errorData);
 
-      if (errorData.error?.message?.includes('tool call validation failed')) {
+      if (errorData.error?.message?.includes('tool call validation failed') || errorData.error?.message?.includes('Failed to call a function') || errorData.error?.failed_generation) {
         return NextResponse.json({
-          text: "I'd love to help you book that! Could you please tell me which service you're looking for, and your preferred date and time?"
+          text: "I'm having a little trouble understanding or booking that right now. Could you please provide your details a bit more clearly, or rephrase your request?"
         });
       }
       throw new Error(errorData.error?.message || 'Groq API error');

@@ -26,7 +26,6 @@ export async function POST(request: Request) {
           full_name: fullName || "Google User",
           customer_code: customerCode,
           phone: 'PENDING', // Requirement: Phone is NOT NULL in DB, will be updated during onboarding
-          profile_photo_url: photoURL || null,
           is_active: true
         })
         if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 })
