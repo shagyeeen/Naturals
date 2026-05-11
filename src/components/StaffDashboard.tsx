@@ -91,7 +91,7 @@ export default function StaffDashboard() {
   
   // Default Tabs based on Role
   const initialTab = isStylist ? 'appointments' : 'stylists';
-  const [activeTab, setActiveTab] = useState<'customers' | 'stylists' | 'managers' | 'franchise' | 'appointments' | 'services' | 'consultations'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'customers' | 'stylists' | 'managers' | 'franchise' | 'appointments' | 'services' | 'consultations' | 'skipped'>(initialTab);
   
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [services, setServices] = useState<Service[]>([]);
@@ -106,6 +106,7 @@ export default function StaffDashboard() {
   const [modalType, setModalType] = useState<ModalType>('add-customer');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [requestToDelete, setRequestToDelete] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>({
     fullName: '',
     phone: '',
@@ -185,7 +186,11 @@ export default function StaffDashboard() {
   };
 
   const updateConsultationStatus = async (id: string, status: string) => {
-    await supabase.from('consultation_requests').update({ status }).eq('id', id);
+    let updatePayload: any = { status };
+    if (status === 'raised_in_admin_portal') {
+      updatePayload = { status: 'cancelled', notes: 'Skipped / Raised in Admin Portal' };
+    }
+    await supabase.from('consultation_requests').update(updatePayload).eq('id', id);
     fetchConsultations();
   };
 
@@ -512,12 +517,12 @@ export default function StaffDashboard() {
       </div>
 
       <div className="flex gap-1 p-1.5 rounded-2xl w-fit bg-warm-grey/50 border border-black/5 shadow-inner">
-        {(['customers', 'stylists', 'managers', 'franchise', 'appointments', 'services', 'consultations'] as const)
+        {(['customers', 'stylists', 'managers', 'franchise', 'appointments', 'services', 'consultations', 'skipped'] as const)
           .filter(tab => {
             if (isAdmin) return true;
-            if (isFranchiseOwner) return ['customers', 'stylists', 'managers', 'appointments', 'services'].includes(tab);
-            if (isManager) return ['customers', 'stylists', 'appointments', 'consultations'].includes(tab);
-            if (isStylist) return ['customers', 'appointments', 'consultations'].includes(tab);
+            if (isFranchiseOwner) return ['customers', 'stylists', 'managers', 'appointments', 'services', 'skipped'].includes(tab);
+            if (isManager) return ['customers', 'stylists', 'appointments', 'consultations', 'skipped'].includes(tab);
+            if (isStylist) return ['customers', 'appointments', 'consultations', 'skipped'].includes(tab);
             return false;
           })
           .map((tab) => (
@@ -832,9 +837,9 @@ export default function StaffDashboard() {
             {consultations
               .filter(c => {
                 const search = searchQuery.toLowerCase();
-                return c.customer_name?.toLowerCase().includes(search) || 
-                       c.service_name?.toLowerCase().includes(search) ||
-                       c.email?.toLowerCase().includes(search) ||
+                return c.customer_name?.toLowerCase()?.includes(search) || 
+                       c.service_name?.toLowerCase()?.includes(search) ||
+                       c.email?.toLowerCase()?.includes(search) ||
                        c.phone?.includes(search);
               })
               .map((c) => (
@@ -858,6 +863,7 @@ export default function StaffDashboard() {
                       c.status === 'contacted' ? 'bg-blue-50 text-blue-600 border-blue-200' :
                       c.status === 'scheduled' ? 'bg-purple-50 text-purple-600 border-purple-200' :
                       c.status === 'completed' ? 'bg-green-50 text-green-600 border-green-200' :
+                      c.status === 'cancelled' || c.status === 'raised_in_admin_portal' ? 'bg-red-50 text-red-600 border-red-200' :
                       'bg-red-50 text-red-600 border-red-200'
                     }`}
                   >
@@ -865,26 +871,76 @@ export default function StaffDashboard() {
                     <option value="contacted">Contacted</option>
                     <option value="scheduled">Scheduled</option>
                     <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option>
+                    <option value="cancelled">Escalated / Skipped</option>
                   </select>
                 </div>
-                <div className="flex justify-end">
-                   <button 
-                     onClick={async () => {
-                       if (confirm('Delete this request?')) {
-                         await supabase.from('consultation_requests').delete().eq('id', c.id);
-                         fetchConsultations();
-                       }
-                     }}
-                     className="p-2 hover:bg-red-50 rounded-xl transition-all group"
-                   >
-                     <Trash2 className="w-4 h-4 text-red-400 group-hover:text-red-500" />
-                   </button>
+                <div className="flex justify-end h-8">
+                   {requestToDelete === c.id ? (
+                     <div className="flex gap-2 items-center animate-in fade-in duration-200">
+                       <span className="text-[9px] font-bold text-red-500 uppercase">Skip?</span>
+                       <button onClick={() => setRequestToDelete(null)} className="px-2 py-1 bg-warm-grey text-deep-grape rounded-md text-[8px] font-black uppercase hover:bg-black/10 transition-colors">No</button>
+                       <button 
+                         onClick={async () => {
+                           await updateConsultationStatus(c.id, 'raised_in_admin_portal');
+                           setRequestToDelete(null);
+                         }} 
+                         className="px-2 py-1 bg-red-500 text-white rounded-md text-[8px] font-black uppercase hover:bg-red-600 transition-colors shadow-sm"
+                       >Yes</button>
+                     </div>
+                   ) : (
+                     <button 
+                       onClick={() => setRequestToDelete(c.id)}
+                       className="p-2 hover:bg-red-50 rounded-xl transition-all group"
+                     >
+                       <Trash2 className="w-4 h-4 text-red-400 group-hover:text-red-500" />
+                     </button>
+                   )}
                 </div>
               </div>
             ))}
             {consultations.length === 0 && (
                <div className="px-6 py-10 text-center text-deep-grape/30 text-xs font-black uppercase tracking-widest">No meeting requests found</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'skipped' && (
+        <div className="bg-white border border-black/5 shadow-xl rounded-[2rem] overflow-hidden">
+          <div className="grid grid-cols-[1.5fr_1.5fr_1fr_1fr] px-6 py-3 bg-warm-grey/40 border-b border-black/5">
+            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Requested Service</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Customer</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Date Skipped</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Status</span>
+          </div>
+          <div className="divide-y divide-black/5">
+            {consultations
+              .filter(c => c.status === 'cancelled' || c.notes?.includes('Skipped'))
+              .filter(c => {
+                const search = searchQuery.toLowerCase();
+                return c.customer_name?.toLowerCase()?.includes(search) || 
+                       c.service_name?.toLowerCase()?.includes(search);
+              })
+              .map((c) => (
+              <div key={c.id} className="grid grid-cols-[1.5fr_1.5fr_1fr_1fr] items-center px-6 py-4 hover:bg-warm-grey/20 transition-colors">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-red-500">{c.service_name}</p>
+                  <p className="text-[8px] text-deep-grape/40 font-bold uppercase mt-1">{c.notes || 'Skipped via workspace'}</p>
+                </div>
+                <div>
+                  <p className="font-bold text-xs text-deep-grape">{c.customer_name}</p>
+                  <p className="text-[9px] text-deep-grape/40 font-bold">{c.email}</p>
+                </div>
+                <p className="text-[10px] font-bold text-deep-grape/60">{new Date(c.created_at).toLocaleDateString()}</p>
+                <div>
+                  <span className="bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest">
+                    Raised in Admin
+                  </span>
+                </div>
+              </div>
+            ))}
+            {consultations.filter(c => c.status === 'cancelled' || c.notes?.includes('Skipped')).length === 0 && (
+               <div className="px-6 py-10 text-center text-deep-grape/30 text-xs font-black uppercase tracking-widest">No skipped appointments found</div>
             )}
           </div>
         </div>

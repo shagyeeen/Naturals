@@ -15,18 +15,17 @@ import {
   AlertCircle
 } from "lucide-react";
 import { 
-  BarChart, 
-  Bar, 
+  AreaChart, 
+  Area, 
   XAxis, 
   YAxis, 
   CartesianGrid, 
   Tooltip as RechartsTooltip, 
-  ResponsiveContainer,
-  Cell,
-  Legend
+  ResponsiveContainer
 } from "recharts";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import Link from "next/link";
 
 export default function WorkAnalytics() {
   const { profile, isAdmin, isStylist } = useAuth();
@@ -194,7 +193,7 @@ export default function WorkAnalytics() {
     { name: "Total Work Hours", value: `${stats.totalWorkHours}h`, icon: Clock, trend: "Shift Total" },
     { name: "Total Appointments", value: stats.appointmentsCount, icon: Calendar, trend: "Current Period" },
     { name: "Avg Service Time", value: `${stats.avgServiceTime}m`, icon: Timer, trend: "Per Service" },
-    { name: "Active Clients", value: stats.activeCustomers, icon: Users, trend: "Unique Reached" }
+    { name: "Active Clients", value: stats.activeCustomers, icon: Users, trend: "Unique Reached", href: "/dashboard/appointments" }
   ];
 
   if (loading) {
@@ -254,26 +253,37 @@ export default function WorkAnalytics() {
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {metricCards.map((metric, idx) => (
-          <motion.div
-            key={metric.name}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.1 }}
-            className="glass-card p-6 border border-black/5 hover:border-naturals-purple/20 transition-all group"
-          >
-            <div className="flex justify-between items-start mb-4">
-              <div className="p-3 rounded-xl bg-warm-grey text-naturals-purple group-hover:bg-naturals-purple group-hover:text-white transition-all">
-                <metric.icon className="w-5 h-5" />
+        {metricCards.map((metric, idx) => {
+          const CardContent = (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.1 }}
+              className="glass-card p-6 border border-black/5 hover:border-naturals-purple/20 transition-all group h-full cursor-pointer hover:shadow-lg hover:-translate-y-1"
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div className="p-3 rounded-xl bg-warm-grey text-naturals-purple group-hover:bg-naturals-purple group-hover:text-white transition-all">
+                  <metric.icon className="w-5 h-5" />
+                </div>
+                <div className="text-[9px] font-black text-deep-grape/20 uppercase tracking-widest">
+                  {metric.trend}
+                </div>
               </div>
-              <div className="text-[9px] font-black text-deep-grape/20 uppercase tracking-widest">
-                {metric.trend}
-              </div>
-            </div>
-            <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-widest mb-1">{metric.name}</p>
-            <h3 className="text-2xl font-black text-deep-grape italic tracking-tight">{metric.value}</h3>
-          </motion.div>
-        ))}
+              <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-widest mb-1">{metric.name}</p>
+              <h3 className="text-2xl font-black text-deep-grape italic tracking-tight">{metric.value}</h3>
+            </motion.div>
+          );
+
+          if (metric.href) {
+            return (
+              <Link href={metric.href} key={metric.name} className="block outline-none">
+                {CardContent}
+              </Link>
+            );
+          }
+
+          return <div key={metric.name}>{CardContent}</div>;
+        })}
       </div>
 
       {/* Main Timeline Chart */}
@@ -293,8 +303,14 @@ export default function WorkAnalytics() {
         
         <div className="h-[400px] w-full relative z-10">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={workloadData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#00000005" />
+            <AreaChart data={workloadData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorAppointments" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#8E3E96" stopOpacity={0.5}/>
+                  <stop offset="95%" stopColor="#8E3E96" stopOpacity={0.0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#8E3E9615" />
               <XAxis 
                 dataKey="name" 
                 axisLine={false} 
@@ -310,30 +326,32 @@ export default function WorkAnalytics() {
                 allowDecimals={false}
               />
               <RechartsTooltip 
-                cursor={{ fill: '#8E3E9608' }}
+                cursor={{ stroke: '#8E3E96', strokeWidth: 1, strokeDasharray: '4 4' }}
                 contentStyle={{ 
                   borderRadius: '1.5rem', 
-                  border: 'none', 
-                  boxShadow: '0 25px 50px rgba(0,0,0,0.15)',
+                  border: '1px solid rgba(142,62,150,0.1)', 
+                  boxShadow: '0 30px 60px rgba(0,0,0,0.12)',
                   fontSize: '11px',
                   fontWeight: 900,
                   textTransform: 'uppercase',
                   letterSpacing: '0.1em',
-                  padding: '1.5rem'
+                  padding: '1.5rem',
+                  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                  backdropFilter: 'blur(10px)'
                 }}
               />
-              <Bar 
+              <Area 
+                type="linear" 
                 dataKey="Appointments" 
-                fill="#8E3E96" 
-                radius={[12, 12, 0, 0]} 
-                barSize={timeframe === 'today' ? 40 : 50}
+                stroke="#8E3E96" 
+                strokeWidth={3}
+                fillOpacity={1} 
+                fill="url(#colorAppointments)" 
                 animationDuration={1500}
-              >
-                {workloadData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fillOpacity={0.8 + (index % 3) * 0.1} />
-                ))}
-              </Bar>
-            </BarChart>
+                dot={{ r: 4, fill: '#8E3E96', stroke: '#fff', strokeWidth: 2 }}
+                activeDot={{ r: 7, fill: '#8E3E96', stroke: '#fff', strokeWidth: 3 }}
+              />
+            </AreaChart>
           </ResponsiveContainer>
         </div>
       </div>
@@ -346,18 +364,24 @@ export default function WorkAnalytics() {
               <h3 className="text-xl font-black text-deep-grape italic tracking-tighter uppercase">Shift Density Analysis</h3>
            </div>
            
-           {workloadData.length > 0 && timeframe === 'today' ? (
+           {workloadData.length > 0 ? (
              <div className="space-y-10">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                    <div className="space-y-4">
                       <div className="flex justify-between items-end">
                          <p className="text-[10px] font-black text-deep-grape/40 uppercase tracking-[0.2em]">Service Occupancy</p>
-                         <p className="text-2xl font-black text-naturals-purple italic">{Math.round((workloadData.filter(d => d.Appointments > 0).length / WORK_HOURS_PER_DAY) * 100)}%</p>
+                         <p className="text-2xl font-black text-naturals-purple italic">
+                           {(() => {
+                             const possibleHours = timeframe === 'today' ? WORK_HOURS_PER_DAY : timeframe === 'week' ? WORK_HOURS_PER_DAY * 7 : WORK_HOURS_PER_DAY * 30;
+                             const ratio = stats.totalWorkHours / possibleHours;
+                             return `${Math.round(Math.min(ratio * 100, 100))}%`;
+                           })()}
+                         </p>
                       </div>
                       <div className="h-4 w-full bg-warm-grey rounded-full overflow-hidden p-1 border border-black/5">
                          <motion.div 
                             initial={{ width: 0 }}
-                            animate={{ width: `${(workloadData.filter(d => d.Appointments > 0).length / WORK_HOURS_PER_DAY) * 100}%` }}
+                            animate={{ width: `${Math.min((stats.totalWorkHours / (timeframe === 'today' ? WORK_HOURS_PER_DAY : timeframe === 'week' ? WORK_HOURS_PER_DAY * 7 : WORK_HOURS_PER_DAY * 30)) * 100, 100)}%` }}
                             transition={{ duration: 1.5, ease: "easeOut" }}
                             className="h-full bg-naturals-purple rounded-full shadow-[0_0_15px_#8E3E9660]"
                          />
@@ -370,7 +394,16 @@ export default function WorkAnalytics() {
                       </div>
                       <div>
                          <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-widest mb-1">Peak Utilization</p>
-                         <p className="text-xs font-black text-deep-grape italic">Highest booking volume detected between 11 AM and 2 PM.</p>
+                         <p className="text-xs font-black text-deep-grape italic">
+                           {(() => {
+                             const maxAppts = Math.max(...workloadData.map(d => d.Appointments || 0));
+                             if (maxAppts === 0) return "No bookings detected for this period.";
+                             const peakSlots = workloadData.filter(d => d.Appointments === maxAppts);
+                             if (peakSlots.length === 1) return `Highest volume detected at ${peakSlots[0].name}.`;
+                             if (peakSlots.length > 1 && peakSlots.length < 4) return `Peak volumes detected at ${peakSlots.map(p => p.name).join(', ')}.`;
+                             return "High volume spread across multiple hours.";
+                           })()}
+                         </p>
                       </div>
                    </div>
                 </div>
@@ -381,23 +414,33 @@ export default function WorkAnalytics() {
                       <p className="text-lg font-black text-deep-grape">{stats.totalWorkHours}h</p>
                    </div>
                    <div>
-                      <p className="text-[9px] font-black text-deep-grape/30 uppercase tracking-widest mb-1">Free Slots</p>
-                      <p className="text-lg font-black text-deep-grape">{WORK_HOURS_PER_DAY - workloadData.filter(d => d.Appointments > 0).length}h</p>
+                      <p className="text-[9px] font-black text-deep-grape/30 uppercase tracking-widest mb-1">Free {timeframe === 'today' ? 'Hours' : timeframe === 'week' ? 'Days' : 'Weeks'}</p>
+                      <p className="text-lg font-black text-deep-grape">{workloadData.length - workloadData.filter(d => d.Appointments > 0).length}</p>
                    </div>
                    <div>
-                      <p className="text-[9px] font-black text-deep-grape/30 uppercase tracking-widest mb-1">Busy Slots</p>
-                      <p className="text-lg font-black text-deep-grape">{workloadData.filter(d => d.Appointments > 0).length}h</p>
+                      <p className="text-[9px] font-black text-deep-grape/30 uppercase tracking-widest mb-1">Busy {timeframe === 'today' ? 'Hours' : timeframe === 'week' ? 'Days' : 'Weeks'}</p>
+                      <p className="text-lg font-black text-deep-grape">{workloadData.filter(d => d.Appointments > 0).length}</p>
                    </div>
                    <div>
                       <p className="text-[9px] font-black text-deep-grape/30 uppercase tracking-widest mb-1">Shift Efficiency</p>
-                      <p className="text-lg font-black text-naturals-purple italic">High</p>
+                      <p className="text-lg font-black text-naturals-purple italic">
+                        {(() => {
+                          const possibleHours = timeframe === 'today' ? WORK_HOURS_PER_DAY : timeframe === 'week' ? WORK_HOURS_PER_DAY * 7 : WORK_HOURS_PER_DAY * 30;
+                          const ratio = stats.totalWorkHours / possibleHours;
+                          if (ratio === 0) return "Idle";
+                          if (ratio < 0.3) return "Low";
+                          if (ratio < 0.6) return "Moderate";
+                          if (ratio < 0.85) return "High";
+                          return "Maximum";
+                        })()}
+                      </p>
                    </div>
                 </div>
              </div>
            ) : (
              <div className="py-12 text-center">
                 <Sparkles className="w-16 h-16 text-deep-grape/5 mx-auto mb-6" />
-                <p className="text-[11px] font-black text-deep-grape/40 uppercase tracking-[0.3em]">Select Today view for specialized real-time timeline metrics.</p>
+                <p className="text-[11px] font-black text-deep-grape/40 uppercase tracking-[0.3em]">No service data found for this period.</p>
              </div>
            )}
         </div>
@@ -408,9 +451,11 @@ export default function WorkAnalytics() {
            </div>
            <h4 className="text-lg font-black text-deep-grape uppercase tracking-widest mb-2">Client Reach</h4>
            <p className="text-xs font-medium text-deep-grape/40 max-w-[200px] mb-8">You have managed services for {stats.activeCustomers} unique customers in this period.</p>
-           <button className="w-full py-4 rounded-2xl bg-naturals-purple text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-naturals-purple/20 hover:scale-[1.02] transition-transform">
-              View History
-           </button>
+           <Link href="/dashboard/appointments" className="block w-full">
+             <button className="w-full py-4 rounded-2xl bg-naturals-purple text-white text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-naturals-purple/20 hover:scale-[1.02] transition-transform">
+                View History
+             </button>
+           </Link>
         </div>
       </div>
     </div>
