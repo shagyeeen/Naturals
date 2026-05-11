@@ -10,26 +10,37 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'No email provided' }, { status: 400 })
     }
 
-    const formattedEmail = email.toLowerCase()
+    const formattedEmail = email.trim().toLowerCase()
     console.log('[API] Fetching profile for:', formattedEmail)
     
-    // Fetch User
+    // Fetch User with case-insensitive check and extra logging
     const { data: userData, error: userError } = await supabaseAdmin
       .from('users')
       .select('*')
-      .eq('email', formattedEmail)
+      .ilike('email', formattedEmail)
       .maybeSingle()
 
-    // Fetch Customer
+    // Fetch Customer with case-insensitive check
     const { data: customerData, error: customerError } = await supabaseAdmin
       .from('customers')
       .select('*')
-      .eq('email', formattedEmail)
+      .ilike('email', formattedEmail)
       .maybeSingle()
 
     if (userError || customerError) {
-       console.error('[API] Supabase Error:', { userError, customerError })
+       console.error('[API] Supabase Error Detail:', { 
+         userError, 
+         customerError,
+         email: formattedEmail,
+         timestamp: new Date().toISOString()
+       })
     }
+
+    console.log('[API] Results for:', formattedEmail, { 
+      foundUser: !!userData, 
+      foundCustomer: !!customerData,
+      role: userData?.role
+    })
 
     return NextResponse.json({
       userData: userData || null,

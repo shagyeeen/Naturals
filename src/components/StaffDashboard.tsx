@@ -900,7 +900,6 @@ export default function StaffDashboard() {
                    )}
                 </div>
                 </div>
-              </div>
             ))}
             {meetings.length === 0 && (
                <div className="px-6 py-10 text-center text-deep-grape/30 text-xs font-black uppercase tracking-widest">No meeting requests found</div>

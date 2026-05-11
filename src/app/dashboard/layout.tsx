@@ -40,7 +40,6 @@ const sidebarLinks = [
   { name: "Beauty Passport", href: "/dashboard/passport", icon: Target, roles: ["customer"] },
   { name: "SOP Audit", href: "/dashboard/sop", icon: ShieldCheck, roles: ["admin", "manager"] },
   { name: "Appointments", href: "/dashboard/appointments", icon: CalendarCheck, roles: ["stylist", "admin"] },
-  { name: "Work Analytics", href: "/dashboard/analytics", icon: LineChart, roles: ["stylist", "admin"] },
   { name: "Trend Engine", href: "/dashboard/trends", icon: LineChart, roles: ["admin", "manager"] },
   { name: "Academy", href: "/dashboard/academy", icon: BookOpen, roles: ["admin"] },
 ];
@@ -238,11 +237,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         <div className="flex-1 overflow-y-auto py-10 px-4 space-y-1">
-          {filteredLinks.map((link) => {
+          {filteredLinks.map((link, idx) => {
             const isActive = pathname === link.href;
             return (
               <Link
-                key={link.name}
+                key={`${link.name}-${idx}`}
                 href={link.href}
                 className={`flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all group relative overflow-hidden ${
                   isActive 

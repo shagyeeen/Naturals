@@ -48,10 +48,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('[Auth] Refreshing profile via API for:', authUser.email);
       
       const res = await fetch(`/api/profile?email=${encodeURIComponent(authUser.email)}`);
-      if (!res.ok) throw new Error('Failed to fetch profile from API');
+      const fullData = await res.json();
+      console.log('[Auth] API Response Detail:', { 
+        status: res.status, 
+        ok: res.ok, 
+        data: fullData 
+      });
       
-      const { userData, customerData } = await res.json();
-      console.log('[Auth] API Profile Data:', { hasUser: !!userData, hasCustomer: !!customerData });
+      const { userData, customerData } = fullData;
 
       if (userData) {
         setProfile(userData);
