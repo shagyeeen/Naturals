@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Activity, Bot, Send, Sparkles, Wand2, ShieldCheck, Zap } from "lucide-react";
+import { Activity, Bot, Send, Sparkles, Wand2, ShieldCheck, Zap, Volume2, Square, Mic, MicOff } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -76,6 +76,123 @@ export default function NeuralAssistantPage() {
   ]);
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [speakingIdx, setSpeakingIdx] = useState<number | null>(null);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  // Initialize Speech Recognition once on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).webkitSpeechRecognition) {
+      const SpeechRecognition = (window as any).webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event: any) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        if (transcript.trim()) {
+          setInputText(transcript);
+        }
+      };
+
+      recognition.onend = () => {
+        // Use a ref to check the latest state without triggering re-runs
+        if (isListeningRef.current) {
+          try {
+            recognition.start();
+          } catch (e) {
+            console.warn("Speech restart failed (likely already running):", e);
+          }
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        // "aborted" often happens when calling start() on an already running instance
+        // "no-speech" happens on silence
+        if (event.error !== 'aborted' && event.error !== 'no-speech') {
+          console.error("Speech Recognition Error:", event.error);
+        }
+        
+        if (event.error === 'not-allowed') {
+          alert("Microphone access denied. Please enable it in your browser settings.");
+          setIsListening(false);
+        }
+      };
+
+      recognitionRef.current = recognition;
+    }
+  }, []);
+
+  // Update a ref to keep track of listening state for the onend callback
+  const isListeningRef = useRef(isListening);
+  useEffect(() => {
+    isListeningRef.current = isListening;
+  }, [isListening]);
+
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      alert("Speech recognition is not supported in this browser.");
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      setInputText("");
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (e) {
+        console.warn("Could not start recognition:", e);
+      }
+      stopSpeech();
+    }
+  };
+
+  // Stop any ongoing speech
+  const stopSpeech = () => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    setSpeakingIdx(null);
+  };
+
+  // Text-to-Speech function
+  const handleSpeak = (text: string, index: number) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+
+    if (speakingIdx === index) {
+      stopSpeech();
+      return;
+    }
+
+    // Cancel previous speech before starting new one to avoid overlap
+    stopSpeech();
+
+    // Clean markdown for better speech
+    const cleanText = text.replace(/[#*`_~]/g, '');
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    
+    // Set voice to English by default
+    const voices = window.speechSynthesis.getVoices();
+    const englishVoice = voices.find(v => v.lang.startsWith('en')) || voices[0];
+    if (englishVoice) {
+      utterance.voice = englishVoice;
+    }
+    utterance.lang = 'en-US';
+
+    // Handle end/error to update UI state
+    utterance.onend = () => setSpeakingIdx(null);
+    utterance.onerror = () => setSpeakingIdx(null);
+
+    setSpeakingIdx(index);
+    window.speechSynthesis.speak(utterance);
+  };
 
   // Auto-scroll logic
   useEffect(() => {
@@ -83,6 +200,13 @@ export default function NeuralAssistantPage() {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [messages, isTyping]);
+
+  // Cleanup speech on unmount
+  useEffect(() => {
+    return () => {
+      stopSpeech();
+    };
+  }, []);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,6 +216,15 @@ export default function NeuralAssistantPage() {
     setMessages(prev => [...prev, userMessage]);
     setInputText("");
     setIsTyping(true);
+    
+    // Stop speaking when a new response starts
+    stopSpeech();
+    
+    // Stop listening when sending a message
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    }
 
     try {
       const response = await fetch('/api/chat', {
@@ -110,7 +243,13 @@ export default function NeuralAssistantPage() {
       const data = await response.json();
       setIsTyping(false);
       if (data.text) {
-        setMessages(prev => [...prev, { role: "bot", text: data.text }]);
+        const newBotMessage = { role: "bot" as const, text: data.text };
+        setMessages(prev => {
+          const updated = [...prev, newBotMessage];
+          // Automatically read the response aloud
+          handleSpeak(data.text, updated.length - 1);
+          return updated;
+        });
       } else {
         throw new Error(data.error || 'No response from AI');
       }
@@ -186,6 +325,29 @@ export default function NeuralAssistantPage() {
                         : 'bg-white border border-black/5 text-deep-grape rounded-tl-none shadow-md w-full'
                     }`}>
                       <MarkdownRenderer content={msg.text} />
+                      
+                      {msg.role === 'bot' && (
+                        <div className="mt-3 pt-3 border-t border-black/5 flex justify-end">
+                           <button 
+                            onClick={() => handleSpeak(msg.text, idx)}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${
+                              speakingIdx === idx 
+                                ? 'bg-naturals-purple text-white shadow-lg shadow-naturals-purple/20' 
+                                : 'bg-warm-grey/50 text-deep-grape/40 hover:bg-naturals-purple/10 hover:text-naturals-purple'
+                            }`}
+                           >
+                              {speakingIdx === idx ? (
+                                <>
+                                  <Square className="w-3 h-3 fill-current" /> Stop
+                                </>
+                              ) : (
+                                <>
+                                  <Volume2 className="w-3 h-3" /> Speak
+                                </>
+                              )}
+                           </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </motion.div>
@@ -208,6 +370,17 @@ export default function NeuralAssistantPage() {
             onChange={(e) => setInputText(e.target.value)}
             className="flex-1 bg-warm-grey/50 border border-transparent focus:border-naturals-purple focus:bg-white rounded-2xl px-8 py-5 outline-none text-xs font-bold text-deep-grape transition-all shadow-inner" 
            />
+           <button 
+            type="button"
+            onClick={toggleListening}
+            className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl transition-all shrink-0 ${
+              isListening 
+                ? 'bg-red-500 text-white animate-pulse' 
+                : 'bg-warm-grey text-deep-grape/40 hover:text-naturals-purple'
+            }`}
+           >
+             {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+           </button>
            <button type="submit" className="w-14 h-14 rounded-2xl bg-deep-grape text-white flex items-center justify-center shadow-2xl hover:bg-naturals-purple transition-all group shrink-0">
              <Send className="w-6 h-6 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
            </button>
