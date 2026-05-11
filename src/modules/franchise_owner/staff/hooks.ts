@@ -7,7 +7,6 @@ export const useBranchStaff = (ownerId: string | undefined) => {
   const [error, setError] = useState<string | null>(null)
 
   const loadStaff = async () => {
-    if (!ownerId) return
     setLoading(true)
     setError(null)
     try {

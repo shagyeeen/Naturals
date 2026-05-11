@@ -84,22 +84,20 @@ function calculateAge(dob: string) {
   return age;
 }
 
-type ModalType = 'add-customer' | 'add-stylist' | 'add-manager' | 'add-franchise' | 'edit';
+type ModalType = 'add-customer' | 'add-stylist' | 'add-admin' | 'add-franchise' | 'edit';
 
 export default function StaffDashboard() {
   const { isAdmin, isManager, isFranchiseOwner, isStylist, profile } = useAuth();
   
   // Default Tabs based on Role
   const initialTab = isStylist ? 'appointments' : 'stylists';
-  const [activeTab, setActiveTab] = useState<'customers' | 'stylists' | 'managers' | 'franchise' | 'appointments' | 'services' | 'consultations' | 'skipped'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'customers' | 'stylists' | 'admins' | 'franchise' | 'appointments' | 'services' | 'meetings' | 'skipped'>(initialTab);
   
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [services, setServices] = useState<Service[]>([]);
-  const [stylists, setStylists] = useState<Stylist[]>([]);
-  const [managers, setManagers] = useState<Admin[]>([]);
   const [franchiseOwners, setFranchiseOwners] = useState<FranchiseOwner[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [consultations, setConsultations] = useState<any[]>([]);
+  const [meetings, setMeetings] = useState<any[]>([]);
   const [branchAssign, setBranchAssign] = useState<{id: string, table: string, current: string} | null>(null);
   const [branchInput, setBranchInput] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -158,48 +156,49 @@ export default function StaffDashboard() {
   // Sync hook data to local state for compatibility with existing search/filters
   useEffect(() => { if (hookCustomers) setCustomers(hookCustomers); }, [hookCustomers]);
   useEffect(() => { if (hookAppointments) setAppointments(hookAppointments); }, [hookAppointments]);
-  useEffect(() => { 
-    if (staff) {
-      setStylists(staff.stylists);
-      setManagers(staff.admins);
-    }
-  }, [staff]);
+
+  // Use staff data from hook directly to avoid sync issues
+  const stylists = staff.stylists || [];
+  const admins = staff.admins || [];
 
   const fetchStylists = async () => fetchStaff();
-  const fetchManagers = async () => fetchStaff();
+  const fetchAdmins = async () => fetchStaff();
   const fetchFranchiseOwners = async () => {
     const { data } = await supabase.from('franchise_owners').select('*').order('full_name');
     if (data) setFranchiseOwners(data as unknown as FranchiseOwner[]);
   }
+
+  const fetchMeetings = async () => {
+    const { data } = await supabase.from('consultation_requests').select('*').order('created_at', { ascending: false });
+    if (data) setMeetings(data);
+  };
 
   const fetchServices = async () => {
     const { data } = await supabase.from('services').select('*').order('category').order('name');
     if (data) setServices(data as unknown as Service[]);
   };
 
-  const fetchConsultations = async () => {
-    const { data } = await supabase
-      .from('consultation_requests')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (data) setConsultations(data);
-  };
-
-  const updateConsultationStatus = async (id: string, status: string) => {
+  const updateMeetingStatus = async (id: string, status: string) => {
     let updatePayload: any = { status };
     if (status === 'raised_in_admin_portal') {
       updatePayload = { status: 'cancelled', notes: 'Skipped / Raised in Admin Portal' };
     }
     await supabase.from('consultation_requests').update(updatePayload).eq('id', id);
-    fetchConsultations();
+    fetchMeetings();
+  };
+
+  const updateAppointmentStatus = async (id: string, status: string) => {
+    await supabase.from('appointments').update({ status }).eq('id', id);
+    fetchAppointments();
   };
 
   useEffect(() => {
     fetchCustomers();
     fetchAppointments();
+    fetchAdmins();
     fetchFranchiseOwners();
     fetchServices();
-    fetchConsultations();
+    fetchMeetings();
   }, []);
 
   const handleOpenModal = (type: ModalType, id?: string) => {
@@ -213,7 +212,7 @@ export default function StaffDashboard() {
     setShowModal(true);
   };
 
-  const handleEdit = (type: 'customer' | 'stylist' | 'manager' | 'franchise', data: any) => {
+  const handleEdit = (type: 'customer' | 'stylist' | 'admin' | 'franchise', data: any) => {
     setModalType('edit');
     setEditingId(data.id);
     
@@ -302,7 +301,7 @@ export default function StaffDashboard() {
         gender: formData.gender || null,
         experience_years: parseInt(formData.experienceYears) || 0,
       };
-    } else if (modalType === 'add-manager' || (modalType === 'edit' && activeTab === 'managers')) {
+    } else if (modalType === 'add-admin' || (modalType === 'edit' && activeTab === 'admins')) {
       table = 'admins';
       payload = {
         ...basePayload,
@@ -376,7 +375,7 @@ export default function StaffDashboard() {
         alert(`${modalType.split('-')[1].replace(/^\w/, c => c.toUpperCase())} added successfully!`);
         if (modalType === 'add-customer') fetchCustomers();
         else if (modalType === 'add-stylist') fetchStylists();
-        else if (modalType === 'add-manager') fetchManagers();
+        else if (modalType === 'add-admin') fetchAdmins();
         else if (modalType === 'add-franchise') fetchFranchiseOwners();
         setShowModal(false);
       }
@@ -384,14 +383,14 @@ export default function StaffDashboard() {
     setIsSubmitting(false);
   };
 
-  const handleDelete = async (type: 'customer' | 'stylist' | 'manager' | 'franchise', id: string) => {
+  const handleDelete = async (type: 'customer' | 'stylist' | 'admin' | 'franchise', id: string) => {
     if (!confirm('Are you sure you want to delete this record?')) return;
-    const tableMap: Record<string, string> = { customer: 'customers', stylist: 'stylists', manager: 'admins', franchise: 'franchise_owners' };
+    const tableMap: Record<string, string> = { customer: 'customers', stylist: 'stylists', admin: 'admins', franchise: 'franchise_owners' };
     const table = tableMap[type];
     await supabase.from(table).delete().eq('id', id);
     if (type === 'customer') fetchCustomers();
     else if (type === 'stylist') fetchStylists();
-    else if (type === 'manager') fetchManagers();
+    else if (type === 'admin') fetchAdmins();
     else if (type === 'franchise') fetchFranchiseOwners();
   };
 
@@ -401,13 +400,8 @@ export default function StaffDashboard() {
     await supabase.from(branchAssign.table).update({ [column]: branchInput }).eq('id', branchAssign.id);
     setBranchAssign(null);
     setBranchInput('');
-    if (branchAssign.table === 'admins') fetchManagers();
+    if (branchAssign.table === 'admins') fetchAdmins();
     else fetchFranchiseOwners();
-  };
-
-  const updateAppointmentStatus = async (id: string, status: string) => {
-    await supabase.from('appointments').update({ status }).eq('id', id);
-    fetchAppointments();
   };
 
   const filteredCustomers = customers.filter(c => 
@@ -461,6 +455,31 @@ export default function StaffDashboard() {
         </div>
       </motion.div>
 
+      {/* Pending Meetings Alert */}
+      {meetings.filter(m => m.status === 'pending').length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-naturals-purple rounded-3xl p-6 text-white flex items-center justify-between shadow-xl shadow-naturals-purple/20 border border-white/10"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20">
+              <Calendar className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-white/60">Urgent Protocol</p>
+              <h3 className="text-xl font-black italic tracking-tight">You have {meetings.filter(m => m.status === 'pending').length} pending meeting requests</h3>
+            </div>
+          </div>
+          <button 
+            onClick={() => setActiveTab('meetings')}
+            className="px-6 py-3 bg-white text-naturals-purple rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-lavender transition-all shadow-lg"
+          >
+            Review Requests
+          </button>
+        </motion.div>
+      )}
+
       <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-6">
         <div>
           {/* Keep original titles for structure but make them subtle since banner is above */}
@@ -488,22 +507,6 @@ export default function StaffDashboard() {
           )}
           {(isAdmin || isFranchiseOwner) && (
             <button
-              onClick={() => handleOpenModal('add-manager')}
-              className="px-4 py-2.5 bg-deep-grape text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg hover:scale-105 transition-all flex items-center gap-2"
-            >
-              <Users className="w-3.5 h-3.5" /> Manager
-            </button>
-          )}
-          {isAdmin && (
-            <button
-              onClick={() => handleOpenModal('add-franchise')}
-              className="px-4 py-2.5 bg-deep-grape text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg hover:scale-105 transition-all flex items-center gap-2"
-            >
-              <Briefcase className="w-3.5 h-3.5" /> Franchise
-            </button>
-          )}
-          {(isAdmin || isFranchiseOwner) && (
-            <button
               onClick={() => {
                 alert("Service management logic (Add/Edit) is handled via the Global Services Registry.");
                 setActiveTab('services');
@@ -517,23 +520,23 @@ export default function StaffDashboard() {
       </div>
 
       <div className="flex gap-1 p-1.5 rounded-2xl w-fit bg-warm-grey/50 border border-black/5 shadow-inner">
-        {(['customers', 'stylists', 'managers', 'franchise', 'appointments', 'services', 'consultations', 'skipped'] as const)
+        {(['customers', 'stylists', 'admins', 'franchise', 'appointments', 'services', 'meetings', 'skipped'] as const)
           .filter(tab => {
             if (isAdmin) return true;
-            if (isFranchiseOwner) return ['customers', 'stylists', 'managers', 'appointments', 'services', 'skipped'].includes(tab);
-            if (isManager) return ['customers', 'stylists', 'appointments', 'consultations', 'skipped'].includes(tab);
-            if (isStylist) return ['customers', 'appointments', 'consultations', 'skipped'].includes(tab);
+            if (isFranchiseOwner) return ['customers', 'stylists', 'admins', 'appointments', 'services', 'meetings', 'skipped'].includes(tab);
+            if (isManager) return ['customers', 'stylists', 'appointments', 'meetings', 'skipped'].includes(tab);
+            if (isStylist) return ['customers', 'appointments', 'meetings', 'skipped'].includes(tab);
             return false;
           })
           .map((tab) => (
             <button
               key={tab}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => setActiveTab(tab as any)}
               className={`px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${
                 activeTab === tab ? 'bg-white text-deep-grape shadow-md' : 'text-deep-grape/40 hover:text-deep-grape'
               }`}
             >
-              {tab === 'franchise' ? 'Franchise' : tab}
+              {tab === 'meetings' ? 'Meeting Requests' : tab}
             </button>
           ))}
       </div>
@@ -655,30 +658,30 @@ export default function StaffDashboard() {
       </div>
     )}
 
-      {activeTab === 'managers' && (
+      {activeTab === 'admins' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2 italic">Management Team</h3>
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2 italic">Administrative Team</h3>
             {(isAdmin || isFranchiseOwner) && (
               <button
-                onClick={() => handleOpenModal('add-manager')}
+                onClick={() => handleOpenModal('add-admin')}
                 className="px-4 py-2 bg-deep-grape text-white font-black text-[9px] uppercase tracking-widest rounded-xl hover:scale-105 transition-all flex items-center gap-2 shadow-lg shadow-deep-grape/20"
               >
-                <Users className="w-3.5 h-3.5" /> Add Manager
+                <Users className="w-3.5 h-3.5" /> Add Admin
               </button>
             )}
           </div>
           <div className="bg-white border border-black/5 shadow-xl rounded-[2rem] overflow-hidden">
             <div className="grid grid-cols-[1fr_1fr_140px_120px] px-6 py-3 bg-warm-grey/40 border-b border-black/5">
-              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Manager</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Admin Name</span>
               <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Email</span>
               <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Branch</span>
               <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Actions</span>
             </div>
             <div className="divide-y divide-black/5">
-              {managers.length === 0 ? (
-                <div className="px-6 py-10 text-center text-deep-grape/30 text-xs font-black uppercase tracking-widest">No managers registered</div>
-              ) : managers.map((m) => (
+              {admins.length === 0 ? (
+                <div className="px-6 py-10 text-center text-deep-grape/30 text-xs font-black uppercase tracking-widest">No admins registered</div>
+              ) : admins.map((m) => (
                 <div key={m.id} className="grid grid-cols-[1fr_1fr_140px_120px] items-center px-6 py-4 hover:bg-warm-grey/20 transition-colors">
                   <div>
                     <p className="font-bold text-sm text-deep-grape">{m.full_name}</p>
@@ -690,10 +693,10 @@ export default function StaffDashboard() {
                     className="px-2 py-0.5 bg-naturals-purple/5 text-naturals-purple rounded-md text-[9px] font-black uppercase hover:bg-naturals-purple hover:text-white transition-all"
                   >{m.branch_location || 'Assign Branch'}</button>
                   <div className="flex items-center gap-1">
-                    <button onClick={() => handleEdit('manager', m)} className="p-2 hover:bg-naturals-purple/10 rounded-xl transition-all group">
+                    <button onClick={() => handleEdit('admin', m)} className="p-2 hover:bg-naturals-purple/10 rounded-xl transition-all group">
                       <Edit className="w-4 h-4 text-naturals-purple/60 group-hover:text-naturals-purple" />
                     </button>
-                    <button onClick={() => handleDelete('manager', m.id)} className="p-2 hover:bg-red-50 rounded-xl transition-all group">
+                    <button onClick={() => handleDelete('admin', m.id)} className="p-2 hover:bg-red-50 rounded-xl transition-all group">
                       <Trash2 className="w-4 h-4 text-red-500 group-hover:text-red-600" />
                     </button>
                   </div>
@@ -824,7 +827,7 @@ export default function StaffDashboard() {
         </div>
       )}
 
-      {activeTab === 'consultations' && (
+      {activeTab === 'meetings' && (
         <div className="bg-white border border-black/5 shadow-xl rounded-[2rem] overflow-hidden">
           <div className="grid grid-cols-[1.5fr_1.5fr_1fr_1.5fr_auto] px-6 py-3 bg-warm-grey/40 border-b border-black/5">
             <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Requested Service</span>
@@ -834,7 +837,7 @@ export default function StaffDashboard() {
             <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Action</span>
           </div>
           <div className="divide-y divide-black/5">
-            {consultations
+            {meetings
               .filter(c => {
                 const search = searchQuery.toLowerCase();
                 return c.customer_name?.toLowerCase()?.includes(search) || 
@@ -857,7 +860,7 @@ export default function StaffDashboard() {
                 <div>
                   <select 
                     value={c.status}
-                    onChange={(e) => updateConsultationStatus(c.id, e.target.value)}
+                    onChange={(e) => updateMeetingStatus(c.id, e.target.value)}
                     className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg border focus:outline-none transition-all cursor-pointer ${
                       c.status === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-200' :
                       c.status === 'contacted' ? 'bg-blue-50 text-blue-600 border-blue-200' :
@@ -881,7 +884,7 @@ export default function StaffDashboard() {
                        <button onClick={() => setRequestToDelete(null)} className="px-2 py-1 bg-warm-grey text-deep-grape rounded-md text-[8px] font-black uppercase hover:bg-black/10 transition-colors">No</button>
                        <button 
                          onClick={async () => {
-                           await updateConsultationStatus(c.id, 'raised_in_admin_portal');
+                           await updateMeetingStatus(c.id, 'raised_in_admin_portal');
                            setRequestToDelete(null);
                          }} 
                          className="px-2 py-1 bg-red-500 text-white rounded-md text-[8px] font-black uppercase hover:bg-red-600 transition-colors shadow-sm"
@@ -896,9 +899,10 @@ export default function StaffDashboard() {
                      </button>
                    )}
                 </div>
+                </div>
               </div>
             ))}
-            {consultations.length === 0 && (
+            {meetings.length === 0 && (
                <div className="px-6 py-10 text-center text-deep-grape/30 text-xs font-black uppercase tracking-widest">No meeting requests found</div>
             )}
           </div>
@@ -914,7 +918,7 @@ export default function StaffDashboard() {
             <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Status</span>
           </div>
           <div className="divide-y divide-black/5">
-            {consultations
+            {meetings
               .filter(c => c.status === 'cancelled' || c.notes?.includes('Skipped'))
               .filter(c => {
                 const search = searchQuery.toLowerCase();
@@ -939,7 +943,7 @@ export default function StaffDashboard() {
                 </div>
               </div>
             ))}
-            {consultations.filter(c => c.status === 'cancelled' || c.notes?.includes('Skipped')).length === 0 && (
+            {meetings.filter(c => c.status === 'cancelled' || c.notes?.includes('Skipped')).length === 0 && (
                <div className="px-6 py-10 text-center text-deep-grape/30 text-xs font-black uppercase tracking-widest">No skipped appointments found</div>
             )}
           </div>
@@ -1234,7 +1238,7 @@ export default function StaffDashboard() {
                 </div>
               )}
 
-              {(modalType === 'add-manager' || (modalType === 'edit' && activeTab === 'managers')) && (
+              {(modalType === 'add-admin' || (modalType === 'edit' && activeTab === 'admins')) && (
                 <div className="space-y-4 pt-2">
                   <div className="space-y-1">
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Associated Franchise Owner</label>

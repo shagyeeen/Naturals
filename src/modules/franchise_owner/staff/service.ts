@@ -1,6 +1,6 @@
 import { getBranchAdmins, getBranchStylists, deleteAdmin, deleteStylist } from './dao'
 
-export const fetchStaff = async (ownerId: string) => {
+export const fetchStaff = async (ownerId?: string) => {
   const [admins, stylists] = await Promise.all([
     getBranchAdmins(ownerId),
     getBranchStylists(ownerId)

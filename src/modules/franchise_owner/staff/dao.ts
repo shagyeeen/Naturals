@@ -1,20 +1,18 @@
 import { supabase } from '@/lib/supabase'
 
 // GET — admins under owner
-export const getBranchAdmins = (ownerId: string) =>
-  supabase
-    .from('admins')
-    .select('*')
-    .eq('franchise_owner_id', ownerId)
-    .order('full_name', { ascending: true })
+export const getBranchAdmins = (ownerId?: string) => {
+  let query = supabase.from('admins').select('*')
+  if (ownerId) query = query.eq('franchise_owner_id', ownerId)
+  return query.order('full_name', { ascending: true })
+}
 
 // GET — stylists under owner
-export const getBranchStylists = (ownerId: string) =>
-  supabase
-    .from('stylists')
-    .select('*')
-    .eq('franchise_owner_id', ownerId)
-    .order('full_name', { ascending: true })
+export const getBranchStylists = (ownerId?: string) => {
+  let query = supabase.from('stylists').select('*')
+  if (ownerId) query = query.eq('franchise_owner_id', ownerId)
+  return query.order('full_name', { ascending: true })
+}
 
 // DELETE — remove admin
 export const deleteAdmin = (id: string) =>
