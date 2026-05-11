@@ -36,11 +36,7 @@ export default function DashboardPage() {
   } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
-  }, [user, loading, router]);
+  // Auth redirect is handled by dashboard/layout.tsx — no need to duplicate here
 
   if (loading) {
     return (

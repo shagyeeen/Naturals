@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
@@ -56,6 +56,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [isBranchSelectorOpen, setBranchSelectorOpen] = useState(false);
   const [availableBranches, setAvailableBranches] = useState<string[]>([]);
   const [selectedBranch, setSelectedBranch] = useState("Adyar Branch");
+  const hasRedirected = useRef(false);
 
   // Use the verified role flags from the auth context
   const userRole = profile?.role || (isAdmin ? "admin" : "customer");
@@ -145,8 +146,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   useEffect(() => {
+    // Only redirect to login if:
+    // 1. Auth has finished loading
+    // 2. No Firebase user found
+    // 3. No active session flag (survives HMR, cleared only on explicit sign-out)
     if (!loading && !user) {
-      router.push("/login");
+      const hasActiveSession = typeof window !== 'undefined' && sessionStorage.getItem('naturals_auth_active');
+      if (!hasActiveSession && !hasRedirected.current) {
+        hasRedirected.current = true;
+        router.push("/login");
+      }
+    }
+
+    // Reset redirect guard when user is confirmed present
+    if (user) {
+      hasRedirected.current = false;
     }
     
     if (!loading && user && (isAdmin ? false : (profile?.role === 'customer')) && customerProfile) {

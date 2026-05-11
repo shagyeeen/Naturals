@@ -124,6 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setProfile({ role: guestRole, full_name: `Guest ${guestRole}`, branch_id: 'guest-branch' });
             setCustomerProfile(null);
          }
+         if (typeof window !== 'undefined') sessionStorage.setItem('naturals_auth_active', '1');
          setLoading(false);
          return;
       }
@@ -132,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (firebaseUser) {
         setUser(firebaseUser)
         await refreshProfile(firebaseUser)
+        if (typeof window !== 'undefined') sessionStorage.setItem('naturals_auth_active', '1');
       } else {
         setUser(null)
         setProfile(null)
@@ -217,6 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('naturals_guest_role');
+        sessionStorage.removeItem('naturals_auth_active');
       }
       setUser(null);
       setProfile(null);

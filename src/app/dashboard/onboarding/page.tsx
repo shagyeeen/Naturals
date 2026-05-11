@@ -86,11 +86,7 @@ export default function OnboardingPage() {
 
 
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login')
-    }
-  }, [user, loading, router])
+  // Auth redirect is handled by dashboard/layout.tsx
 
   useEffect(() => {
     if (user) {
