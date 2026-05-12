@@ -192,3 +192,52 @@ export interface CustomerHistory {
   performed_by?: string
   created_at: string
 }
+
+export interface CustomerFeedback {
+  id: string
+  customer_id?: string
+  appointment_id?: string
+  rating: number
+  service_quality: number
+  stylist_behaviour: number
+  cleanliness: number
+  value_for_money: number
+  comment?: string
+  sentiment_label: 'positive' | 'neutral' | 'negative'
+  source: 'in-app' | 'google' | 'instagram' | 'walk-in' | 'phone'
+  branch_location?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Inventory {
+  id: string
+  product_name: string
+  category: string
+  branch_location: string
+  current_stock: number
+  min_threshold: number
+  max_capacity: number
+  unit: string
+  unit_cost: number
+  supplier?: string
+  last_restocked_at?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface ProcurementOrder {
+  id: string
+  inventory_id?: string
+  product_name: string
+  branch_location: string
+  quantity_ordered: number
+  unit_cost: number
+  total_cost: number
+  status: 'pending' | 'approved' | 'ordered' | 'delivered' | 'cancelled'
+  reason?: string
+  ordered_by: string
+  estimated_delivery?: string
+  created_at: string
+  updated_at: string
+}
