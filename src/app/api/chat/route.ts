@@ -11,7 +11,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Groq API key not configured' }, { status: 500 });
     }
 
-    // 1. Fetch Preferences if customerId exists
+    // 1. Resolve Role
+    let userRole = 'GUEST';
+    if (customerId) {
+      userRole = 'CUSTOMER';
+    }
+
+    // Check for higher roles based on full_name
+    if (userName) {
+      const { data: foData } = await supabaseAdmin.from('franchise_owners').select('id').ilike('full_name', userName).limit(1);
+      const { data: adminData } = await supabaseAdmin.from('admins').select('id').ilike('full_name', userName).limit(1);
+      const { data: stylistData } = await supabaseAdmin.from('stylists').select('id').ilike('full_name', userName).limit(1);
+
+      if (foData && foData.length > 0) userRole = 'FRANCHISE_OWNER';
+      else if (adminData && adminData.length > 0) userRole = 'ADMIN';
+      else if (stylistData && stylistData.length > 0) userRole = 'STYLIST';
+    }
+
+    // 2. Fetch Preferences if customerId exists
     let preferencesContext = "";
     if (customerId) {
       const { data: prefData } = await supabaseAdmin
@@ -33,22 +50,75 @@ export async function POST(req: Request) {
       }
     }
 
+    // 3. Fetch Data for Prompt
+    const { data: dbServices } = await supabaseAdmin
+      .from('services')
+      .select('name, price, duration_minutes, category')
+      .eq('is_active', true)
+      .order('category');
+
+    const servicesList = dbServices?.map(s => 
+      `- ${s.name} (${s.category}) | Price: ₹${s.price} | Duration: ${s.duration_minutes} min`
+    ).join('\n') || "No services currently available.";
+
+    const { data: dbStylists } = await supabaseAdmin
+      .from('stylists')
+      .select('full_name');
+
+    const stylistsList = dbStylists?.map(s => `- ${s.full_name}`).join('\n') || "Our specialist team.";
+
+    // 4. Define Tools
     const tools = [
       {
         type: 'function',
         function: {
           name: 'book_appointment',
-          description: 'Book a salon appointment for the current customer.',
+          description: 'Book a salon appointment. ONLY call when user says "book it" or similar. You MUST ask for date, time, and stylist preference separately before calling this. Set explicit_date=false if user did NOT say the date, explicit_time=false if user did NOT say the time, explicit_stylist=false if user did NOT mention a stylist.',
           parameters: {
             type: 'object',
             properties: {
+              customerId: { type: 'string', description: 'The UUID of the customer. Use the authenticated session ID, not a name.' },
               serviceName: { type: 'string', description: 'Name of the service' },
-              stylistName: { type: 'string', description: 'Name of the preferred stylist' },
-              date: { type: 'string', description: 'Date (YYYY-MM-DD)' },
-              time: { type: 'string', description: 'Time (HH:MM)' },
-              notes: { type: 'string', description: 'Special requests' }
+              stylistName: { type: 'string', description: 'Name of the preferred stylist — only if user mentioned one' },
+              date: { type: 'string', description: 'Date (YYYY-MM-DD) — only if user explicitly stated it' },
+              time: { type: 'string', description: 'Time (HH:MM) — only if user explicitly stated it' },
+              explicit_date: { type: 'boolean', description: 'true ONLY if the user explicitly said the date in this conversation' },
+              explicit_time: { type: 'boolean', description: 'true ONLY if the user explicitly said the time in this conversation' },
+              explicit_stylist: { type: 'boolean', description: 'true ONLY if the user explicitly mentioned a stylist name' },
+              notes: { type: 'string' }
             },
-            required: ['serviceName', 'date', 'time']
+            required: ['serviceName', 'explicit_date', 'explicit_time', 'explicit_stylist']
+          }
+        }
+      },
+      {
+        type: 'function',
+        function: {
+          name: 'cancel_appointment',
+          description: 'Cancel an existing appointment. ALWAYS ask "Are you sure?" and get confirmation before calling this.',
+          parameters: {
+            type: 'object',
+            properties: {
+              appointmentId: { type: 'string', description: 'The ID of the appointment to cancel' },
+              reason: { type: 'string', description: 'Required for Admin/Owner, optional for Customer' }
+            },
+            required: ['appointmentId']
+          }
+        }
+      },
+      {
+        type: 'function',
+        function: {
+          name: 'reschedule_appointment',
+          description: 'Change the date or time of an existing appointment.',
+          parameters: {
+            type: 'object',
+            properties: {
+              appointmentId: { type: 'string' },
+              newDate: { type: 'string' },
+              newTime: { type: 'string' }
+            },
+            required: ['appointmentId', 'newDate', 'newTime']
           }
         }
       },
@@ -56,12 +126,10 @@ export async function POST(req: Request) {
         type: 'function',
         function: {
           name: 'search_customer',
-          description: 'Search for a customer by name to get their ID and details. Useful for stylists.',
+          description: 'Search for a customer by name.',
           parameters: {
             type: 'object',
-            properties: {
-              name: { type: 'string', description: 'The name of the customer to search for' }
-            },
+            properties: { name: { type: 'string' } },
             required: ['name']
           }
         }
@@ -69,13 +137,27 @@ export async function POST(req: Request) {
       {
         type: 'function',
         function: {
-          name: 'get_customer_appointments',
-          description: "Get a list of appointments for a specific customer ID. Useful to see what they've booked today.",
+          name: 'create_customer',
+          description: 'Create a new customer profile for walk-ins (Admin only).',
           parameters: {
             type: 'object',
             properties: {
-              customerId: { type: 'string', description: 'The UUID of the customer' }
+              name: { type: 'string' },
+              phone: { type: 'string' },
+              email: { type: 'string' }
             },
+            required: ['name', 'phone']
+          }
+        }
+      },
+      {
+        type: 'function',
+        function: {
+          name: 'get_customer_appointments',
+          description: "Get appointments for a specific customer.",
+          parameters: {
+            type: 'object',
+            properties: { customerId: { type: 'string' } },
             required: ['customerId']
           }
         }
@@ -84,18 +166,60 @@ export async function POST(req: Request) {
         type: 'function',
         function: {
           name: 'get_stylist_appointments',
-          description: "Get the appointment schedule for a specific stylist by name. Can be filtered by date.",
+          description: "Get schedule for a stylist.",
           parameters: {
             type: 'object',
             properties: {
-              stylistName: { type: 'string', description: 'The name of the stylist' },
-              date: { type: 'string', description: 'Optional date (YYYY-MM-DD). If omitted, shows upcoming appointments.' }
+              stylistName: { type: 'string' },
+              date: { type: 'string' }
             },
             required: ['stylistName']
           }
         }
+      },
+      {
+        type: 'function',
+        function: {
+          name: 'update_preferences',
+          description: "Update a customer's preferences.",
+          parameters: {
+            type: 'object',
+            properties: {
+              targetCustomerId: { type: 'string', description: 'ID of the customer to update' },
+              hairwash_preference: { type: 'string', enum: ['Before SPA', 'After SPA', 'Both', 'None'] },
+              water_temperature: { type: 'string', enum: ['Cold', 'Lukewarm', 'Warm', 'Hot'] },
+              scalp_massage_intensity: { type: 'string', enum: ['Light', 'Medium', 'Strong', 'None'] },
+              conversation_level: { type: 'string', enum: ['Quiet Professional', 'Friendly Chat', 'No Preference'] },
+              preferred_hairstyle: { type: 'string' },
+              special_instructions: { type: 'string' }
+            }
+          }
+        }
       }
-    ];
+    ];    // 5. System Prompt Injection
+    const systemPrompt = `You are the official AI assistant for Naturals Salon. Be warm, concise, and helpful.
+
+ROLE: ${userRole} | USER: ${userName || 'Unknown'} | TODAY: ${new Date().toISOString().split('T')[0]}
+
+STRICT TOOL USAGE RULES:
+- get_stylist_appointments → ONLY call when user explicitly asks to see a stylist's schedule or timetable.
+- get_customer_appointments → ONLY call when user asks to see THEIR OWN appointments.
+- book_appointment → ONLY call after user confirms a specific service, date AND time.
+- cancel_appointment → ONLY call after user explicitly confirms cancellation with "yes" or "confirm".
+- search_customer → ONLY for STYLIST/ADMIN roles searching by name.
+- update_preferences → ONLY when user explicitly wants to change a preference.
+- NEVER call any tool for beauty advice, comparisons, or general questions. Answer those from your knowledge.
+- NEVER guess dates or times. If not provided, ASK.
+- NEVER show JSON, UUIDs, or Internal Reference blocks.
+
+CUSTOMER RULES: CUSTOMER role can only access their own data. NEVER show other customers' names.
+
+SERVICE CATALOG:
+${servicesList}
+
+STYLISTS:
+${stylistsList}
+${preferencesContext}`;
 
     const response = await fetch(GROQ_API_URL, {
       method: 'POST',
@@ -106,53 +230,7 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
         messages: [
-          {
-            role: 'system',
-            content: `You are an advanced AI Beauty & Salon Assistant for Naturals salon. 
-            ${preferencesContext}
-
-            USER CONTEXT:
-            - Current User: ${userName || 'a valued guest'}
-            - STYLIST IDENTITIES: If the user is 'Colin', 'Daphne', or 'Eloise', THEY ARE STYLISTS.
-            
-            CAPABILITIES:
-            1. BOOK appointments using 'book_appointment'.
-            2. SEARCH for customers using 'search_customer' (especially for Stylists).
-            3. GET schedules using 'get_stylist_appointments' or 'get_customer_appointments'.
-            
-            ROUTING LOGIC:
-            - If a STYLIST (Colin, Daphne, Eloise) asks "What are my appointments?" or "Show my schedule", ALWAYS use 'get_stylist_appointments' with their name.
-            - If they ask for "today only", pass the current date (${new Date().toISOString().split('T')[0]}) to the 'date' parameter.
-            - DO NOT use 'get_customer_appointments' for Stylists checking their own day.
-            
-            PRESENTATION:
-            - Always present appointment schedules as a clean Markdown TABLE.
-            - TABLE COLUMNS: Time | Service | Customer | Date
-            
-            CRITICAL RULES:
-            1. NEVER hallucinate or assume booking details (Service, Date, Time, Stylist).
-            2. If any information is missing, DO NOT call the 'book_appointment' tool. Instead, ask the user for the missing details.
-            3. REQUIRED DETAILS: 'serviceName', 'date', 'time'.
-            4. If a Stylist asks about a customer's preferences and they aren't listed above, use 'search_customer' to find them.
-            5. ONLY call the booking tool after the user has explicitly confirmed all three required details.
-            
-            AVAILABLE STYLISTS:
-            - Colin (Senior Stylist, Men/Women)
-            - Daphne (Styling Expert, Women)
-            - Eloise (Skincare & Hair Specialist)
-            
-            TOP SERVICES:
-            - Haircut (Basic) [Men]
-            - Haircut (Signature) [Men]
-            - Hair Cut (Basic Trim) [Women]
-            - Hair Styling
-            - Gold Facial
-            - Brightening Facial
-            - Basic Manicure / Spa Pedicure
-            - Hair Spa (Basic)
-            
-            Current Date: ${new Date().toISOString().split('T')[0]}.`
-          },
+          { role: 'system', content: systemPrompt },
           ...messages
         ],
         tools: tools,
@@ -165,12 +243,6 @@ export async function POST(req: Request) {
     if (!response.ok) {
       const errorData = await response.json();
       console.error('Groq API Error:', errorData);
-
-      if (errorData.error?.message?.includes('tool call validation failed') || errorData.error?.message?.includes('Failed to call a function') || errorData.error?.failed_generation) {
-        return NextResponse.json({
-          text: "I'm having a little trouble understanding or booking that right now. Could you please provide your details a bit more clearly, or rephrase your request?"
-        });
-      }
       throw new Error(errorData.error?.message || 'Groq API error');
     }
 
@@ -179,175 +251,162 @@ export async function POST(req: Request) {
 
     if (choice.message.tool_calls) {
       const toolCall = choice.message.tool_calls[0];
+      const args = JSON.parse(toolCall.function.arguments);
+
       if (toolCall.function.name === 'book_appointment') {
-        const args = JSON.parse(toolCall.function.arguments);
-
-        if (!args.serviceName || !args.date || !args.time || args.date === 'null' || args.time === 'null') {
-          return NextResponse.json({
-            text: "I'm ready to book for you! I just need to know the specific service, date, and time you'd like."
-          });
+        // Use authenticated customerId first, only fall back to args if it's a real UUID
+        const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const targetId = UUID_REGEX.test(args.customerId || '') ? args.customerId : customerId;
+        if (!targetId || !UUID_REGEX.test(targetId)) {
+          return NextResponse.json({ text: "I couldn't identify your customer profile. Please make sure you're logged in and try again." });
         }
 
-        // 1. Resolve Service ID and Price
-        const { data: serviceData } = await supabaseAdmin
-          .from('services')
-          .select('id, name, price')
-          .ilike('name', `%${args.serviceName}%`)
-          .limit(1);
-
-        const service = serviceData?.[0];
-
-        // 2. Resolve Stylist ID
-        let stylistId = null;
-        if (args.stylistName) {
-          const { data: stylistData } = await supabaseAdmin
-            .from('stylists')
-            .select('id, full_name')
-            .ilike('full_name', `%${args.stylistName}%`)
-            .limit(1);
-
-          stylistId = stylistData?.[0]?.id;
+        // Block if AI didn't get date/time/stylist explicitly from the user
+        const missing: string[] = [];
+        if (!args.explicit_date || !args.date || args.date === 'null') missing.push('**date** (e.g. "26th May")');
+        if (!args.explicit_time || !args.time || args.time === 'null') missing.push('**preferred time** (e.g. "3 PM")');
+        if (!args.explicit_stylist) missing.push('**stylist preference** — or say "any available" and we\'ll assign the next free one');
+        if (missing.length > 0) {
+          return NextResponse.json({ text: `Before I book that, I just need a few details:\n${missing.map(m => `• ${m}`).join('\n')}` });
         }
 
-        // Fallback for Stylist (Required)
-        if (!stylistId) {
-          const { data: defaultStylist } = await supabaseAdmin
-            .from('stylists')
+        // Parse and validate working hours (10:00 AM - 7:00 PM)
+        const [hours, minutes] = (args.time.includes(':') ? args.time : `${args.time}:00`).split(':');
+        const startHour = parseInt(hours);
+        if (startHour < 10 || startHour >= 19) {
+          return NextResponse.json({ text: `Our salon is open from **10:00 AM to 7:00 PM**. Please choose a time within those hours.` });
+        }
+
+        const startTime = `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
+
+        const { data: service, error: serviceError } = await supabaseAdmin.from('services').select('id, name, price, duration_minutes').ilike('name', `%${args.serviceName.trim()}%`).eq('is_active', true).limit(1).single();
+        if (!service || serviceError) return NextResponse.json({ text: `Service "${args.serviceName}" not found in our catalog.` });
+
+        const duration = service.duration_minutes || 60;
+        const startDate = new Date(`2000-01-01T${startTime}`);
+        const endDate = new Date(startDate.getTime() + duration * 60000);
+        const endTime = endDate.toTimeString().split(' ')[0];
+
+        // Validate that the appointment ends by 7:00 PM (19:00)
+        const closingTime = new Date(`2000-01-01T19:00:00`);
+        if (endDate > closingTime) {
+          const latestStart = new Date(closingTime.getTime() - duration * 60000);
+          const latestHr = latestStart.getHours().toString().padStart(2, '0');
+          const latestMin = latestStart.getMinutes().toString().padStart(2, '0');
+          const latestAmPm = latestStart.getHours() >= 12 ? 'PM' : 'AM';
+          const latestHr12 = latestStart.getHours() % 12 || 12;
+          return NextResponse.json({ text: `**${service.name}** takes ${duration} minutes, so booking at ${args.time} would run past our 7:00 PM closing time. The latest you can book this service is **${latestHr12}:${latestMin} ${latestAmPm}**. Would you like that slot instead?` });
+        }
+
+        // Build stylist priority: requested stylist first, then all active stylists
+        const { data: allStylists } = await supabaseAdmin.from('stylists').select('id, full_name').eq('is_active', true);
+        const requestedName = (args.stylistName || '').toLowerCase();
+        const prioritized = [
+          ...(allStylists?.filter(s => s.full_name.toLowerCase().includes(requestedName)) || []),
+          ...(allStylists?.filter(s => !s.full_name.toLowerCase().includes(requestedName)) || [])
+        ];
+
+        // Find first available stylist (no overlapping confirmed appointment)
+        let chosenStylist = null;
+        for (const stylist of prioritized) {
+          const { data: overlap } = await supabaseAdmin.from('appointments')
             .select('id')
-            .limit(1);
-          stylistId = defaultStylist?.[0]?.id;
-        }
+            .eq('stylist_id', stylist.id)
+            .eq('appointment_date', args.date)
+            .eq('status', 'confirmed')
+            .filter('start_time', 'lt', endTime)
+            .filter('end_time', 'gt', startTime);
 
-        // 3. Create Appointment
-        if (customerId && stylistId) {
-          const [hours, minutes] = (args.time.includes(':') ? args.time : `${args.time}:00`).split(':');
-          const endHours = (parseInt(hours) + 1).toString().padStart(2, '0');
-          const endTime = `${endHours}:${minutes}:00`;
-          const startTime = `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
-
-          const { error: insertError } = await supabaseAdmin
-            .from('appointments')
-            .insert({
-              customer_id: customerId,
-              stylist_id: stylistId,
-              service_id: service?.id,
-              appointment_date: args.date,
-              start_time: startTime,
-              end_time: endTime,
-              total_amount: service?.price || 0,
-              status: 'confirmed',
-              notes: args.notes || 'Booked via AI Neural Assistant'
-            });
-
-          if (insertError) {
-            console.error('Booking Insert Error:', insertError);
-            return NextResponse.json({ text: `Technical error during booking: ${insertError.message}` });
+          if (!overlap || overlap.length === 0) {
+            chosenStylist = stylist;
+            break;
           }
-
-          return NextResponse.json({
-            text: `Perfect! I've officially booked your ${service?.name || args.serviceName} for ${args.date} at ${args.time} with our specialist. Your total is ₹${service?.price || 0}, and you can view it in your appointments tab now.`
-          });
         }
+
+        if (!chosenStylist) {
+          return NextResponse.json({ text: `All our stylists are fully booked on **${args.date} at ${args.time}**. Could you try a different time or date?` });
+        }
+
+        const wasPreferred = chosenStylist.full_name.toLowerCase().includes(requestedName);
+        const stylistNote = wasPreferred ? '' : ` (Your preferred stylist was unavailable, so we've assigned **${chosenStylist.full_name}** who is free.)`;
+
+        const { error } = await supabaseAdmin.from('appointments').insert({
+          customer_id: targetId,
+          service_id: service.id,
+          stylist_id: chosenStylist.id,
+          appointment_date: args.date,
+          start_time: startTime,
+          end_time: endTime,
+          total_amount: service.price || 0,
+          status: 'confirmed',
+          notes: args.notes || 'Booked via AI Assistant'
+        });
+
+        if (error) return NextResponse.json({ text: `Booking failed: ${error.message}` });
+        return NextResponse.json({ text: `✅ Booked **${service.name}** on **${args.date} at ${args.time}** with **${chosenStylist.full_name}**.${stylistNote}` });
+
+
+
+      } else if (toolCall.function.name === 'cancel_appointment') {
+        const { error } = await supabaseAdmin.from('appointments').update({ 
+          status: 'cancelled',
+          notes: `Cancelled by ${userName || userRole}. Reason: ${args.reason || 'No reason provided'}`
+        }).eq('id', args.appointmentId);
+
+        if (error) return NextResponse.json({ text: `Cancellation failed: ${error.message}` });
+        return NextResponse.json({ text: `The appointment has been cancelled by ${userName || userRole}.` });
+
+      } else if (toolCall.function.name === 'reschedule_appointment') {
+        const { error } = await supabaseAdmin.from('appointments').update({
+          appointment_date: args.newDate,
+          start_time: args.newTime
+        }).eq('id', args.appointmentId);
+
+        if (error) return NextResponse.json({ text: `Rescheduling failed: ${error.message}` });
+        return NextResponse.json({ text: `Success! Rescheduled to ${args.newDate} at ${args.newTime}.` });
+
       } else if (toolCall.function.name === 'search_customer') {
-        const args = JSON.parse(toolCall.function.arguments);
-        const { data: customerData } = await supabaseAdmin
-          .from('customers')
-          .select('id, full_name, email, phone')
-          .ilike('full_name', `%${args.name}%`)
-          .limit(1);
+        if (userRole === 'CUSTOMER' || userRole === 'GUEST') return NextResponse.json({ text: "I'm sorry, but I can't look up other customer profiles. This feature is restricted to salon staff for security and privacy." });
+        const { data } = await supabaseAdmin.from('customers').select('id, full_name').ilike('full_name', `%${args.name}%`).limit(1);
+        if (!data?.[0]) return NextResponse.json({ text: `No customer found matching "${args.name}".` });
+        
+        const { data: prefs } = await supabaseAdmin.from('customer_preferences').select('*').eq('customer_id', data[0].id).single();
+        return NextResponse.json({ text: `Found ${data[0].full_name} (ID: ${data[0].id}). Preferences: ${JSON.stringify(prefs || 'None')}` });
 
-        if (!customerData || customerData.length === 0) {
-          return NextResponse.json({ text: `I couldn't find a customer named "${args.name}". Could you double-check the spelling?` });
-        }
+      } else if (toolCall.function.name === 'create_customer') {
+        const { data, error } = await supabaseAdmin.from('customers').insert({ full_name: args.name, phone: args.phone, email: args.email }).select('id').single();
+        if (error) return NextResponse.json({ text: `Failed to create customer: ${error.message}` });
+        return NextResponse.json({ text: `New customer ${args.name} created with ID: ${data.id}. You can now book their appointment.` });
 
-        const customer = customerData[0];
+      } else if (toolCall.function.name === 'update_preferences') {
+        const target = args.targetCustomerId || customerId;
+        const { error } = await supabaseAdmin.from('customer_preferences').upsert({ customer_id: target, ...args });
+        if (error) return NextResponse.json({ text: `Update failed: ${error.message}` });
+        return NextResponse.json({ text: "Preferences updated successfully." });
 
-        // Fetch Preferences
-        const { data: prefData } = await supabaseAdmin
-          .from('customer_preferences')
-          .select('*')
-          .eq('customer_id', customer.id)
-          .single();
-
-        let prefText = "";
-        if (prefData) {
-          prefText = `
-          Preferences for ${customer.full_name}:
-          - Hairwash: ${prefData.hairwash_preference}
-          - Style: ${prefData.preferred_hairstyle || 'Not specified'}
-          - Water: ${prefData.water_temperature}
-          - Massage: ${prefData.scalp_massage_intensity}
-          - Chat Level: ${prefData.conversation_level}
-          - Instructions: ${prefData.special_instructions || 'None'}
-          `;
-        } else {
-          prefText = `I found ${customer.full_name}, but they don't have any specific preferences recorded yet.`;
-        }
-
-        return NextResponse.json({ text: `I've retrieved the records for ${customer.full_name}. ${prefText}` });
       } else if (toolCall.function.name === 'get_customer_appointments') {
-        const args = JSON.parse(toolCall.function.arguments);
-        const { data: appts } = await supabaseAdmin
-          .from('appointments')
-          .select('*, service:services(name, price)')
-          .eq('customer_id', args.customerId)
-          .order('appointment_date', { ascending: false })
-          .limit(5);
+        const { data } = await supabaseAdmin.from('appointments').select('id, appointment_date, start_time, status, service:services(name)').eq('customer_id', args.customerId).order('appointment_date', { ascending: false }).limit(5);
+        const list = data?.map(a => `- [ID: ${a.id.slice(0, 8)}...] ${(a.service as any)?.name || 'Standard Salon Service'} on ${a.appointment_date} at ${a.start_time} (${a.status})`).join('\n') || "No appointments found.";
+        // Include full IDs in a hidden way for the AI
+        const rawData = JSON.stringify(data?.map(a => ({ id: a.id, service: (a.service as any)?.name, date: a.appointment_date, time: a.start_time })));
+        return NextResponse.json({ text: `${list}\n\n(Internal Reference: ${rawData})` });
 
-        if (!appts || appts.length === 0) {
-          return NextResponse.json({ text: "I couldn't find any recent or upcoming appointments for this customer." });
-        }
-
-        const apptList = appts.map(a => `- ${a.service?.name} on ${a.appointment_date} at ${a.start_time.slice(0, 5)} (Status: ${a.status})`).join('\n');
-        return NextResponse.json({ text: `Here are the appointments I found for this customer:\n${apptList}` });
       } else if (toolCall.function.name === 'get_stylist_appointments') {
-        const args = JSON.parse(toolCall.function.arguments);
-
-        // 1. Find Stylist ID
-        const { data: stylistData } = await supabaseAdmin
-          .from('stylists')
-          .select('id, full_name')
-          .ilike('full_name', `%${args.stylistName}%`)
-          .limit(1);
-
-        if (!stylistData || stylistData.length === 0) {
-          return NextResponse.json({ text: `I couldn't find a stylist named "${args.stylistName}".` });
+        // HARD SECURITY GATE: Stylist schedules are STAFF-ONLY
+        if (userRole === 'CUSTOMER' || userRole === 'GUEST') {
+          return NextResponse.json({ text: "I'm sorry, stylist schedules are not available to customers. I can help you book an appointment instead!" });
         }
-
-        const stylist = stylistData[0];
-
-        // 2. Fetch Appointments for Stylist
-        let query = supabaseAdmin
-          .from('appointments')
-          .select('*, customer:customers(full_name), service:services(name)')
-          .eq('stylist_id', stylist.id);
+        const { data: stylist } = await supabaseAdmin.from('stylists').select('id, full_name').ilike('full_name', `%${args.stylistName}%`).single();
+        if (!stylist) return NextResponse.json({ text: "Stylist not found." });
+        const { data } = await supabaseAdmin.from('appointments').select('*, customer:customers(full_name), service:services(name)').eq('stylist_id', stylist.id).gte('appointment_date', args.date || new Date().toISOString().split('T')[0]).order('appointment_date').limit(20);
         
-        if (args.date) {
-          query = query.eq('appointment_date', args.date);
-        } else {
-          query = query.gte('appointment_date', new Date().toISOString().split('T')[0]);
-        }
-
-        const { data: appts } = await query
-          .order('appointment_date', { ascending: true })
-          .order('start_time', { ascending: true })
-          .limit(20);
-
-        if (!appts || appts.length === 0) {
-          const dateStr = args.date ? ` on ${args.date}` : "";
-          return NextResponse.json({ text: `I couldn't find any appointments for ${stylist.full_name}${dateStr}.` });
-        }
-
-        const tableHeader = "| Time | Service | Customer | Date |\n| :--- | :--- | :--- | :--- |\n";
-        const tableRows = appts.map(a => 
-          `| ${a.start_time.slice(0, 5)} | ${a.service?.name || 'Styling Service'} | ${a.customer?.full_name || 'Guest'} | ${a.appointment_date} |`
-        ).join('\n');
-        
+        const tableHeader = "| Time | Service | Customer | Date | Status |\n| :--- | :--- | :--- | :--- | :--- |\n";
+        const tableRows = data?.map(a => `| ${a.start_time} | ${(a.service as any)?.name || 'Standard Salon Service'} | ${userRole === 'CUSTOMER' ? 'Hidden' : (a.customer as any)?.full_name || 'Walk-in'} | ${a.appointment_date} | ${a.status} |`).join('\n');
         return NextResponse.json({ text: `### Schedule for ${stylist.full_name}\n\n${tableHeader}${tableRows}` });
       }
     }
 
-    return NextResponse.json({ text: choice.message.content || "Operational synchronization complete. How else may I assist you?" });
+    return NextResponse.json({ text: choice.message.content });
   } catch (error: any) {
     console.error('Chat API Error:', error.message);
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });

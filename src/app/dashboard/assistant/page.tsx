@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Activity, Bot, Send, Sparkles, Wand2, ShieldCheck, Zap, Volume2, Square, Mic, MicOff } from "lucide-react";
+import { Activity, Bot, Send, Sparkles, Wand2, ShieldCheck, Zap, Volume2, Square, Mic, MicOff, RotateCcw } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -295,8 +295,8 @@ export default function NeuralAssistantPage() {
                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-colors cursor-pointer">
                   <ShieldCheck className="w-5 h-5" />
                </div>
-               <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-colors cursor-pointer" onClick={() => setMessages([messages[0]])}>
-                  <Wand2 className="w-5 h-5" />
+               <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-colors cursor-pointer" onClick={() => { setMessages([messages[0]]); stopSpeech(); }}>
+                  <RotateCcw className="w-5 h-5" />
                </div>
             </div>
             
@@ -370,6 +370,14 @@ export default function NeuralAssistantPage() {
             onChange={(e) => setInputText(e.target.value)}
             className="flex-1 bg-warm-grey/50 border border-transparent focus:border-naturals-purple focus:bg-white rounded-2xl px-8 py-5 outline-none text-xs font-bold text-deep-grape transition-all shadow-inner" 
            />
+           <button 
+            type="button"
+            onClick={() => { setMessages([messages[0]]); stopSpeech(); }}
+            className="w-14 h-14 rounded-2xl bg-warm-grey text-deep-grape/40 flex items-center justify-center shadow-2xl hover:text-red-500 transition-all shrink-0 group"
+            title="Reset AI Conversation"
+           >
+             <RotateCcw className="w-6 h-6 group-hover:rotate-[-45deg] transition-transform" />
+           </button>
            <button 
             type="button"
             onClick={toggleListening}

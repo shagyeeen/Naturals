@@ -519,15 +519,30 @@ export default function BookingPage() {
                 const isAvailable = availableSlots.some(s => s.start_time === time);
                 const isSelected = selectedSlot?.start_time === time;
                 
+                // Real-time slot validation for "Today"
+                const today = new Date().toISOString().split('T')[0];
+                let isPast = false;
+                if (selectedDate === today) {
+                  const now = new Date();
+                  const [slotH, slotM] = time.split(':').map(Number);
+                  const slotDateTime = new Date();
+                  slotDateTime.setHours(slotH, slotM, 0, 0);
+                  if (slotDateTime < now) {
+                    isPast = true;
+                  }
+                }
+
+                const finalAvailable = isAvailable && !isPast;
+                
                 return (
                   <button
                     key={idx}
-                    disabled={!isAvailable}
+                    disabled={!finalAvailable}
                     onClick={() => setSelectedSlot({ start_time: time, end_time: '' })}
                     className={`px-4 py-3 rounded-xl border-2 text-[10px] font-black uppercase tracking-widest transition-all ${
                       isSelected
                         ? 'border-naturals-purple bg-naturals-purple text-white shadow-lg shadow-naturals-purple/20 scale-105 z-10'
-                        : isAvailable
+                        : finalAvailable
                           ? 'border-black/5 bg-white text-deep-grape hover:border-naturals-purple/30 hover:scale-105'
                           : 'border-black/5 bg-warm-grey/30 text-deep-grape/10 cursor-not-allowed opacity-50 grayscale'
                     }`}
