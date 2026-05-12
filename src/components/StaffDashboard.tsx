@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase, Customer, Stylist, Admin, FranchiseOwner, Appointment, Service } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { motion, AnimatePresence } from "framer-motion";
-import { UserPlus, Search, Edit, Trash2, Eye, X, Briefcase, Users, UserCheck, Scissors, Calendar, Sparkles } from "lucide-react";
+import { UserPlus, Search, Edit, Trash2, Eye, X, Briefcase, Users, UserCheck, Scissors, Calendar, Sparkles, ChevronDown, ArrowUpDown, Filter, Plus } from "lucide-react";
 
 // Modular Hooks
 import { useAdminCustomers } from "@/modules/admin/customers/hooks";
@@ -30,6 +30,14 @@ interface FormData {
   serviceDuration?: string;
   servicePrice?: string;
   serviceIsActive?: boolean;
+  // Appointment fields
+  appointmentCustomerId?: string;
+  appointmentStylistId?: string;
+  appointmentServiceId?: string;
+  appointmentDate?: string;
+  appointmentStartTime?: string;
+  appointmentEndTime?: string;
+  appointmentStatus?: string;
   preferences: { [key: string]: string | string[] };
 }
 
@@ -91,27 +99,76 @@ function calculateAge(dob: string) {
   return age;
 }
 
-type ModalType = 'add-customer' | 'add-stylist' | 'add-admin' | 'add-franchise' | 'add-service' | 'edit';
+type ModalType = 'add-customer' | 'add-stylist' | 'add-service' | 'add-appointment' | 'edit';
+
+function CustomSelect({ value, onChange, options, label }: { value: string, onChange: (v: string) => void, options: {value: string, label: string}[], label?: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectedOption = options.find(o => o.value === value) || options[0];
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center justify-between gap-3 bg-white border border-black/10 rounded-xl px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-deep-grape outline-none focus:ring-2 focus:ring-naturals-purple/20 transition-all cursor-pointer shadow-sm hover:border-naturals-purple/30 min-w-[120px]"
+      >
+        <span>{selectedOption.label}</span>
+        <ChevronDown className={`w-3.5 h-3.5 text-deep-grape/30 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <div className="fixed inset-0 z-[90]" onClick={() => setIsOpen(false)} />
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              className="absolute top-full mt-2 left-0 w-full min-w-[160px] bg-white border border-black/5 shadow-2xl rounded-2xl overflow-hidden z-[100]"
+            >
+              <div className="p-1.5 space-y-0.5">
+                {options.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => {
+                      onChange(opt.value);
+                      setIsOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                      value === opt.value 
+                        ? 'bg-naturals-purple text-white shadow-md' 
+                        : 'text-deep-grape/60 hover:bg-naturals-purple/5 hover:text-naturals-purple'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export default function StaffDashboard() {
   const { isAdmin, isManager, isFranchiseOwner, isStylist, profile } = useAuth();
   
   // Default Tabs based on Role
   const initialTab = isStylist ? 'appointments' : 'stylists';
-  const [activeTab, setActiveTab] = useState<'customers' | 'stylists' | 'admins' | 'franchise' | 'appointments' | 'services' | 'meetings' | 'skipped'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'customers' | 'stylists' | 'appointments' | 'services' | 'meetings' | 'skipped'>(initialTab);
   
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [services, setServices] = useState<Service[]>([]);
-  const [franchiseOwners, setFranchiseOwners] = useState<FranchiseOwner[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [meetings, setMeetings] = useState<any[]>([]);
-  const [branchAssign, setBranchAssign] = useState<{id: string, table: string, current: string} | null>(null);
-  const [branchInput, setBranchInput] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState<ModalType>('add-customer');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [requestToDelete, setRequestToDelete] = useState<string | null>(null);
+  const [aptFilter, setAptFilter] = useState<{status: string, date: string}>({status: 'all', date: 'all'});
+  const [aptSort, setAptSort] = useState<'date_asc' | 'date_desc' | 'client_name'>('date_desc');
   const [formData, setFormData] = useState<FormData>({
     fullName: '',
     phone: '',
@@ -129,6 +186,13 @@ export default function StaffDashboard() {
     serviceDuration: '',
     servicePrice: '',
     serviceIsActive: true,
+    appointmentCustomerId: '',
+    appointmentStylistId: '',
+    appointmentServiceId: '',
+    appointmentDate: '',
+    appointmentStartTime: '',
+    appointmentEndTime: '',
+    appointmentStatus: 'pending',
     preferences: {},
   });
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -172,14 +236,8 @@ export default function StaffDashboard() {
 
   // Use staff data from hook directly to avoid sync issues
   const stylists = staff.stylists || [];
-  const admins = staff.admins || [];
 
   const fetchStylists = async () => fetchStaff();
-  const fetchAdmins = async () => fetchStaff();
-  const fetchFranchiseOwners = async () => {
-    const { data } = await supabase.from('franchise_owners').select('*').order('full_name');
-    if (data) setFranchiseOwners(data as unknown as FranchiseOwner[]);
-  }
 
   const fetchMeetings = async () => {
     const { data } = await supabase.from('consultation_requests').select('*').order('created_at', { ascending: false });
@@ -194,7 +252,9 @@ export default function StaffDashboard() {
   const updateMeetingStatus = async (id: string, status: string) => {
     let updatePayload: any = { status };
     if (status === 'raised_in_admin_portal') {
-      updatePayload = { status: 'cancelled', notes: 'Skipped / Raised in Admin Portal' };
+      const skippedBy = profile?.full_name || profile?.email || 'Staff';
+      const role = isAdmin ? 'Admin' : isFranchiseOwner ? 'Franchise Owner' : isManager ? 'Manager' : 'Staff';
+      updatePayload = { status: 'cancelled', notes: `Skipped by ${skippedBy} (${role}) / Raised in Admin Portal` };
     }
     await supabase.from('consultation_requests').update(updatePayload).eq('id', id);
     fetchMeetings();
@@ -208,8 +268,6 @@ export default function StaffDashboard() {
   useEffect(() => {
     fetchCustomers();
     fetchAppointments();
-    fetchAdmins();
-    fetchFranchiseOwners();
     fetchServices();
     fetchMeetings();
   }, []);
@@ -228,7 +286,7 @@ export default function StaffDashboard() {
     setShowModal(true);
   };
 
-  const handleEdit = (type: 'customer' | 'stylist' | 'admin' | 'franchise' | 'service', data: any) => {
+  const handleEdit = (type: 'customer' | 'stylist' | 'service' | 'appointment', data: any) => {
     setModalType('edit');
     setEditingId(data.id);
     
@@ -256,6 +314,13 @@ export default function StaffDashboard() {
       serviceDuration: data.duration_minutes?.toString() || '',
       servicePrice: data.price?.toString() || '',
       serviceIsActive: data.is_active ?? true,
+      appointmentCustomerId: data.customer_id || '',
+      appointmentStylistId: data.stylist_id || '',
+      appointmentServiceId: data.service_id || '',
+      appointmentDate: data.appointment_date || '',
+      appointmentStartTime: data.start_time || '',
+      appointmentEndTime: data.end_time || '',
+      appointmentStatus: data.status || 'pending',
       preferences: data.ai_hairstyle_analysis?.questionnaire_results || {},
     });
     setShowModal(true);
@@ -331,18 +396,17 @@ export default function StaffDashboard() {
         gender: formData.gender || null,
         experience_years: parseInt(formData.experienceYears) || 0,
       };
-    } else if (modalType === 'add-admin' || (modalType === 'edit' && activeTab === 'admins')) {
-      table = 'admins';
+
+    } else if (modalType === 'add-appointment' || (modalType === 'edit' && activeTab === 'appointments')) {
+      table = 'appointments';
       payload = {
-        ...basePayload,
-        franchise_owner_id: formData.franchiseOwnerId || null,
-      };
-    } else if (modalType === 'add-franchise' || (modalType === 'edit' && activeTab === 'franchise')) {
-      table = 'franchise_owners';
-      payload = {
-        ...basePayload,
-        franchise_name: formData.franchiseName || null,
-        branch_address: formData.franchiseAddress || null,
+        customer_id: formData.appointmentCustomerId,
+        stylist_id: formData.appointmentStylistId,
+        service_id: formData.appointmentServiceId,
+        appointment_date: formData.appointmentDate,
+        start_time: formData.appointmentStartTime,
+        end_time: formData.appointmentEndTime,
+        status: formData.appointmentStatus,
       };
     } else if (modalType === 'add-service' || (modalType === 'edit' && activeTab === 'services')) {
       table = 'services';
@@ -385,8 +449,9 @@ export default function StaffDashboard() {
 
         alert("Updated successfully!");
         if (table === 'customers') fetchCustomers();
-        else if (table === 'stylists') fetchStylists();
+        else if (table === 'stylists') fetchStaff();
         else if (table === 'services') fetchServices();
+        else if (table === 'appointments') fetchAppointments();
         setShowModal(false);
       }
     } else {
@@ -415,36 +480,31 @@ export default function StaffDashboard() {
 
         alert(`${modalType.split('-')[1].replace(/^\w/, c => c.toUpperCase())} added successfully!`);
         if (modalType === 'add-customer') fetchCustomers();
-        else if (modalType === 'add-stylist') fetchStylists();
-        else if (modalType === 'add-admin') fetchAdmins();
-        else if (modalType === 'add-franchise') fetchFranchiseOwners();
+        else if (modalType === 'add-stylist') fetchStaff();
+        else if (modalType === 'add-appointment') fetchAppointments();
         setShowModal(false);
       }
     }
     setIsSubmitting(false);
   };
 
-  const handleDelete = async (type: 'customer' | 'stylist' | 'admin' | 'franchise' | 'service', id: string) => {
+  const handleDelete = async (type: 'customer' | 'stylist' | 'service' | 'appointment', id: string) => {
     if (!confirm('Are you sure you want to delete this record?')) return;
-    const tableMap: Record<string, string> = { customer: 'customers', stylist: 'stylists', admin: 'admins', franchise: 'franchise_owners', service: 'services' };
+    const tableMap: Record<string, string> = { 
+      customer: 'customers', 
+      stylist: 'stylists', 
+      service: 'services',
+      appointment: 'appointments'
+    };
     const table = tableMap[type];
     await supabase.from(table).delete().eq('id', id);
     if (type === 'customer') fetchCustomers();
-    else if (type === 'stylist') fetchStylists();
-    else if (type === 'admin') fetchAdmins();
-    else if (type === 'franchise') fetchFranchiseOwners();
+    else if (type === 'stylist') fetchStaff();
     else if (type === 'service') fetchServices();
+    else if (type === 'appointment') fetchAppointments();
   };
 
-  const handleAssignBranch = async () => {
-    if (!branchAssign) return;
-    const column = branchAssign.table === 'franchise_owners' ? 'branch_name' : 'branch_location';
-    await supabase.from(branchAssign.table).update({ [column]: branchInput }).eq('id', branchAssign.id);
-    setBranchAssign(null);
-    setBranchInput('');
-    if (branchAssign.table === 'admins') fetchAdmins();
-    else fetchFranchiseOwners();
-  };
+
 
   const filteredCustomers = customers.filter(c => 
     c.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -559,10 +619,10 @@ export default function StaffDashboard() {
       </div>
 
       <div className="flex gap-1 p-1.5 rounded-2xl w-fit bg-warm-grey/50 border border-black/5 shadow-inner">
-        {(['customers', 'stylists', 'admins', 'franchise', 'appointments', 'services', 'meetings', 'skipped'] as const)
+        {(['customers', 'stylists', 'appointments', 'services', 'meetings', 'skipped'] as const)
           .filter(tab => {
             if (isAdmin) return true;
-            if (isFranchiseOwner) return ['customers', 'stylists', 'admins', 'appointments', 'services', 'meetings', 'skipped'].includes(tab);
+            if (isFranchiseOwner) return ['customers', 'stylists', 'appointments', 'services', 'meetings', 'skipped'].includes(tab);
             if (isManager) return ['customers', 'stylists', 'appointments', 'meetings', 'skipped'].includes(tab);
             if (isStylist) return ['customers', 'appointments', 'meetings', 'skipped'].includes(tab);
             return false;
@@ -697,137 +757,55 @@ export default function StaffDashboard() {
       </div>
     )}
 
-      {activeTab === 'admins' && (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2 italic">Administrative Team</h3>
-            {isFranchiseOwner && (
-              <button
-                onClick={() => handleOpenModal('add-admin')}
-                className="px-4 py-2 bg-deep-grape text-white font-black text-[9px] uppercase tracking-widest rounded-xl hover:scale-105 transition-all flex items-center gap-2 shadow-lg shadow-deep-grape/20"
-              >
-                <Users className="w-3.5 h-3.5" /> Add Admin
-              </button>
-            )}
-          </div>
-          <div className="bg-white border border-black/5 shadow-xl rounded-[2rem] overflow-hidden">
-            <div className="grid grid-cols-[1fr_1fr_140px_120px] px-6 py-3 bg-warm-grey/40 border-b border-black/5">
-              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Admin Name</span>
-              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Email</span>
-              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Branch</span>
-              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Actions</span>
-            </div>
-            <div className="divide-y divide-black/5">
-              {admins.length === 0 ? (
-                <div className="px-6 py-10 text-center text-deep-grape/30 text-xs font-black uppercase tracking-widest">No admins registered</div>
-              ) : admins.map((m) => (
-                <div key={m.id} className="grid grid-cols-[1fr_1fr_140px_120px] items-center px-6 py-4 hover:bg-warm-grey/20 transition-colors">
-                  <div>
-                    <p className="font-bold text-sm text-deep-grape">{m.full_name}</p>
-                    <p className="text-[10px] text-deep-grape/40 font-bold mt-0.5">{m.phone || '—'}</p>
-                  </div>
-                  <p className="text-xs text-deep-grape/60 font-semibold">{m.email}</p>
-                  <button
-                    disabled={!isFranchiseOwner}
-                    onClick={() => { if (!isFranchiseOwner) return; setBranchAssign({id: m.id, table: 'admins', current: m.branch_location || ''}); setBranchInput(m.branch_location || ''); }}
-                    className={`px-2 py-0.5 bg-naturals-purple/5 text-naturals-purple rounded-md text-[9px] font-black uppercase transition-all ${isFranchiseOwner ? 'hover:bg-naturals-purple hover:text-white cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
-                  >{m.branch_location || 'Assign Branch'}</button>
-                  <div className="flex items-center gap-1">
-                    {isFranchiseOwner && (
-                      <>
-                        <button onClick={() => handleEdit('admin', m)} className="p-2 hover:bg-naturals-purple/10 rounded-xl transition-all group">
-                          <Edit className="w-4 h-4 text-naturals-purple/60 group-hover:text-naturals-purple" />
-                        </button>
-                        <button onClick={() => handleDelete('admin', m.id)} className="p-2 hover:bg-red-50 rounded-xl transition-all group">
-                          <Trash2 className="w-4 h-4 text-red-500 group-hover:text-red-600" />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'franchise' && (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2 italic">Franchise Owners</h3>
-            {isFranchiseOwner && (
-              <button
-                onClick={() => handleOpenModal('add-franchise')}
-                className="px-4 py-2 bg-deep-grape text-white font-black text-[9px] uppercase tracking-widest rounded-xl hover:scale-105 transition-all flex items-center gap-2 shadow-lg shadow-deep-grape/20"
-              >
-                <Briefcase className="w-3.5 h-3.5" /> Add Franchise
-              </button>
-            )}
-          </div>
-          <div className="bg-white border border-black/5 shadow-xl rounded-[2rem] overflow-hidden">
-            <div className="grid grid-cols-[1fr_1fr_140px_120px] px-6 py-3 bg-warm-grey/40 border-b border-black/5">
-              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Franchise Owner</span>
-              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Email</span>
-              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Branch</span>
-              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Actions</span>
-            </div>
-            <div className="divide-y divide-black/5">
-              {franchiseOwners.length === 0 ? (
-                <div className="px-6 py-10 text-center text-deep-grape/30 text-xs font-black uppercase tracking-widest">No franchise owners registered</div>
-              ) : franchiseOwners.map((fo) => (
-                <div key={fo.id} className="grid grid-cols-[1fr_1fr_140px_120px] items-center px-6 py-4 hover:bg-warm-grey/20 transition-colors">
-                  <div>
-                    <p className="font-bold text-sm text-deep-grape">{fo.full_name}</p>
-                    <p className="text-[10px] text-deep-grape/40 font-bold mt-0.5">{fo.phone || '—'}</p>
-                  </div>
-                  <p className="text-xs text-deep-grape/60 font-semibold">{fo.email}</p>
-                  <button
-                    disabled={!isFranchiseOwner}
-                    onClick={() => { if (!isFranchiseOwner) return; setBranchAssign({id: fo.id, table: 'franchise_owners', current: fo.branch_name || ''}); setBranchInput(fo.branch_name || ''); }}
-                    className={`px-2 py-0.5 bg-deep-grape/5 text-deep-grape rounded-md text-[9px] font-black uppercase transition-all ${isFranchiseOwner ? 'hover:bg-deep-grape hover:text-white cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
-                  >{fo.branch_name || 'Assign Branch'}</button>
-                  <div className="flex items-center gap-1">
-                    {isFranchiseOwner && (
-                      <>
-                        <button onClick={() => handleEdit('franchise', fo)} className="p-2 hover:bg-naturals-purple/10 rounded-xl transition-all group">
-                          <Edit className="w-4 h-4 text-naturals-purple/60 group-hover:text-naturals-purple" />
-                        </button>
-                        <button onClick={() => handleDelete('franchise', fo.id)} className="p-2 hover:bg-red-50 rounded-xl transition-all group">
-                          <Trash2 className="w-4 h-4 text-red-500 group-hover:text-red-600" />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {branchAssign && (
-        <div className="fixed inset-0 bg-deep-grape/40 backdrop-blur-sm z-[200] flex items-center justify-center p-4" onClick={() => setBranchAssign(null)}>
-          <div className="bg-white rounded-[2rem] p-8 shadow-2xl border border-black/5 w-full max-w-sm" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-black text-deep-grape mb-1">Assign Branch</h3>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-deep-grape/40 mb-6">Enter branch name or location code</p>
-            <input
-              type="text"
-              value={branchInput}
-              onChange={e => setBranchInput(e.target.value)}
-              placeholder="e.g. Chennai-Adyar, BLR-02"
-              className="w-full px-4 py-3 rounded-xl border border-black/10 text-sm font-bold text-deep-grape bg-warm-grey/30 focus:outline-none focus:ring-2 focus:ring-naturals-purple/30 mb-6"
-              autoFocus
-            />
-            <div className="flex gap-3">
-              <button onClick={() => setBranchAssign(null)} className="flex-1 py-3 rounded-xl border border-black/10 text-deep-grape font-black text-xs uppercase tracking-widest hover:bg-warm-grey transition-all">Cancel</button>
-              <button onClick={handleAssignBranch} className="flex-1 py-3 rounded-xl bg-naturals-purple text-white font-black text-xs uppercase tracking-widest hover:bg-deep-grape transition-all">Assign</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {activeTab === 'appointments' && (
         <div className="bg-white border border-black/5 shadow-xl rounded-[2rem] overflow-hidden">
+          <div className="p-4 bg-warm-grey/20 border-b border-black/5 flex flex-wrap gap-4 items-center justify-between">
+            <div className="flex gap-2">
+              <CustomSelect 
+                value={aptFilter.status}
+                onChange={v => setAptFilter({...aptFilter, status: v})}
+                options={[
+                  { value: 'all', label: 'All Status' },
+                  { value: 'confirmed', label: 'Confirmed' },
+                  { value: 'pending', label: 'Pending' },
+                  { value: 'cancelled', label: 'Cancelled' },
+                  { value: 'completed', label: 'Completed' }
+                ]}
+              />
+
+              <CustomSelect 
+                value={aptFilter.date}
+                onChange={v => setAptFilter({...aptFilter, date: v})}
+                options={[
+                  { value: 'all', label: 'Any Date' },
+                  { value: 'today', label: 'Today' },
+                  { value: 'upcoming', label: 'Upcoming' },
+                  { value: 'past', label: 'Past' }
+                ]}
+              />
+            </div>
+            
+            <button
+                onClick={() => handleOpenModal('add-appointment')}
+                className="px-4 py-2 bg-deep-grape text-white font-black text-[9px] uppercase tracking-widest rounded-xl hover:scale-105 transition-all flex items-center gap-2 shadow-lg shadow-deep-grape/20"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Appointment
+              </button>
+
+            <div className="flex items-center gap-3">
+              <span className="text-[8px] font-black uppercase tracking-[0.2em] text-deep-grape/30">Sort By</span>
+              <CustomSelect 
+                value={aptSort}
+                onChange={v => setAptSort(v as any)}
+                options={[
+                  { value: 'date_desc', label: 'Newest First' },
+                  { value: 'date_asc', label: 'Oldest First' },
+                  { value: 'client_name', label: 'Client Name' }
+                ]}
+              />
+            </div>
+          </div>
           <div className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] px-6 py-3 bg-warm-grey/40 border-b border-black/5">
             <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Date & Slot</span>
             <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Client</span>
@@ -837,15 +815,38 @@ export default function StaffDashboard() {
           </div>
           <div className="divide-y divide-black/5">
             {appointments
-              .filter(a => {
+              .filter((a: any) => {
                 if (isAdmin || isFranchiseOwner || isManager) return true;
                 return (a as any).stylist_id === myStylistId;
               })
-              .filter(a => {
+              .filter((a: any) => {
                 const search = searchQuery.toLowerCase();
                 return (a as any).customer?.full_name?.toLowerCase().includes(search) || 
                        (a as any).service?.name?.toLowerCase().includes(search) ||
                        (a as any).stylist?.full_name?.toLowerCase().includes(search);
+              })
+              .filter((a: any) => {
+                if (aptFilter.status !== 'all' && a.status.toLowerCase() !== aptFilter.status) return false;
+                
+                if (aptFilter.date !== 'all') {
+                  const aptDate = new Date(a.appointment_date);
+                  const today = new Date();
+                  today.setHours(0,0,0,0);
+                  aptDate.setHours(0,0,0,0);
+                  
+                  if (aptFilter.date === 'today' && aptDate.getTime() !== today.getTime()) return false;
+                  if (aptFilter.date === 'upcoming' && aptDate.getTime() <= today.getTime()) return false;
+                  if (aptFilter.date === 'past' && aptDate.getTime() >= today.getTime()) return false;
+                }
+                return true;
+              })
+              .sort((a: any, b: any) => {
+                if (aptSort === 'client_name') {
+                  return (a.customer?.full_name || '').localeCompare(b.customer?.full_name || '');
+                }
+                const dateA = new Date(`${a.appointment_date}T${a.start_time}`).getTime();
+                const dateB = new Date(`${b.appointment_date}T${b.start_time}`).getTime();
+                return aptSort === 'date_asc' ? dateA - dateB : dateB - dateA;
               })
               .map((a: any) => (
               <div key={a.id} className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] items-center px-6 py-4 hover:bg-warm-grey/20 transition-colors">
@@ -862,11 +863,25 @@ export default function StaffDashboard() {
                   <p className="text-[10px] font-black uppercase tracking-widest text-naturals-purple">{a.service?.name || 'Custom Service'}</p>
                   {a.notes && <p className="text-[8px] text-deep-grape/40 font-bold uppercase mt-1 max-w-[120px] truncate">{a.notes}</p>}
                 </div>
-                <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
-                  a.status === 'confirmed' ? 'bg-green-50 text-green-600 border-green-200' : 'bg-warm-grey text-deep-grape/40 border-black/5'
-                }`}>
-                  {a.status}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border transition-all ${
+                    a.status === 'confirmed' ? 'bg-green-50 text-green-600 border-green-200' : 
+                    a.status === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                    a.status === 'cancelled' ? 'bg-red-50 text-red-600 border-red-200' :
+                    a.status === 'completed' ? 'bg-naturals-purple/5 text-naturals-purple border-naturals-purple/20' :
+                    'bg-warm-grey text-deep-grape/40 border-black/5'
+                  }`}>
+                    {a.status}
+                  </span>
+                  <div className="flex items-center gap-1 ml-2">
+                    <button onClick={() => handleEdit('appointment' as any, a)} className="p-2 hover:bg-naturals-purple/10 rounded-xl transition-all group">
+                      <Edit className="w-3.5 h-3.5 text-naturals-purple/60 group-hover:text-naturals-purple" />
+                    </button>
+                    <button onClick={() => handleDelete('appointment', a.id)} className="p-2 hover:bg-red-50 rounded-xl transition-all group">
+                      <Trash2 className="w-3.5 h-3.5 text-red-500 group-hover:text-red-600" />
+                    </button>
+                  </div>
+                </div>
               </div>
             ))}
             {appointments.length === 0 && (
@@ -1027,10 +1042,11 @@ export default function StaffDashboard() {
 
       {activeTab === 'skipped' && (
         <div className="bg-white border border-black/5 shadow-xl rounded-[2rem] overflow-hidden">
-          <div className="grid grid-cols-[1.5fr_1.5fr_1fr_1fr] px-6 py-3 bg-warm-grey/40 border-b border-black/5">
+          <div className="grid grid-cols-[1.5fr_1.5fr_1fr_1.5fr_1fr] px-6 py-3 bg-warm-grey/40 border-b border-black/5">
             <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Requested Service</span>
             <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Customer</span>
             <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Date Skipped</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Skipped By</span>
             <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Status</span>
           </div>
           <div className="divide-y divide-black/5">
@@ -1042,16 +1058,19 @@ export default function StaffDashboard() {
                        c.service_name?.toLowerCase()?.includes(search);
               })
               .map((c) => (
-              <div key={c.id} className="grid grid-cols-[1.5fr_1.5fr_1fr_1fr] items-center px-6 py-4 hover:bg-warm-grey/20 transition-colors">
+              <div key={c.id} className="grid grid-cols-[1.5fr_1.5fr_1fr_1.5fr_1fr] items-center px-6 py-4 hover:bg-warm-grey/20 transition-colors">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-widest text-red-500">{c.service_name}</p>
-                  <p className="text-[8px] text-deep-grape/40 font-bold uppercase mt-1">{c.notes || 'Skipped via workspace'}</p>
                 </div>
                 <div>
                   <p className="font-bold text-xs text-deep-grape">{c.customer_name}</p>
                   <p className="text-[9px] text-deep-grape/40 font-bold">{c.email}</p>
                 </div>
                 <p className="text-[10px] font-bold text-deep-grape/60">{new Date(c.created_at).toLocaleDateString()}</p>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-deep-grape">{c.notes?.split(' / ')[0]?.replace('Skipped by ', '') || 'Unknown'}</p>
+                  <p className="text-[8px] text-deep-grape/40 font-bold uppercase mt-1">Admin Portal</p>
+                </div>
                 <div>
                   <span className="bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest">
                     Raised in Admin
@@ -1416,53 +1435,6 @@ export default function StaffDashboard() {
                   </div>
                 )}
 
-
-                {(modalType === 'add-franchise' || (modalType === 'edit' && activeTab === 'franchise')) && (
-                  <div className="space-y-4 pt-2">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Franchise Name</label>
-                      <input
-                        type="text"
-                        value={formData.franchiseName}
-                        onChange={(e) => setFormData({ ...formData, franchiseName: e.target.value })}
-                        className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Franchise Address</label>
-                      <input
-                        type="text"
-                        value={formData.franchiseAddress}
-                        onChange={(e) => setFormData({ ...formData, franchiseAddress: e.target.value })}
-                        className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {(modalType === 'add-admin' || (modalType === 'edit' && activeTab === 'admins')) && (
-                  <div className="space-y-4 pt-2">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Associated Franchise Owner</label>
-                      <div className="relative group/sel">
-                          <select 
-                              className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none appearance-none cursor-pointer"
-                              value={formData.franchiseOwnerId}
-                              onChange={(e) => setFormData({ ...formData, franchiseOwnerId: e.target.value })}
-                          >
-                              <option value="">Independent / None</option>
-                              {franchiseOwners.map(fo => (
-                                  <option key={fo.id} value={fo.id}>{fo.full_name} ({fo.franchise_name || 'No Name'})</option>
-                              ))}
-                          </select>
-                          <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-naturals-purple/40 group-hover/sel:text-naturals-purple transition-colors">
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" /></svg>
-                          </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 {(modalType === 'add-stylist' || (modalType === 'edit' && activeTab === 'stylists')) && (
                   <div className="space-y-4 pt-2">
                     <div className="space-y-1">
@@ -1472,8 +1444,96 @@ export default function StaffDashboard() {
                         placeholder="e.g. 5"
                         value={formData.experienceYears}
                         onChange={(e) => setFormData({ ...formData, experienceYears: e.target.value })}
-                        className="w-full bg-warm-grey/50 border-2 border-transparent rounded-2xl py-4 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple/30 transition-all outline-none"
+                        className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
                       />
+                    </div>
+                  </div>
+                )}
+
+                {(modalType === 'add-appointment' || (modalType === 'edit' && activeTab === 'appointments')) && (
+                  <div className="space-y-4 pt-2">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Customer</label>
+                        <select
+                          value={formData.appointmentCustomerId}
+                          onChange={(e) => setFormData({ ...formData, appointmentCustomerId: e.target.value })}
+                          className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
+                        >
+                          <option value="">Select Customer</option>
+                          {customers.map(c => (
+                            <option key={c.id} value={c.id}>{c.full_name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Stylist</label>
+                        <select
+                          value={formData.appointmentStylistId}
+                          onChange={(e) => setFormData({ ...formData, appointmentStylistId: e.target.value })}
+                          className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
+                        >
+                          <option value="">Select Stylist</option>
+                          {stylists.map(s => (
+                            <option key={s.id} value={s.id}>{s.full_name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Service</label>
+                      <select
+                        value={formData.appointmentServiceId}
+                        onChange={(e) => setFormData({ ...formData, appointmentServiceId: e.target.value })}
+                        className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
+                      >
+                        <option value="">Select Service</option>
+                        {services.map(s => (
+                          <option key={s.id} value={s.id}>{s.name} - ₹{s.price}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Date</label>
+                        <input
+                          type="date"
+                          value={formData.appointmentDate}
+                          onChange={(e) => setFormData({ ...formData, appointmentDate: e.target.value })}
+                          className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Start</label>
+                        <input
+                          type="time"
+                          value={formData.appointmentStartTime}
+                          onChange={(e) => setFormData({ ...formData, appointmentStartTime: e.target.value })}
+                          className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">End</label>
+                        <input
+                          type="time"
+                          value={formData.appointmentEndTime}
+                          onChange={(e) => setFormData({ ...formData, appointmentEndTime: e.target.value })}
+                          className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Status</label>
+                      <select
+                        value={formData.appointmentStatus}
+                        onChange={(e) => setFormData({ ...formData, appointmentStatus: e.target.value })}
+                        className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="completed">Completed</option>
+                      </select>
                     </div>
                   </div>
                 )}
