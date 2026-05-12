@@ -11,6 +11,8 @@ import { useAdminCustomers } from "@/modules/admin/customers/hooks";
 import { useAdminAppointments } from "@/modules/admin/appointments/hooks";
 import { useBranchStaff } from "@/modules/franchise_owner/staff/hooks";
 import { useBranchOverview } from "@/modules/franchise_owner/overview/hooks";
+import { useAdminDashboard } from "@/modules/admin/dashboard/hooks";
+import { useOffers } from "@/modules/franchise_owner/hooks";
 
 interface FormData {
   fullName: string;
@@ -38,6 +40,14 @@ interface FormData {
   appointmentStartTime?: string;
   appointmentEndTime?: string;
   appointmentStatus?: string;
+  // Offer fields
+  offerTitle?: string;
+  offerDescription?: string;
+  offerDiscountType?: 'percentage' | 'fixed';
+  offerDiscountValue?: string;
+  offerExpiryDate?: string;
+  offerServiceId?: string;
+  offerIsActive?: boolean;
   preferences: { [key: string]: string | string[] };
 }
 
@@ -99,7 +109,7 @@ function calculateAge(dob: string) {
   return age;
 }
 
-type ModalType = 'add-customer' | 'add-stylist' | 'add-service' | 'add-appointment' | 'edit';
+type ModalType = 'add-customer' | 'add-stylist' | 'add-service' | 'add-appointment' | 'add-offer' | 'edit';
 
 function CustomSelect({ value, onChange, options, label }: { value: string, onChange: (v: string) => void, options: {value: string, label: string}[], label?: string }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -156,7 +166,7 @@ export default function StaffDashboard() {
   
   // Default Tabs based on Role
   const initialTab = isStylist ? 'appointments' : 'stylists';
-  const [activeTab, setActiveTab] = useState<'customers' | 'stylists' | 'appointments' | 'services' | 'meetings' | 'skipped'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'customers' | 'stylists' | 'appointments' | 'services' | 'offers' | 'meetings' | 'skipped'>(initialTab);
   
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [services, setServices] = useState<Service[]>([]);
@@ -192,7 +202,15 @@ export default function StaffDashboard() {
     appointmentDate: '',
     appointmentStartTime: '',
     appointmentEndTime: '',
+    appointmentEndTime: '',
     appointmentStatus: 'pending',
+    offerTitle: '',
+    offerDescription: '',
+    offerDiscountType: 'percentage',
+    offerDiscountValue: '',
+    offerExpiryDate: '',
+    offerServiceId: '',
+    offerIsActive: true,
     preferences: {},
   });
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -227,7 +245,11 @@ export default function StaffDashboard() {
   
   // For Franchise Owners / Managers
   const { staff, refresh: fetchStaff } = useBranchStaff(myFranchiseOwnerId);
-  const { metrics, refresh: fetchMetrics } = useBranchOverview(myFranchiseOwnerId);
+  const { metrics: branchMetrics, refresh: fetchBranchMetrics } = useBranchOverview(myFranchiseOwnerId);
+  const { metrics: adminMetrics, refresh: fetchAdminMetrics } = useAdminDashboard();
+  const { offers, refetch: fetchOffersData } = useOffers();
+
+  const metrics = isAdmin ? adminMetrics : branchMetrics;
 
 
   // Sync hook data to local state for compatibility with existing search/filters
@@ -270,6 +292,7 @@ export default function StaffDashboard() {
     fetchAppointments();
     fetchServices();
     fetchMeetings();
+    fetchOffersData();
   }, []);
 
   const handleOpenModal = (type: ModalType, id?: string) => {
@@ -321,6 +344,13 @@ export default function StaffDashboard() {
       appointmentStartTime: data.start_time || '',
       appointmentEndTime: data.end_time || '',
       appointmentStatus: data.status || 'pending',
+      offerTitle: data.title || '',
+      offerDescription: data.description || '',
+      offerDiscountType: data.discount_type || 'percentage',
+      offerDiscountValue: data.discount_value?.toString() || '',
+      offerExpiryDate: data.expiry_date || '',
+      offerServiceId: data.service_id || '',
+      offerIsActive: data.is_active ?? true,
       preferences: data.ai_hairstyle_analysis?.questionnaire_results || {},
     });
     setShowModal(true);
@@ -418,6 +448,17 @@ export default function StaffDashboard() {
         price: parseFloat(formData.servicePrice || '0'),
         is_active: formData.serviceIsActive,
       };
+    } else if (modalType === 'add-offer' || (modalType === 'edit' && activeTab === 'offers')) {
+      table = 'offers';
+      payload = {
+        title: formData.offerTitle,
+        description: formData.offerDescription,
+        discount_type: formData.offerDiscountType,
+        discount_value: parseFloat(formData.offerDiscountValue || '0'),
+        expiry_date: formData.offerExpiryDate || null,
+        service_id: formData.offerServiceId || null,
+        is_active: formData.offerIsActive,
+      };
     }
 
     if (editingId) {
@@ -452,6 +493,7 @@ export default function StaffDashboard() {
         else if (table === 'stylists') fetchStaff();
         else if (table === 'services') fetchServices();
         else if (table === 'appointments') fetchAppointments();
+        else if (table === 'offers') fetchOffersData();
         setShowModal(false);
       }
     } else {
@@ -482,6 +524,7 @@ export default function StaffDashboard() {
         if (modalType === 'add-customer') fetchCustomers();
         else if (modalType === 'add-stylist') fetchStaff();
         else if (modalType === 'add-appointment') fetchAppointments();
+        else if (modalType === 'add-offer') fetchOffersData();
         setShowModal(false);
       }
     }
@@ -494,7 +537,8 @@ export default function StaffDashboard() {
       customer: 'customers', 
       stylist: 'stylists', 
       service: 'services',
-      appointment: 'appointments'
+      appointment: 'appointments',
+      offer: 'offers'
     };
     const table = tableMap[type];
     await supabase.from(table).delete().eq('id', id);
@@ -502,6 +546,7 @@ export default function StaffDashboard() {
     else if (type === 'stylist') fetchStaff();
     else if (type === 'service') fetchServices();
     else if (type === 'appointment') fetchAppointments();
+    else if (type === 'offer') fetchOffersData();
   };
 
 
@@ -582,6 +627,65 @@ export default function StaffDashboard() {
         </motion.div>
       )}
 
+      {/* Metrics Dashboard for Management Roles */}
+      {(isAdmin || isFranchiseOwner || isManager) && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <motion.div 
+            whileHover={{ y: -5 }}
+            className="bg-white rounded-[2.5rem] p-8 border border-black/5 shadow-xl relative overflow-hidden group"
+          >
+            <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:rotate-12 transition-transform duration-700">
+              <Users className="w-20 h-20" />
+            </div>
+            <div className="relative z-10">
+              <p className="text-[9px] font-black text-deep-grape/30 uppercase tracking-[0.3em] mb-1">{isAdmin ? "Network" : "Branch"} Base</p>
+              <h4 className="text-3xl font-black text-deep-grape italic tracking-tighter tabular-nums">
+                {isAdmin ? metrics.customers : metrics.stylists}
+              </h4>
+              <p className="text-[8px] font-bold text-naturals-purple uppercase tracking-widest mt-2 flex items-center gap-1">
+                <div className="w-1 h-1 bg-naturals-purple rounded-full" /> {isAdmin ? "Registered Customers" : "Active Specialists"}
+              </p>
+            </div>
+          </motion.div>
+
+          <motion.div 
+            whileHover={{ y: -5 }}
+            className="bg-white rounded-[2.5rem] p-8 border border-black/5 shadow-xl relative overflow-hidden group"
+          >
+            <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:rotate-12 transition-transform duration-700">
+              <Calendar className="w-20 h-20" />
+            </div>
+            <div className="relative z-10">
+              <p className="text-[9px] font-black text-deep-grape/30 uppercase tracking-[0.3em] mb-1">Operational Flow</p>
+              <h4 className="text-3xl font-black text-deep-grape italic tracking-tighter tabular-nums">
+                {metrics.appointments}
+              </h4>
+              <p className="text-[8px] font-bold text-naturals-purple uppercase tracking-widest mt-2 flex items-center gap-1">
+                <div className="w-1 h-1 bg-naturals-purple rounded-full" /> Active Appointments
+              </p>
+            </div>
+          </motion.div>
+
+          <motion.div 
+            whileHover={{ y: -5 }}
+            className="bg-deep-grape text-white rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden group"
+          >
+            <div className="absolute top-0 right-0 p-6 opacity-[0.05] group-hover:rotate-12 transition-transform duration-700">
+              <Sparkles className="w-20 h-20" />
+            </div>
+            <div className="relative z-10">
+              <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.3em] mb-1">Revenue Stream</p>
+              <h4 className="text-3xl font-black text-white italic tracking-tighter tabular-nums">
+                ₹{metrics.revenue.toLocaleString()}
+              </h4>
+              <p className="text-[8px] font-bold text-lavender uppercase tracking-widest mt-2 flex items-center gap-1">
+                <div className="w-1 h-1 bg-lavender rounded-full" /> Performance Value
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-6">
         <div>
           {/* Keep original titles for structure but make them subtle since banner is above */}
@@ -609,21 +713,21 @@ export default function StaffDashboard() {
           )}
           {(isAdmin || isFranchiseOwner) && (
             <button
-              onClick={() => handleOpenModal('add-service')}
-              className="px-4 py-2.5 bg-lavender text-deep-grape font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg hover:scale-105 transition-all flex items-center gap-2"
+              onClick={() => handleOpenModal('add-offer')}
+              className="px-4 py-2.5 bg-green-600 text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg hover:scale-105 transition-all flex items-center gap-2"
             >
-              <Sparkles className="w-3.5 h-3.5" /> Add Service
+              <Zap className="w-3.5 h-3.5" /> Add Offer
             </button>
           )}
         </div>
       </div>
 
       <div className="flex gap-1 p-1.5 rounded-2xl w-fit bg-warm-grey/50 border border-black/5 shadow-inner">
-        {(['customers', 'stylists', 'appointments', 'services', 'meetings', 'skipped'] as const)
+        {(['customers', 'stylists', 'appointments', 'services', 'offers', 'meetings', 'skipped'] as const)
           .filter(tab => {
             if (isAdmin) return true;
-            if (isFranchiseOwner) return ['customers', 'stylists', 'appointments', 'services', 'meetings', 'skipped'].includes(tab);
-            if (isManager) return ['customers', 'stylists', 'appointments', 'meetings', 'skipped'].includes(tab);
+            if (isFranchiseOwner) return ['customers', 'stylists', 'appointments', 'services', 'offers', 'meetings', 'skipped'].includes(tab);
+            if (isManager) return ['customers', 'stylists', 'appointments', 'offers', 'meetings', 'skipped'].includes(tab);
             if (isStylist) return ['customers', 'appointments', 'meetings', 'skipped'].includes(tab);
             return false;
           })
@@ -887,6 +991,73 @@ export default function StaffDashboard() {
             {appointments.length === 0 && (
                <div className="px-6 py-10 text-center text-deep-grape/30 text-xs font-black uppercase tracking-widest">No active deployments found</div>
             )}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'offers' && (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2 italic">Active Promotions</h3>
+            {(isAdmin || isFranchiseOwner) && (
+              <button
+                onClick={() => handleOpenModal('add-offer')}
+                className="px-4 py-2 bg-green-600 text-white font-black text-[9px] uppercase tracking-widest rounded-xl hover:scale-105 transition-all flex items-center gap-2 shadow-lg shadow-green-600/20"
+              >
+                <Zap className="w-3.5 h-3.5" /> New Offer
+              </button>
+            )}
+          </div>
+          <div className="bg-white border border-black/5 shadow-xl rounded-[2rem] overflow-hidden">
+            <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr_auto] px-6 py-3 bg-warm-grey/40 border-b border-black/5">
+              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Promotion</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Discount</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Expiry</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50">Status</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-deep-grape/50 text-right">Actions</span>
+            </div>
+            <div className="divide-y divide-black/5">
+              {offers
+                .filter(o => {
+                  const search = searchQuery.toLowerCase();
+                  return o.title.toLowerCase().includes(search) || 
+                         o.description?.toLowerCase().includes(search);
+                })
+                .map((o) => (
+                <div key={o.id} className="grid grid-cols-[1.5fr_1fr_1fr_1fr_auto] items-center px-6 py-4 hover:bg-warm-grey/20 transition-colors">
+                  <div>
+                    <p className="font-bold text-sm text-deep-grape">{o.title}</p>
+                    <p className="text-[9px] text-deep-grape/40 font-bold uppercase truncate max-w-[200px]">{o.description || 'No description'}</p>
+                  </div>
+                  <div className="flex flex-col">
+                    <p className="text-[10px] font-black text-naturals-purple italic">{o.discount_type === 'percentage' ? `${o.discount_value}% OFF` : `₹${o.discount_value} OFF`}</p>
+                    <p className="text-[8px] font-bold text-deep-grape/30 uppercase">{(o as any).service?.name || 'All Services'}</p>
+                  </div>
+                  <p className="text-[10px] font-black text-deep-grape/60">{o.expiry_date ? new Date(o.expiry_date).toLocaleDateString() : 'Never'}</p>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-1.5 h-1.5 rounded-full ${o.is_active ? 'bg-green-500' : 'bg-red-400'}`} />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-deep-grape/40">
+                      {o.is_active ? 'Active' : 'Expired'}
+                    </span>
+                  </div>
+                  <div className="flex justify-end gap-1">
+                    {(isAdmin || isFranchiseOwner) && (
+                      <>
+                        <button onClick={() => handleEdit('offer' as any, o)} className="p-2 hover:bg-naturals-purple/10 rounded-xl transition-all group">
+                          <Edit className="w-4 h-4 text-naturals-purple/60 group-hover:text-naturals-purple" />
+                        </button>
+                        <button onClick={() => handleDelete('offer' as any, o.id)} className="p-2 hover:bg-red-50 rounded-xl transition-all group">
+                          <Trash2 className="w-4 h-4 text-red-500 group-hover:text-red-600" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {offers.length === 0 && (
+                 <div className="px-6 py-10 text-center text-deep-grape/30 text-xs font-black uppercase tracking-widest">No active promotions in catalog</div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -1177,6 +1348,91 @@ export default function StaffDashboard() {
                         {formData.serviceIsActive ? 'ACTIVE' : 'HIDDEN'}
                       </button>
                     </div>
+                  </div>
+                </div>
+              ) : (modalType === 'add-offer' || (modalType === 'edit' && activeTab === 'offers')) ? (
+                <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Offer Title</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Summer Sparkle 20% OFF"
+                      value={formData.offerTitle}
+                      onChange={(e) => setFormData({ ...formData, offerTitle: e.target.value })}
+                      className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Offer Description</label>
+                    <textarea
+                      value={formData.offerDescription}
+                      onChange={(e) => setFormData({ ...formData, offerDescription: e.target.value })}
+                      className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none min-h-[80px] resize-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Discount Type</label>
+                      <select
+                        value={formData.offerDiscountType}
+                        onChange={(e) => setFormData({ ...formData, offerDiscountType: e.target.value as any })}
+                        className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
+                      >
+                        <option value="percentage">Percentage (%)</option>
+                        <option value="fixed">Fixed Amount (₹)</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Value</label>
+                      <input
+                        type="number"
+                        value={formData.offerDiscountValue}
+                        onChange={(e) => setFormData({ ...formData, offerDiscountValue: e.target.value })}
+                        className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Expiry Date</label>
+                      <input
+                        type="date"
+                        value={formData.offerExpiryDate}
+                        onChange={(e) => setFormData({ ...formData, offerExpiryDate: e.target.value })}
+                        className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Active Status</label>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, offerIsActive: !formData.offerIsActive })}
+                        className={`w-full py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest border transition-all ${
+                          formData.offerIsActive 
+                            ? 'bg-green-500 border-green-500 text-white shadow-lg shadow-green-500/20' 
+                            : 'bg-warm-grey border-black/5 text-deep-grape/40'
+                        }`}
+                      >
+                        {formData.offerIsActive ? 'ACTIVE' : 'INACTIVE'}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Specific Service (Optional)</label>
+                    <select
+                      value={formData.offerServiceId}
+                      onChange={(e) => setFormData({ ...formData, offerServiceId: e.target.value })}
+                      className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
+                    >
+                      <option value="">All Services</option>
+                      {services.map(s => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               ) : (
