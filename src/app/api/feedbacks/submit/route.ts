@@ -8,7 +8,7 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: Request) {
   try {
-    const { appointmentId, customerId, rating, comment } = await req.json();
+    const { appointmentId, customerId, rating, comment, serviceRating, staffRating, cleanlinessRating, pricingRating } = await req.json();
 
     if (!appointmentId || !customerId || !rating) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -23,7 +23,11 @@ export async function POST(req: Request) {
         appointment_id: appointmentId,
         customer_id: customerId,
         rating,
-        comment
+        comment,
+        service_rating: serviceRating || 5,
+        staff_behavior_rating: staffRating || 5,
+        cleanliness_rating: cleanlinessRating || 5,
+        pricing_rating: pricingRating || 5
       });
 
     if (feedbackError) throw feedbackError;

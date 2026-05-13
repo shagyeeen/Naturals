@@ -37,6 +37,10 @@ export default function AppointmentsPage() {
   const [isReviewModalOpen, setReviewModalOpen] = useState(false);
   const [isDetailsModalOpen, setDetailsModalOpen] = useState(false);
   const [reviewRating, setReviewRating] = useState(5);
+  const [serviceRating, setServiceRating] = useState(5);
+  const [staffRating, setStaffRating] = useState(5);
+  const [cleanlinessRating, setCleanlinessRating] = useState(5);
+  const [pricingRating, setPricingRating] = useState(5);
   const [reviewText, setReviewText] = useState("");
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [cancelModalId, setCancelModalId] = useState<string | null>(null);
@@ -256,6 +260,10 @@ export default function AppointmentsPage() {
           appointmentId: selectedAppt.id,
           customerId: customerProfile.id,
           rating: reviewRating,
+          serviceRating,
+          staffRating,
+          cleanlinessRating,
+          pricingRating,
           comment: reviewText
         })
       });
@@ -266,6 +274,10 @@ export default function AppointmentsPage() {
       setReviewModalOpen(false);
       setReviewText("");
       setReviewRating(5);
+      setServiceRating(5);
+      setStaffRating(5);
+      setCleanlinessRating(5);
+      setPricingRating(5);
       fetchAppointments();
     } catch (error: any) {
       console.error("Error submitting review:", error);
@@ -629,20 +641,56 @@ export default function AppointmentsPage() {
               <p className="text-deep-grape/40 font-black uppercase text-[10px] tracking-[0.2em] mb-10">Your feedback helps us maintain our premium standards.</p>
               
               <div className="space-y-8">
-                <div>
-                  <label className="block text-[10px] font-black mb-4 uppercase tracking-[0.25em] opacity-40">Service Quality</label>
-                  <div className="flex gap-4">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        onClick={() => setReviewRating(star)}
-                        className="transition-transform hover:scale-110"
-                      >
-                        <Star 
-                          className={`w-8 h-8 ${star <= reviewRating ? 'text-amber-500 fill-amber-500' : 'text-gray-200'}`} 
-                        />
-                      </button>
-                    ))}
+                <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+                  <div>
+                    <label className="block text-[9px] font-black mb-3 uppercase tracking-widest opacity-40">Overall Experience</label>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button key={star} onClick={() => setReviewRating(star)} className="transition-transform hover:scale-110">
+                          <Star className={`w-6 h-6 ${star <= reviewRating ? 'text-amber-500 fill-amber-500' : 'text-gray-200'}`} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-black mb-3 uppercase tracking-widest opacity-40">Service Quality</label>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button key={star} onClick={() => setServiceRating(star)} className="transition-transform hover:scale-110">
+                          <Star className={`w-6 h-6 ${star <= serviceRating ? 'text-blue-500 fill-blue-500' : 'text-gray-200'}`} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-black mb-3 uppercase tracking-widest opacity-40">Staff Behavior</label>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button key={star} onClick={() => setStaffRating(star)} className="transition-transform hover:scale-110">
+                          <Star className={`w-6 h-6 ${star <= staffRating ? 'text-violet-500 fill-violet-500' : 'text-gray-200'}`} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-black mb-3 uppercase tracking-widest opacity-40">Cleanliness</label>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button key={star} onClick={() => setCleanlinessRating(star)} className="transition-transform hover:scale-110">
+                          <Star className={`w-6 h-6 ${star <= cleanlinessRating ? 'text-emerald-500 fill-emerald-500' : 'text-gray-200'}`} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-black mb-3 uppercase tracking-widest opacity-40">Pricing</label>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button key={star} onClick={() => setPricingRating(star)} className="transition-transform hover:scale-110">
+                          <Star className={`w-6 h-6 ${star <= pricingRating ? 'text-amber-600 fill-amber-600' : 'text-gray-200'}`} />
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 

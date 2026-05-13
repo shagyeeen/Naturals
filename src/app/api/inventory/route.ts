@@ -46,47 +46,32 @@ export async function GET(request: NextRequest) {
 
     // Build forecast alerts from real stock data
     const alerts = items.map((item) => {
-      const stockRatio = item.current_stock / item.min_threshold;
+      const lastBooked = item.last_restocked_at ? new Date(item.last_restocked_at) : new Date();
+      const usageDuration = item.usage_duration_days || 30;
+      const deadlineDate = new Date(lastBooked.getTime() + usageDuration * 24 * 60 * 60 * 1000);
+      const daysUsed = Math.floor((new Date().getTime() - lastBooked.getTime()) / (24 * 60 * 60 * 1000));
+      
+      const stockRatio = 1 - (daysUsed / usageDuration);
       let status: "critical" | "low" | "optimal";
-      let type: string;
-      let reason: string;
-      let action: string | null;
-
-      if (item.current_stock <= item.min_threshold * 0.5) {
-        status = "critical";
-        type = "Critical";
-        reason = `Only ${item.current_stock} ${item.unit} left (min: ${item.min_threshold})`;
-        const orderQty = item.max_capacity - item.current_stock;
-        action = `Procure ${orderQty} ${item.unit} from ${item.supplier || "supplier"}`;
-      } else if (item.current_stock <= item.min_threshold) {
-        status = "low";
-        type = "Restock";
-        reason = `Stock at ${item.current_stock}/${item.min_threshold} threshold`;
-        const orderQty = Math.ceil((item.max_capacity - item.current_stock) * 0.5);
-        action = `Order ${orderQty} ${item.unit} to maintain buffer`;
-      } else {
-        status = "optimal";
-        type = "Optimal";
-        reason = `${item.current_stock} ${item.unit} in stock (capacity: ${item.max_capacity})`;
-        action = null;
-      }
+      
+      if (stockRatio <= 0.2) status = "critical";
+      else if (stockRatio <= 0.5) status = "low";
+      else status = "optimal";
 
       return {
         id: item.id,
         productName: item.product_name,
         category: item.category,
         branch: item.branch_location,
-        currentStock: item.current_stock,
-        minThreshold: item.min_threshold,
-        maxCapacity: item.max_capacity,
+        lastBookedDate: lastBooked.toISOString(),
+        deadlineDate: deadlineDate.toISOString(),
+        usageDuration: `${daysUsed} / ${usageDuration} days used`,
+        stockPct: Math.max(0, Math.min(100, Math.round(stockRatio * 100))),
         unit: item.unit,
-        unitCost: item.unit_cost,
-        supplier: item.supplier,
-        stockRatio,
         status,
-        type,
-        reason,
-        action,
+        type: status === "critical" ? "DEADLINE EXPIRED" : status === "low" ? "ORDER SOON" : "OPTIMAL",
+        reason: status === "critical" ? "Order deadline has passed or is imminent." : `Approximately ${Math.max(0, usageDuration - daysUsed)} days remaining.`,
+        action: `Replenish ${item.product_name}`,
       };
     });
 
@@ -125,6 +110,19 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { action } = body;
+
+    if (action === "record-order") {
+      const { inventory_id } = body;
+      if (!inventory_id) return NextResponse.json({ error: "inventory_id required" }, { status: 400 });
+
+      const { error } = await supabaseAdmin
+        .from("inventory")
+        .update({ last_restocked_at: new Date().toISOString() })
+        .eq("id", inventory_id);
+
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ success: true, message: "Order recorded. usage cycle reset." });
+    }
 
     if (action === "auto-procure") {
       // Find all items below threshold

@@ -54,6 +54,12 @@ interface FeedbackAnalytics {
     branch_location?: string;
     created_at: string;
   }[];
+  serviceTrends: {
+    name: string;
+    count: number;
+    growth: number;
+    up: boolean;
+  }[];
   trend: "up" | "down" | "stable";
 }
 
@@ -62,16 +68,13 @@ interface InventoryAlert {
   productName: string;
   category: string;
   branch: string;
-  currentStock: number;
-  minThreshold: number;
-  maxCapacity: number;
-  unit: string;
-  unitCost: number;
-  supplier: string;
+  lastBookedDate: string;
+  deadlineDate: string;
+  usageDuration: string;
+  stockPct: number;
   status: "critical" | "low" | "optimal";
   type: string;
   reason: string;
-  action: string | null;
 }
 
 interface InventoryData {
@@ -97,7 +100,7 @@ interface InventoryData {
 interface ProcurementResult {
   success: boolean;
   message: string;
-  ordersCreated: number;
+  ordersCreated?: number;
   totalCost?: number;
 }
 
@@ -118,14 +121,56 @@ const MOCK_ANALYTICS: FeedbackAnalytics = {
     { id: "3", rating: 2, comment: "Waiting time was too long even with an appointment. Staff seemed overwhelmed.", sentiment_label: "negative", source: "Yelp", branch_location: "Indiranagar", created_at: new Date().toISOString() },
     { id: "4", rating: 4, comment: "Value for money is good. Cleanliness could be slightly better in the washing area.", sentiment_label: "neutral", source: "In-App", branch_location: "Adyar", created_at: new Date().toISOString() },
   ],
+  serviceTrends: [
+    { name: "Hair Spa", count: 145, growth: 12, up: true },
+    { name: "Global Coloring", count: 98, growth: 8, up: true },
+    { name: "Keratin Treatment", count: 76, growth: 15, up: true },
+    { name: "Signature Facial", count: 64, growth: 5, up: false },
+  ],
   trend: "up"
 };
 
 const MOCK_INVENTORY: InventoryData = {
   alerts: [
-    { id: "i1", productName: "L'Oreal Professionnel Serie Expert Absolut Repair Shampoo (500ml)", category: "Shampoo", branch: "Adyar", currentStock: 2, minThreshold: 5, maxCapacity: 20, unit: "Bottles", unitCost: 850, supplier: "ProBeauty Hub", status: "critical", type: "STOCK DEPLETION", reason: "Current stock (2) below critical threshold (5). High velocity item.", action: "Procure 18 units immediately." },
-    { id: "i2", productName: "Schwarzkopf Professional IGORA Royal 5-0 (60ml)", category: "Hair Color", branch: "RS Puram", currentStock: 4, minThreshold: 10, maxCapacity: 40, unit: "Tubes", unitCost: 420, supplier: "ColorMaster Direct", status: "low", type: "PREDICTIVE SHORTFALL", reason: "Based on last 30 day demand, stock will hit zero in 4 days.", action: "Queue for weekly replenishment." },
-    { id: "i3", productName: "Naturals Signature Spa Oil (1L)", category: "Oils", branch: "Adyar", currentStock: 12, minThreshold: 10, maxCapacity: 30, unit: "Litres", unitCost: 1200, supplier: "Naturals Corporate", status: "optimal", type: "RESTOCK SECURE", reason: "Stock level within target range (12/10).", action: null },
+    { 
+      id: "f8b18514-79a9-4597-bd92-949bf75d6ab5", 
+      productName: "L'Oreal Absolut Repair Shampoo (500ml)", 
+      category: "Shampoo", 
+      branch: "Adyar", 
+      lastBookedDate: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+      deadlineDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(),
+      usageDuration: "14 / 15 days used",
+      stockPct: 15,
+      status: "critical", 
+      type: "DEADLINE EXPIRED", 
+      reason: "Order deadline has passed or is imminent." 
+    },
+    { 
+      id: "4fa4ec5f-c5d6-48f7-9143-5625aa80041b", 
+      productName: "GK Hair Keratin Mix", 
+      category: "Keratin", 
+      branch: "RS Puram", 
+      lastBookedDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+      deadlineDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+      usageDuration: "10 / 20 days used",
+      stockPct: 50,
+      status: "low", 
+      type: "ORDER SOON", 
+      reason: "Approximately 10 days remaining." 
+    },
+    { 
+      id: "af00ba37-7fab-48a7-9bbd-d553f25c2bc8", 
+      productName: "Naturals Signature Spa Oil", 
+      category: "Oils", 
+      branch: "Adyar", 
+      lastBookedDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      deadlineDate: new Date(Date.now() + 40 * 24 * 60 * 60 * 1000).toISOString(),
+      usageDuration: "5 / 45 days used",
+      stockPct: 89,
+      status: "optimal", 
+      type: "OPTIMAL", 
+      reason: "Approximately 40 days remaining." 
+    },
   ],
   summary: {
     criticalCount: 1,
@@ -146,6 +191,8 @@ export default function TrendIntelligence() {
   const [isLoadingInventory, setIsLoadingInventory] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [procurementResult, setProcurementResult] = useState<ProcurementResult | null>(null);
+  const [aiInsight, setAiInsight] = useState<string | null>(null);
+  const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
 
   const fetchAnalytics = async () => {
     setIsLoading(true);
@@ -222,17 +269,63 @@ export default function TrendIntelligence() {
     }
   };
 
+  const handleRecordOrder = async (id: string) => {
+    try {
+      const res = await fetch("/api/inventory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "record-order", inventory_id: id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setProcurementResult({ success: true, message: "Order recorded successfully. Usage cycle reset." });
+        await fetchInventory();
+        setTimeout(() => setProcurementResult(null), 3000);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleGenerateInsight = async () => {
+    if (!analytics?.serviceTrends) return;
+    setIsGeneratingInsight(true);
+    setAiInsight(null);
+    try {
+      const trendsText = analytics.serviceTrends.map(s => `${s.name}: ${s.growth}% growth`).join(", ");
+      const prompt = `Analyze these salon service trends: ${trendsText}. 
+      Explain why these specific services might be trending this month (seasonal reasons, fashion trends, etc.) 
+      and suggest one actionable business strategy. Be concise and professional. Use markdown.`;
+
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [{ role: "user", content: prompt }],
+          userName: "Manager"
+        }),
+      });
+      const data = await res.json();
+      setAiInsight(data.text);
+    } catch (err) {
+      console.error(err);
+      setAiInsight("Failed to generate insights. Please try again later.");
+    } finally {
+      setIsGeneratingInsight(false);
+    }
+  };
+
   const sentimentVelocity = analytics?.sentimentVelocity ?? 0;
   const trend = analytics?.trend ?? "stable";
   const totalFeedbacks = analytics?.totalFeedbacks ?? 0;
 
   return (
-    <div className="min-h-screen bg-[#0F071D] text-white p-6 relative overflow-hidden">
-      {/* Mesh Gradients Background */}
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-40">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-naturals-purple/30 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-600/20 blur-[120px] rounded-full" />
-        <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] bg-fuchsia-600/10 blur-[100px] rounded-full" />
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 p-6 relative overflow-hidden">
+      {/* Mesh Gradients Background - Toned down for light mode */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-naturals-purple/10 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-600/5 blur-[120px] rounded-full" />
+        <div className="absolute top-[20%] right-[10%] w-[30%] h-[30%] bg-fuchsia-600/5 blur-[100px] rounded-full" />
       </div>
 
       <div className="max-w-7xl mx-auto space-y-8 relative z-10">
@@ -246,12 +339,12 @@ export default function TrendIntelligence() {
               <div className="w-10 h-10 rounded-2xl bg-naturals-purple/20 flex items-center justify-center border border-naturals-purple/30">
                 <Zap className="w-5 h-5 text-naturals-purple" />
               </div>
-              <h1 className="text-3xl font-black tracking-tight italic">
-                INTELLIGENCE <span className="text-naturals-purple font-normal">COMMAND</span>
+              <h1 className="text-3xl font-black tracking-tight italic text-slate-900 uppercase">
+                trend <span className="text-naturals-purple font-normal lowercase">engine</span>
               </h1>
             </div>
-            <p className="text-gray-400 font-medium max-w-md">
-              Real-time neural synthesis of customer sentiment and operational logistics.
+            <p className="text-slate-500 font-medium max-w-md">
+              Live data on customer reviews and salon stock.
             </p>
           </motion.div>
 
@@ -266,23 +359,23 @@ export default function TrendIntelligence() {
                 <select
                   value={selectedRegion}
                   onChange={(e) => setSelectedRegion(e.target.value)}
-                  className="appearance-none bg-[#1A102D] border border-white/10 rounded-xl px-5 py-3 pr-12 text-sm font-bold text-white cursor-pointer hover:border-naturals-purple/50 transition-all focus:outline-none"
+                  className="appearance-none bg-white border border-slate-200 rounded-xl px-5 py-3 pr-12 text-sm font-bold text-slate-900 cursor-pointer hover:border-naturals-purple/50 transition-all focus:outline-none shadow-sm"
                 >
                   <option>All Branches</option>
                   <option>Chennai — Adyar</option>
                   <option>Coimbatore — RS Puram</option>
                   <option>Bangalore — Indiranagar</option>
                 </select>
-                <ChevronDown className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
+                <ChevronDown className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               </div>
             </div>
             
             <button
               onClick={fetchAnalytics}
               disabled={isLoading}
-              className="p-3 bg-[#1A102D] border border-white/10 rounded-xl hover:border-naturals-purple/50 transition-all cursor-pointer group"
+              className="p-3 bg-white border border-slate-200 rounded-xl hover:border-naturals-purple/50 transition-all cursor-pointer group shadow-sm"
             >
-              <RefreshCw className={`w-5 h-5 text-white/50 group-hover:text-naturals-purple transition-colors ${isLoading ? "animate-spin" : ""}`} />
+              <RefreshCw className={`w-5 h-5 text-slate-400 group-hover:text-naturals-purple transition-colors ${isLoading ? "animate-spin" : ""}`} />
             </button>
           </motion.div>
         </div>
@@ -292,32 +385,32 @@ export default function TrendIntelligence() {
           <PremiumKPICard
             icon={<Globe className="w-5 h-5" />}
             color="purple"
-            label="Neural Sentiment"
+            label="Review Score"
             value={analytics ? analytics.sentimentVelocity.toFixed(1) : null}
             suffix="%"
             trend={trend}
-            description="Overall network health"
+            description="Overall satisfaction score"
           />
           <PremiumKPICard
             icon={<Star className="w-5 h-5" />}
             color="amber"
-            label="Service Quality"
+            label="Avg Rating"
             value={analytics ? analytics.avgRating.toFixed(1) : null}
             suffix="pts"
-            description="Customer experience delta"
+            description="Average stars per visit"
           />
           <PremiumKPICard
             icon={<MessageSquare className="w-5 h-5" />}
             color="blue"
-            label="Data Ingestion"
+            label="Total Reviews"
             value={analytics ? String(analytics.totalFeedbacks) : null}
             suffix="rev"
-            description="Total signals processed"
+            description="Number of feedbacks received"
           />
           <PremiumKPICard
             icon={<Users className="w-5 h-5" />}
             color="emerald"
-            label="Satisfaction"
+            label="Happy Customers"
             value={
               !analytics
                 ? null
@@ -325,7 +418,7 @@ export default function TrendIntelligence() {
                 ? `${Math.round((analytics.sentimentBreakdown.positive / analytics.totalFeedbacks) * 100)}%`
                 : "0%"
             }
-            description="Positive polarity ratio"
+            description="Good review percentage"
           />
         </div>
 
@@ -334,7 +427,7 @@ export default function TrendIntelligence() {
           <div className="lg:col-span-8 space-y-8">
             <div className="grid md:grid-cols-2 gap-8">
               {/* Sentiment Breakdown */}
-              <GlassCard title="Polarity Distribution" subtitle="Customer reaction vectors">
+              <GlassCard title="Customer Feelings" subtitle="Good vs Bad reviews">
                 {analytics ? (
                   <div className="space-y-6">
                     {[
@@ -343,7 +436,7 @@ export default function TrendIntelligence() {
                         count: analytics.sentimentBreakdown.positive,
                         color: "from-emerald-400 to-teal-500",
                         glow: "shadow-emerald-500/20",
-                        textColor: "text-emerald-400",
+                        textColor: "text-emerald-600",
                         icon: <ThumbsUp className="w-4 h-4" />,
                       },
                       {
@@ -359,7 +452,7 @@ export default function TrendIntelligence() {
                         count: analytics.sentimentBreakdown.negative,
                         color: "from-rose-400 to-red-600",
                         glow: "shadow-red-500/20",
-                        textColor: "text-rose-400",
+                        textColor: "text-rose-600",
                         icon: <ThumbsDown className="w-4 h-4" />,
                       },
                     ].map((item, i) => {
@@ -371,11 +464,11 @@ export default function TrendIntelligence() {
                             <span className={`text-xs font-bold uppercase tracking-[0.15em] flex items-center gap-2 ${item.textColor}`}>
                               {item.icon} {item.label}
                             </span>
-                            <span className="text-sm font-black text-white/80 tabular-nums">
+                            <span className="text-sm font-black text-slate-900 tabular-nums">
                               {pct}%
                             </span>
                           </div>
-                          <div className="h-3 bg-white/5 rounded-full overflow-hidden p-[2px] border border-white/5">
+                          <div className="h-3 bg-slate-100 rounded-full overflow-hidden p-[2px] border border-slate-200/50">
                             <motion.div
                               initial={{ width: 0 }}
                               animate={{ width: `${pct}%` }}
@@ -391,27 +484,30 @@ export default function TrendIntelligence() {
               </GlassCard>
 
               {/* Quality Dimensions */}
-              <GlassCard title="Operational KPIs" subtitle="Service dimension analysis">
+              <GlassCard title="Service Quality" subtitle="Performance by category">
                 {analytics ? (
                   <div className="space-y-6">
                     {[
-                      { label: "Service Logic", value: analytics.avgServiceQuality, color: "from-blue-400 to-indigo-500" },
-                      { label: "Stylist Precision", value: analytics.avgStylistBehaviour, color: "from-violet-400 to-purple-600" },
-                      { label: "Zone Sterility", value: analytics.avgCleanliness, color: "from-emerald-400 to-teal-500" },
-                      { label: "Value Equation", value: analytics.avgValueForMoney, color: "from-amber-400 to-orange-500" },
+                      { label: "Service", value: analytics.avgServiceQuality, color: "text-blue-400" },
+                      { label: "Staff Behavior", value: analytics.avgStylistBehaviour, color: "text-violet-400" },
+                      { label: "Cleanliness", value: analytics.avgCleanliness, color: "text-emerald-600" },
+                      { label: "Pricing", value: analytics.avgValueForMoney, color: "text-amber-500" },
                     ].map((dim, i) => (
-                      <div key={dim.label}>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-bold text-white/40 uppercase tracking-widest">{dim.label}</span>
-                          <span className="text-sm font-black text-white italic tabular-nums">{dim.value}<span className="text-[10px] text-white/20 ml-1">/5</span></span>
+                      <div key={dim.label} className="flex items-center justify-between p-3 rounded-2xl bg-slate-100 border border-slate-200/60 hover:bg-slate-200 transition-all">
+                        <div>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{dim.label}</p>
+                          <div className="flex gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star 
+                                key={star} 
+                                className={`w-3.5 h-3.5 ${star <= Math.round(dim.value) ? dim.color + ' fill-current' : 'text-slate-300'}`} 
+                              />
+                            ))}
+                          </div>
                         </div>
-                        <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${(dim.value / 5) * 100}%` }}
-                            transition={{ duration: 1, delay: 0.3 + (i * 0.1), ease: "circOut" }}
-                            className={`h-full bg-gradient-to-r ${dim.color} rounded-full`}
-                          />
+                        <div className="text-right">
+                          <p className={`text-lg font-black italic tracking-tighter ${dim.color}`}>{dim.value}</p>
+                          <p className="text-[8px] font-bold text-slate-900/20 uppercase tracking-widest">Average</p>
                         </div>
                       </div>
                     ))}
@@ -421,7 +517,7 @@ export default function TrendIntelligence() {
             </div>
 
             {/* Rating distribution chart */}
-            <GlassCard title="Neural Response Curve" subtitle="Rating intensity spectrum">
+            <GlassCard title="Rating Summary" subtitle="Star breakdown">
               {analytics ? (
                 <div className="pt-4 h-48 flex items-end gap-3 sm:gap-6">
                   {[1, 2, 3, 4, 5].map((star, i) => {
@@ -433,7 +529,7 @@ export default function TrendIntelligence() {
                         <motion.div 
                           initial={{ opacity: 0, scale: 0 }}
                           animate={{ opacity: 1, scale: 1 }}
-                          className="text-[10px] font-black text-white/40 tabular-nums mb-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="text-[10px] font-black text-slate-400 tabular-nums mb-1 opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           {count}
                         </motion.div>
@@ -442,27 +538,27 @@ export default function TrendIntelligence() {
                             initial={{ height: 0 }}
                             animate={{ height: `${Math.max(barHeight, 4)}%` }}
                             transition={{ duration: 1, delay: i * 0.1, ease: "backOut" }}
-                            className={`w-full rounded-t-xl transition-all relative overflow-hidden group-hover:shadow-[0_0_20px_rgba(139,92,246,0.3)] ${
+                            className={`w-full rounded-t-xl transition-all relative overflow-hidden shadow-sm ${
                               star >= 4
-                                ? "bg-gradient-to-t from-emerald-600/20 to-emerald-400"
+                                ? "bg-gradient-to-t from-emerald-50 to-emerald-500"
                                 : star === 3
-                                ? "bg-gradient-to-t from-amber-600/20 to-amber-400"
-                                : "bg-gradient-to-t from-rose-600/20 to-rose-500"
+                                ? "bg-gradient-to-t from-amber-50 to-amber-400"
+                                : "bg-gradient-to-t from-rose-50 to-rose-500"
                             }`}
                           >
                             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20" />
                           </motion.div>
                         </div>
-                        <span className="text-xs font-black text-white/20 italic tracking-tighter">{star}★</span>
+                        <span className="text-xs font-black text-slate-400 italic tracking-tighter">{star}★</span>
                       </div>
                     );
                   })}
                 </div>
-              ) : <div className="h-48 bg-white/5 rounded-2xl animate-pulse" />}
+              ) : <div className="h-48 bg-slate-100 rounded-2xl animate-pulse" />}
             </GlassCard>
 
             {/* Recent Neural Feed */}
-            <GlassCard title="Real-time Signal Feed" subtitle="Latest unprocessed customer vectors">
+            <GlassCard title="Customer Reviews" subtitle="Latest feedback messages">
               {analytics && analytics.recentFeedbacks.length > 0 ? (
                 <div className="grid md:grid-cols-2 gap-4">
                   {analytics.recentFeedbacks.slice(0, 6).map((fb, i) => (
@@ -471,33 +567,33 @@ export default function TrendIntelligence() {
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: i * 0.05 }}
-                      className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.05] hover:border-naturals-purple/30 transition-all group"
+                      className="p-4 rounded-2xl bg-slate-50/50 border border-slate-200/60 hover:bg-slate-50 hover:border-naturals-purple/30 transition-all group"
                     >
                       <div className="flex gap-4 items-start">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border ${
-                          fb.sentiment_label === "positive" ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-500" :
-                          fb.sentiment_label === "negative" ? "bg-rose-500/10 border-rose-500/30 text-rose-500" :
-                          "bg-white/5 border-white/10 text-white/40"
+                          fb.sentiment_label === "positive" ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600" :
+                          fb.sentiment_label === "negative" ? "bg-rose-500/10 border-rose-500/30 text-rose-600" :
+                          "bg-slate-100 border-slate-200 text-slate-400"
                         }`}>
                           {fb.sentiment_label === "positive" ? <ThumbsUp className="w-3.5 h-3.5" /> : 
                            fb.sentiment_label === "negative" ? <ThumbsDown className="w-3.5 h-3.5" /> : 
                            <Minus className="w-3.5 h-3.5" />}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-white/70 line-clamp-2 leading-relaxed font-medium italic">
+                          <p className="text-sm text-slate-600 font-medium">
                             "{fb.comment || "Signal detected without semantic payload."}"
                           </p>
                           <div className="flex items-center gap-3 mt-3">
                             <div className="flex gap-0.5">
                               {[...Array(5)].map((_, i) => (
-                                <Star key={i} className={`w-2.5 h-2.5 ${i < fb.rating ? "text-amber-400 fill-amber-400" : "text-white/10"}`} />
+                                <Star key={i} className={`w-2.5 h-2.5 ${i < fb.rating ? "text-amber-600 fill-amber-400" : "text-slate-300"}`} />
                               ))}
                             </div>
-                            <span className="text-[9px] font-black uppercase tracking-widest text-naturals-purple/60 bg-naturals-purple/10 px-2 py-0.5 rounded-full border border-naturals-purple/20">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-naturals-purple bg-naturals-purple/10 px-2 py-0.5 rounded-full border border-naturals-purple/20">
                               {fb.source}
                             </span>
-                            <span className="text-[9px] text-white/20 font-bold flex items-center gap-1">
-                              <MapPin className="w-2.5 h-2.5" /> {fb.branch_location || "Unknown"}
+                            <span className="text-[9px] text-slate-400 font-bold flex items-center gap-1">
+                              <MapPin className="w-2.5 h-2.5" /> {fb.branch_location}
                             </span>
                           </div>
                         </div>
@@ -511,22 +607,22 @@ export default function TrendIntelligence() {
 
           {/* Right Column: Inventory & Logistics */}
           <div className="lg:col-span-4 space-y-8">
-            <GlassCard title="Logistics Core" subtitle="Autonomous inventory forecasting">
+            <GlassCard title="Stock Management" subtitle="Inventory and orders">
               <div className="space-y-6">
                 {/* Stats Summary */}
                 {inventory && (
-                  <div className="grid grid-cols-3 gap-3 p-1 bg-white/5 rounded-2xl border border-white/5">
+                  <div className="grid grid-cols-3 gap-3 p-1 bg-slate-50 rounded-2xl border border-slate-200">
                     <div className="py-3 text-center">
                       <p className="text-xs font-black text-rose-500 tabular-nums">{inventory.summary.criticalCount}</p>
-                      <p className="text-[8px] font-bold text-white/20 uppercase tracking-tighter">Critical</p>
+                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Critical</p>
                     </div>
-                    <div className="py-3 text-center border-x border-white/5">
+                    <div className="py-3 text-center border-x border-slate-200">
                       <p className="text-xs font-black text-amber-500 tabular-nums">{inventory.summary.lowCount}</p>
-                      <p className="text-[8px] font-bold text-white/20 uppercase tracking-tighter">Low</p>
+                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Low</p>
                     </div>
                     <div className="py-3 text-center">
                       <p className="text-xs font-black text-emerald-500 tabular-nums">{inventory.summary.optimalCount}</p>
-                      <p className="text-[8px] font-bold text-white/20 uppercase tracking-tighter">Secure</p>
+                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Secure</p>
                     </div>
                   </div>
                 )}
@@ -536,21 +632,23 @@ export default function TrendIntelligence() {
                   {inventory?.alerts.map((alert) => (
                     <ForecastCard
                       key={alert.id}
+                      id={alert.id}
                       type={alert.type}
                       title={alert.productName}
                       reason={alert.reason}
-                      action={alert.action}
                       color={alert.status === "critical" ? "orange" : alert.status === "low" ? "blue" : "green"}
                       branch={alert.branch}
-                      stock={alert.currentStock}
-                      threshold={alert.minThreshold}
-                      unit={alert.unit}
+                      lastBookedDate={alert.lastBookedDate}
+                      deadlineDate={alert.deadlineDate}
+                      usageDuration={alert.usageDuration}
+                      stockPct={alert.stockPct}
+                      onRecordOrder={handleRecordOrder}
                     />
                   ))}
                   {!isLoadingInventory && inventory?.alerts.length === 0 && (
                     <div className="py-20 text-center">
-                      <Package className="w-12 h-12 text-white/5 mx-auto mb-4" />
-                      <p className="text-sm font-bold text-white/20 uppercase tracking-[0.2em]">No logistic anomalies</p>
+                      <Package className="w-12 h-12 text-slate-900/5 mx-auto mb-4" />
+                      <p className="text-sm font-bold text-slate-900/20 uppercase tracking-[0.2em]">No logistic anomalies</p>
                     </div>
                   )}
                 </div>
@@ -567,15 +665,15 @@ export default function TrendIntelligence() {
                     >
                       <div className="flex gap-3">
                         <div className={`p-2 rounded-xl ${procurementResult.success ? "bg-emerald-500/20" : "bg-rose-500/20"}`}>
-                          {procurementResult.success ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <AlertTriangle className="w-4 h-4 text-rose-400" />}
+                          {procurementResult.success ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <AlertTriangle className="w-4 h-4 text-rose-600" />}
                         </div>
                         <div>
-                          <p className={`text-xs font-black uppercase tracking-widest ${procurementResult.success ? "text-emerald-400" : "text-rose-400"}`}>
-                            {procurementResult.success ? "Transmission Success" : "Sync Failed"}
+                          <p className={`text-xs font-black uppercase tracking-widest ${procurementResult.success ? "text-emerald-600" : "text-rose-600"}`}>
+                            {procurementResult.success ? "Order Successful" : "Update Failed"}
                           </p>
-                          <p className="text-[11px] text-white/60 mt-1 leading-tight">{procurementResult.message}</p>
+                          <p className="text-[11px] text-slate-900/60 mt-1 leading-tight">{procurementResult.message}</p>
                           {procurementResult.totalCost && (
-                            <p className="text-[10px] font-black text-white mt-2 tabular-nums">ALLOCATED: ₹{procurementResult.totalCost.toLocaleString()}</p>
+                            <p className="text-[10px] font-black text-slate-900 mt-2 tabular-nums">ALLOCATED: ₹{procurementResult.totalCost.toLocaleString()}</p>
                           )}
                         </div>
                       </div>
@@ -583,56 +681,65 @@ export default function TrendIntelligence() {
                   )}
                 </AnimatePresence>
 
-                <button
-                  onClick={handleAutomateOrders}
-                  disabled={isAutomating}
-                  className="w-full relative group overflow-hidden"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-naturals-purple to-indigo-600 group-hover:scale-105 transition-transform duration-500" />
-                  <div className="relative py-4 flex items-center justify-center gap-3 text-white font-black text-xs uppercase tracking-[0.2em] transition-all group-hover:gap-5">
-                    {isAutomating ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <>
-                        <Zap className="w-4 h-4 fill-white" />
-                        Execute Auto-Procure
-                      </>
-                    )}
-                  </div>
-                </button>
-
-                {inventory && (
-                  <div className="flex items-center justify-between px-2">
-                    <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Global Asset Value</span>
-                    <span className="text-sm font-black text-naturals-purple tabular-nums italic">₹{inventory.summary.totalStockValue.toLocaleString()}</span>
-                  </div>
-                )}
               </div>
             </GlassCard>
 
-            {/* Neural Insights / Trending */}
-            <GlassCard title="Trend Trajectory" subtitle="Neural signal breakout detection">
+            <GlassCard 
+              title="Popular Trends" 
+              subtitle="Most requested services this month"
+              headerAction={
+                <button 
+                  onClick={handleGenerateInsight}
+                  disabled={isGeneratingInsight}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-naturals-purple/10 text-naturals-purple text-[10px] font-black uppercase tracking-widest hover:bg-naturals-purple hover:text-white transition-all disabled:opacity-50"
+                >
+                  {isGeneratingInsight ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                  AI Insight
+                </button>
+              }
+            >
               <div className="space-y-4">
-                {[
-                  { name: "Glass Dermal Synthesis", growth: "+42%", up: true, tag: "BREAKOUT" },
-                  { name: "Follicle Neural Repair", growth: "+35%", up: true, tag: "ASCENDING" },
-                  { name: "Keratin Fusion", growth: "+12%", up: true, tag: "STABLE" },
-                  { name: "Traditional Bonding", growth: "-18%", up: false, tag: "PHASE OUT" },
-                ].map((svc) => (
-                  <div key={svc.name} className="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors border border-transparent hover:border-white/5">
-                    <div>
-                      <p className="text-[10px] font-black text-naturals-purple mb-0.5 tracking-tighter">{svc.tag}</p>
-                      <p className="text-sm font-bold text-white/70 italic tracking-tight">{svc.name}</p>
+                <AnimatePresence>
+                  {aiInsight && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="mb-6 p-4 rounded-2xl bg-indigo-50 border border-indigo-100 relative overflow-hidden group/insight"
+                    >
+                      <div className="absolute top-0 right-0 p-3 opacity-[0.05]">
+                        <Sparkles className="w-8 h-8 text-indigo-600" />
+                      </div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Neural Analysis</span>
+                        <button onClick={() => setAiInsight(null)} className="text-slate-400 hover:text-rose-500 transition-colors">
+                          <Minus className="w-3 h-3" />
+                        </button>
+                      </div>
+                      <div className="text-[11px] text-slate-700 leading-relaxed font-medium max-w-none">
+                        {aiInsight}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                {analytics && analytics.serviceTrends ? (
+                  analytics.serviceTrends.map((svc, i) => (
+                    <div key={svc.name} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-100 transition-colors border border-transparent hover:border-slate-200/60">
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-900/70 italic tracking-tight">{svc.name}</h4>
+                      </div>
+                      <div className="text-right">
+                        <div className={`flex items-center justify-end gap-1 font-black italic ${svc.up ? "text-emerald-600" : "text-rose-500"}`}>
+                          {svc.up ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
+                          +{svc.growth}%
+                        </div>
+                        <p className="text-[8px] font-bold text-slate-900/20 uppercase tracking-widest mt-1">Last 30 days</p>
+                      </div>
                     </div>
-                    <div className={`flex flex-col items-end ${svc.up ? "text-emerald-400" : "text-rose-500"}`}>
-                      <span className="flex items-center gap-1 font-black italic tracking-tighter">
-                        {svc.up ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-                        {svc.growth}
-                      </span>
-                      <span className="text-[8px] font-black opacity-30 uppercase">30D Delta</span>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <SkeletonList count={4} />
+                )}
               </div>
             </GlassCard>
             <InstagramMonitor />
@@ -679,50 +786,67 @@ function PremiumKPICard({
       </div>
       
       <div className="flex items-center justify-between mb-4">
-        <div className={`w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center border border-white/10 ${themes[color].split(' ').pop()}`}>
+        <div className={`w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center border border-slate-200 ${themes[color].split(' ').pop()}`}>
           {icon}
         </div>
         {trend && trend !== "stable" && (
-          <div className={`flex items-center gap-1 text-xs font-black italic tracking-tighter ${trend === "up" ? "text-emerald-400" : "text-rose-500"}`}>
+          <div className={`flex items-center gap-1 text-xs font-black italic tracking-tighter ${trend === "up" ? "text-emerald-600" : "text-rose-500"}`}>
             {trend === "up" ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
             {trend === "up" ? "GAIN" : "LOSS"}
           </div>
         )}
       </div>
 
-      <p className="text-[10px] font-black uppercase tracking-[0.25em] text-white/30 mb-1">{label}</p>
+      <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 mb-1">{label}</p>
       
       {value === null ? (
-        <div className="h-10 w-24 bg-white/5 rounded-xl animate-pulse" />
+        <div className="h-10 w-24 bg-slate-100 rounded-xl animate-pulse" />
       ) : (
         <div className="flex items-baseline gap-2">
-          <h3 className="text-4xl font-black italic tracking-tighter text-white tabular-nums">{value}</h3>
-          <span className="text-lg font-black text-white/20 italic tracking-tighter uppercase">{suffix}</span>
+          <h3 className="text-4xl font-black italic tracking-tighter text-slate-900 tabular-nums">{value}</h3>
+          <span className="text-lg font-black text-slate-300 italic tracking-tighter uppercase">{suffix}</span>
         </div>
       )}
       
-      <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest mt-2">{description}</p>
+      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-2">{description}</p>
     </motion.div>
   );
 }
 
-function GlassCard({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
+function GlassCard({ 
+  title, 
+  subtitle, 
+  children,
+  headerAction
+}: { 
+  title: string; 
+  subtitle: string; 
+  children: React.ReactNode;
+  headerAction?: React.ReactNode;
+}) {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      className="bg-[#1A102D]/60 backdrop-blur-2xl rounded-[3rem] border border-white/5 p-8 shadow-2xl relative group"
+      className="bg-white/80 backdrop-blur-2xl rounded-[3rem] border border-slate-200 p-8 shadow-xl shadow-slate-200/20 relative group h-full"
     >
       <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-naturals-purple/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
       
-      <div className="flex flex-col mb-8">
-        <h2 className="text-lg font-black italic tracking-tight text-white uppercase group-hover:text-naturals-purple transition-colors">
-          {title}
-        </h2>
-        <p className="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em]">
-          {subtitle}
-        </p>
+      <div className="flex items-start justify-between mb-8">
+        <div className="flex flex-col">
+          <h2 className="text-lg font-black italic tracking-tight text-slate-900 uppercase group-hover:text-naturals-purple transition-colors">
+            {title}
+          </h2>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">
+            {subtitle}
+          </p>
+        </div>
+        {headerAction && (
+          <div className="flex-shrink-0">
+            {headerAction}
+          </div>
+        )}
       </div>
       
       {children}
@@ -730,15 +854,30 @@ function GlassCard({ title, subtitle, children }: { title: string; subtitle: str
   );
 }
 
-function ForecastCard({ type, title, reason, action, color, branch, stock, threshold, unit }: any) {
+function ForecastCard({ 
+  id,
+  type, 
+  title, 
+  reason, 
+  color, 
+  branch, 
+  lastBookedDate,
+  deadlineDate,
+  usageDuration,
+  stockPct,
+  onRecordOrder 
+}: any) {
+  const [isUpdating, setIsUpdating] = useState(false);
   const colors: any = {
-    orange: { bg: "bg-rose-500/10", border: "border-rose-500/20", text: "text-rose-400", badge: "bg-rose-500/20", bar: "bg-rose-500" },
-    blue: { bg: "bg-indigo-500/10", border: "border-indigo-500/20", text: "text-indigo-400", badge: "bg-indigo-500/20", bar: "bg-indigo-500" },
-    green: { bg: "bg-emerald-500/10", border: "border-emerald-500/20", text: "text-emerald-400", badge: "bg-emerald-500/20", bar: "bg-emerald-500" },
+    orange: { bg: "bg-rose-500/10", border: "border-rose-500/20", text: "text-rose-600", badge: "bg-rose-500/20", bar: "bg-rose-500" },
+    blue: { bg: "bg-indigo-500/10", border: "border-indigo-500/20", text: "text-indigo-600", badge: "bg-indigo-500/20", bar: "bg-indigo-500" },
+    green: { bg: "bg-emerald-500/10", border: "border-emerald-500/20", text: "text-emerald-600", badge: "bg-emerald-500/20", bar: "bg-emerald-500" },
   };
 
   const theme = colors[color] || colors.blue;
-  const stockPct = stock !== undefined && threshold ? Math.min((stock / (threshold * 2)) * 100, 100) : null;
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  };
 
   return (
     <div className={`p-5 rounded-3xl border ${theme.border} ${theme.bg} relative group overflow-hidden`}>
@@ -750,86 +889,131 @@ function ForecastCard({ type, title, reason, action, color, branch, stock, thres
         <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${theme.badge} ${theme.text} border border-current/20`}>
           {type}
         </span>
-        <span className="text-[10px] font-black text-white/20 italic tracking-tighter">{branch}</span>
+        <span className="text-[10px] font-black text-slate-400 italic tracking-tighter">{branch}</span>
       </div>
 
-      <h4 className="text-sm font-black text-white/90 mb-1 italic tracking-tight group-hover:text-white transition-colors">{title}</h4>
-      <p className="text-[11px] text-white/40 font-medium mb-4 leading-snug">{reason}</p>
-
-      {stockPct !== null && (
-        <div className="space-y-2">
-          <div className="flex justify-between items-end">
-            <p className="text-[10px] font-black text-white/20 tabular-nums">
-              STOCK: <span className="text-white/60">{stock}</span> / {threshold * 2} {unit}
-            </p>
-            <span className={`text-[10px] font-black italic tracking-tighter ${theme.text}`}>{Math.round(stockPct)}%</span>
-          </div>
-          <div className="h-1.5 bg-black/40 rounded-full overflow-hidden p-[1px]">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${stockPct}%` }}
-              transition={{ duration: 1, ease: "circOut" }}
-              className={`h-full ${theme.bar} rounded-full shadow-[0_0_10px_rgba(0,0,0,0.5)]`}
-            />
-          </div>
+      <h4 className="text-sm font-black text-slate-900 mb-1 italic tracking-tight group-hover:text-naturals-purple transition-colors">{title}</h4>
+      
+      <div className="grid grid-cols-2 gap-4 my-4">
+        <div className="space-y-1">
+          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Last Booked</p>
+          <p className="text-xs font-black text-slate-900 tabular-nums">{formatDate(lastBookedDate)}</p>
         </div>
-      )}
-
-      {action && (
-        <div className="mt-4 pt-4 border-t border-white/5">
-          <div className="flex items-center gap-2 text-[10px] font-black text-white/60 group-hover:text-white transition-colors italic">
-            <ArrowUpRight className="w-3.5 h-3.5 text-naturals-purple" />
-            {action}
-          </div>
+        <div className="space-y-1 text-right">
+          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Deadline</p>
+          <p className={`text-xs font-black tabular-nums ${color === 'orange' ? 'text-rose-600' : 'text-slate-900'}`}>{formatDate(deadlineDate)}</p>
         </div>
-      )}
+      </div>
+
+      <div className="space-y-2 mb-4">
+        <div className="flex justify-between items-end">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+            Cycle: <span className="text-slate-900/60 font-black">{usageDuration}</span>
+          </p>
+          <span className={`text-[10px] font-black italic tracking-tighter ${theme.text}`}>{stockPct}%</span>
+        </div>
+        <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden p-[1px]">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${stockPct}%` }}
+            transition={{ duration: 1, ease: "circOut" }}
+            className={`h-full ${theme.bar} rounded-full shadow-[0_0_10px_rgba(0,0,0,0.5)]`}
+          />
+        </div>
+      </div>
+
+      <button 
+        onClick={async () => {
+          setIsUpdating(true);
+          await onRecordOrder(id);
+          setIsUpdating(false);
+        }}
+        disabled={isUpdating}
+        className={`w-full py-3 rounded-2xl border transition-all flex items-center justify-center gap-2 group/btn relative overflow-hidden ${
+          isUpdating ? 'opacity-50 cursor-not-allowed' :
+          color === 'orange' 
+          ? 'bg-rose-500 text-white border-rose-600 shadow-lg shadow-rose-500/20 hover:scale-[1.02]' 
+          : 'bg-white/50 text-slate-600 border-slate-200 hover:bg-white hover:text-naturals-purple'
+        }`}
+      >
+        {isUpdating ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <>
+            <CheckCircle2 className={`w-4 h-4 ${color === 'orange' ? 'text-white' : 'text-naturals-purple'}`} />
+            <span className="text-[10px] font-black uppercase tracking-widest">Record Order Placed</span>
+          </>
+        )}
+      </button>
     </div>
   );
 }
 
 function InstagramMonitor() {
   const [metrics, setMetrics] = useState({
-    followers: 124582,
-    reach: 842900,
-    engagement: 4.2,
-    isLive: true
+    followers: 'Fetching...',
+    reach: 482900,
+    engagement: 3.8,
+    posts: '...',
+    isLive: false,
+    loading: true,
+    lastUpdated: null as string | null
   });
 
+  const fetchLiveMetrics = async () => {
+    try {
+      const res = await fetch('/api/instagram');
+      const data = await res.json();
+      
+      // Always update metrics if data is returned, even if success is false (fallback data)
+      if (data.followers || data.posts) {
+        setMetrics(prev => ({
+          ...prev,
+          followers: data.followers || prev.followers,
+          posts: data.posts || prev.posts,
+          isLive: data.success,
+          loading: false,
+          lastUpdated: data.lastUpdated || prev.lastUpdated
+        }));
+      } else {
+        setMetrics(prev => ({ ...prev, loading: false }));
+      }
+    } catch (e) {
+      console.error("Live Instagram Sync Failed:", e);
+      setMetrics(prev => ({ ...prev, loading: false }));
+    }
+  };
+
   useEffect(() => {
-    // Simulate real-time signal flux
-    const interval = setInterval(() => {
-      setMetrics(prev => ({
-        ...prev,
-        followers: prev.followers + Math.floor(Math.random() * 3),
-        reach: prev.reach + Math.floor(Math.random() * 12)
-      }));
-    }, 3000);
+    fetchLiveMetrics();
+    // Refresh every hour
+    const interval = setInterval(fetchLiveMetrics, 3600000);
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <GlassCard title="Social Neural Pulse" subtitle="Real-time Instagram Signal Processing">
+    <GlassCard title="Instagram Stats" subtitle="Live Instagram updates">
       <div className="space-y-6">
-        <div className="flex items-center justify-between p-5 rounded-[2rem] bg-gradient-to-br from-pink-500/10 to-violet-600/10 border border-white/10 relative overflow-hidden group">
+        <div className="flex items-center justify-between p-5 rounded-[2rem] bg-gradient-to-br from-pink-500/10 to-violet-600/10 border border-slate-200 relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-6 opacity-5 rotate-12 group-hover:rotate-0 transition-transform duration-1000">
             <Instagram className="w-24 h-24" />
           </div>
           
           <div className="flex items-center gap-4 relative z-10">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 p-[2px] shadow-2xl animate-pulse">
-              <div className="w-full h-full rounded-2xl bg-[#0F071D] flex items-center justify-center overflow-hidden">
+              <div className="w-full h-full rounded-2xl bg-white flex items-center justify-center overflow-hidden">
                 <img 
                   src="/naturalslogo.png" 
                   alt="Naturals" 
-                  className="w-10 h-10 object-contain invert"
+                  className="w-10 h-10 object-contain"
                 />
               </div>
             </div>
             <div>
-              <h4 className="text-lg font-black italic tracking-tighter text-white">@naturalssalon</h4>
+              <h4 className="text-lg font-black italic tracking-tighter text-slate-900">@naturalssalon</h4>
               <div className="flex items-center gap-2 mt-1">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400">Live Neural Link</span>
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-600">Connected</span>
               </div>
             </div>
           </div>
@@ -838,62 +1022,61 @@ function InstagramMonitor() {
             href="https://www.instagram.com/naturalssalon/" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:border-naturals-purple transition-all group relative z-10"
+            className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center hover:bg-slate-200 hover:border-naturals-purple transition-all group relative z-10"
           >
-            <ExternalLink className="w-5 h-5 text-white/40 group-hover:text-white" />
+            <ExternalLink className="w-5 h-5 text-slate-400 group-hover:text-slate-900" />
           </a>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-1">
-            <div className="flex items-center gap-2 text-[10px] font-bold text-white/20 uppercase tracking-widest">
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
               <Users className="w-3 h-3" /> Followers
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-xl font-black italic tabular-nums text-white">
-                {metrics.followers.toLocaleString()}
+              <span className={`text-xl font-black italic tabular-nums ${metrics.loading ? 'text-slate-300 animate-pulse' : 'text-slate-900'}`}>
+                {metrics.followers}
               </span>
-              <span className="text-[10px] font-black text-emerald-400">+{Math.floor(Math.random() * 40)} today</span>
+              <span className="text-[10px] font-black text-emerald-600">
+                {metrics.isLive ? 'LIVE' : (metrics.loading ? 'SCANNING...' : 'VERIFIED')}
+              </span>
             </div>
           </div>
           
-          <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-1">
-            <div className="flex items-center gap-2 text-[10px] font-bold text-white/20 uppercase tracking-widest">
-              <Sparkles className="w-3 h-3" /> Monthly Reach
+          <div className="p-4 rounded-2xl bg-slate-100 border border-slate-200/60 space-y-1">
+            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-900/20 uppercase tracking-widest">
+              <Package className="w-3 h-3" /> Total Posts
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-xl font-black italic tabular-nums text-white">
-                {(metrics.reach / 1000).toFixed(1)}K
+              <span className={`text-xl font-black italic tabular-nums ${metrics.loading ? 'text-slate-900/20 animate-pulse' : 'text-slate-900'}`}>
+                {metrics.posts}
               </span>
-              <span className="text-[10px] font-black text-emerald-400">↑ 12%</span>
+              <span className="text-[10px] font-black text-indigo-600">
+                {metrics.isLive ? 'SYNCED' : (metrics.loading ? 'SCANNING...' : 'VERIFIED')}
+              </span>
             </div>
           </div>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white/5 border border-white/5">
+        <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2 text-[10px] font-bold text-white/20 uppercase tracking-widest">
-              <Activity className="w-3 h-3" /> Engagement Velocity
+            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              <Activity className="w-3 h-3" /> Engagement Rate
             </div>
             <span className="text-xs font-black text-naturals-purple italic tabular-nums">{metrics.engagement}%</span>
           </div>
-          <div className="h-2 bg-black/40 rounded-full overflow-hidden p-[1px]">
+          <div className="h-2 bg-slate-200 rounded-full overflow-hidden p-[1px]">
             <motion.div
               initial={{ width: 0 }}
-              animate={{ width: '42%' }}
+              animate={{ width: '38%' }}
               className="h-full bg-gradient-to-r from-pink-500 to-naturals-purple rounded-full shadow-[0_0_15px_rgba(219,39,119,0.3)]"
             />
           </div>
-          <div className="flex justify-between mt-3">
-             <div className="flex items-center gap-2">
-                <Heart className="w-3 h-3 text-pink-500 fill-pink-500" />
-                <span className="text-[10px] font-black text-white/40 tabular-nums">12.4K Avg Likes</span>
-             </div>
-             <div className="flex items-center gap-2">
-                <Share2 className="w-3 h-3 text-indigo-400" />
-                <span className="text-[10px] font-black text-white/40 tabular-nums">1.2K Avg Shares</span>
-             </div>
-          </div>
+          <p className="text-[8px] font-black text-slate-900/20 uppercase tracking-[0.2em] mt-3 text-center">
+            {metrics.lastUpdated 
+              ? `Last Synced: ${new Date(metrics.lastUpdated).toLocaleTimeString()}` 
+              : "Data synced with official profile"}
+          </p>
         </div>
       </div>
     </GlassCard>
@@ -904,7 +1087,7 @@ function SkeletonList({ count, className }: any) {
   return (
     <div className={className || "space-y-4"}>
       {[...Array(count)].map((_, i) => (
-        <div key={i} className="h-16 bg-white/5 rounded-2xl animate-pulse" />
+        <div key={i} className="h-16 bg-slate-100 rounded-2xl animate-pulse" />
       ))}
     </div>
   );

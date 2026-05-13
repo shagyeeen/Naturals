@@ -664,7 +664,7 @@ export default function StaffDashboard() {
                 {isAdmin ? (metrics as any).customers : (metrics as any).stylists}
               </h4>
               <p className="text-[8px] font-bold text-naturals-purple uppercase tracking-widest mt-2 flex items-center gap-1">
-                <div className="w-1 h-1 bg-naturals-purple rounded-full" /> {isAdmin ? "Registered Customers" : "Active Specialists"}
+                <span className="w-1 h-1 bg-naturals-purple rounded-full" /> {isAdmin ? "Registered Customers" : "Active Specialists"}
               </p>
             </div>
           </motion.div>
@@ -682,7 +682,7 @@ export default function StaffDashboard() {
                 {metrics.appointments}
               </h4>
               <p className="text-[8px] font-bold text-naturals-purple uppercase tracking-widest mt-2 flex items-center gap-1">
-                <div className="w-1 h-1 bg-naturals-purple rounded-full" /> Active Appointments
+                <span className="w-1 h-1 bg-naturals-purple rounded-full" /> Active Appointments
               </p>
             </div>
           </motion.div>
@@ -700,7 +700,7 @@ export default function StaffDashboard() {
                 ₹{metrics.revenue.toLocaleString()}
               </h4>
               <p className="text-[8px] font-bold text-lavender uppercase tracking-widest mt-2 flex items-center gap-1">
-                <div className="w-1 h-1 bg-lavender rounded-full" /> Performance Value
+                <span className="w-1 h-1 bg-lavender rounded-full" /> Performance Value
               </p>
             </div>
           </motion.div>
