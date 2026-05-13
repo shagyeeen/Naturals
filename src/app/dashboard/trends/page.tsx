@@ -33,6 +33,7 @@ import {
   Heart,
   Share2,
   ExternalLink,
+  X,
 } from "lucide-react";
 
 interface FeedbackAnalytics {
@@ -100,7 +101,7 @@ interface InventoryData {
 interface ProcurementResult {
   success: boolean;
   message: string;
-  ordersCreated?: number;
+  ordersCreated: number;
   totalCost?: number;
 }
 
@@ -148,7 +149,7 @@ const MOCK_INVENTORY: InventoryData = {
     { 
       id: "4fa4ec5f-c5d6-48f7-9143-5625aa80041b", 
       productName: "GK Hair Keratin Mix", 
-      category: "Keratin", 
+      category: "Hair Care", 
       branch: "RS Puram", 
       lastBookedDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
       deadlineDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
@@ -159,8 +160,8 @@ const MOCK_INVENTORY: InventoryData = {
       reason: "Approximately 10 days remaining." 
     },
     { 
-      id: "af00ba37-7fab-48a7-9bbd-d553f25c2bc8", 
-      productName: "Naturals Signature Spa Oil", 
+      id: "32df6a4f-8543-4e18-a356-548ee145ecf3", 
+      productName: "Wella Color Mix", 
       category: "Oils", 
       branch: "Adyar", 
       lastBookedDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
@@ -191,8 +192,8 @@ export default function TrendIntelligence() {
   const [isLoadingInventory, setIsLoadingInventory] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [procurementResult, setProcurementResult] = useState<ProcurementResult | null>(null);
-  const [aiInsight, setAiInsight] = useState<string | null>(null);
   const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
+  const [aiInsight, setAiInsight] = useState<string | null>(null);
 
   const fetchAnalytics = async () => {
     setIsLoading(true);
@@ -270,6 +271,7 @@ export default function TrendIntelligence() {
   };
 
   const handleRecordOrder = async (id: string) => {
+    setProcurementResult(null);
     try {
       const res = await fetch("/api/inventory", {
         method: "POST",
@@ -278,38 +280,33 @@ export default function TrendIntelligence() {
       });
       const data = await res.json();
       if (data.success) {
-        setProcurementResult({ success: true, message: "Order recorded successfully. Usage cycle reset." });
+        setProcurementResult({
+          success: true,
+          message: "Order date successfully stored in database. Usage cycle reset.",
+          ordersCreated: 1
+        });
         await fetchInventory();
-        setTimeout(() => setProcurementResult(null), 3000);
       }
     } catch (err) {
       console.error(err);
     }
   };
 
-  const handleGenerateInsight = async () => {
+  const handleGenerateAIInsight = async () => {
     if (!analytics?.serviceTrends) return;
     setIsGeneratingInsight(true);
-    setAiInsight(null);
     try {
-      const trendsText = analytics.serviceTrends.map(s => `${s.name}: ${s.growth}% growth`).join(", ");
-      const prompt = `Analyze these salon service trends: ${trendsText}. 
-      Explain why these specific services might be trending this month (seasonal reasons, fashion trends, etc.) 
-      and suggest one actionable business strategy. Be concise and professional. Use markdown.`;
-
-      const res = await fetch("/api/chat", {
+      const res = await fetch("/api/ai/insights", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: [{ role: "user", content: prompt }],
-          userName: "Manager"
-        }),
+        body: JSON.stringify({ trends: analytics.serviceTrends }),
       });
       const data = await res.json();
-      setAiInsight(data.text);
+      if (data.insight) {
+        setAiInsight(data.insight);
+      }
     } catch (err) {
-      console.error(err);
-      setAiInsight("Failed to generate insights. Please try again later.");
+      console.error("AI Insight error:", err);
     } finally {
       setIsGeneratingInsight(false);
     }
@@ -684,44 +681,9 @@ export default function TrendIntelligence() {
               </div>
             </GlassCard>
 
-            <GlassCard 
-              title="Popular Trends" 
-              subtitle="Most requested services this month"
-              headerAction={
-                <button 
-                  onClick={handleGenerateInsight}
-                  disabled={isGeneratingInsight}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-naturals-purple/10 text-naturals-purple text-[10px] font-black uppercase tracking-widest hover:bg-naturals-purple hover:text-white transition-all disabled:opacity-50"
-                >
-                  {isGeneratingInsight ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                  AI Insight
-                </button>
-              }
-            >
+            {/* Neural Insights / Trending */}
+            <GlassCard title="Popular Trends" subtitle="Most requested services this month">
               <div className="space-y-4">
-                <AnimatePresence>
-                  {aiInsight && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="mb-6 p-4 rounded-2xl bg-indigo-50 border border-indigo-100 relative overflow-hidden group/insight"
-                    >
-                      <div className="absolute top-0 right-0 p-3 opacity-[0.05]">
-                        <Sparkles className="w-8 h-8 text-indigo-600" />
-                      </div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Neural Analysis</span>
-                        <button onClick={() => setAiInsight(null)} className="text-slate-400 hover:text-rose-500 transition-colors">
-                          <Minus className="w-3 h-3" />
-                        </button>
-                      </div>
-                      <div className="text-[11px] text-slate-700 leading-relaxed font-medium max-w-none">
-                        {aiInsight}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
                 {analytics && analytics.serviceTrends ? (
                   analytics.serviceTrends.map((svc, i) => (
                     <div key={svc.name} className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-100 transition-colors border border-transparent hover:border-slate-200/60">
@@ -741,11 +703,86 @@ export default function TrendIntelligence() {
                   <SkeletonList count={4} />
                 )}
               </div>
+              <div className="mt-6 pt-6 border-t border-slate-100">
+                <button 
+                  onClick={handleGenerateAIInsight}
+                  disabled={isGeneratingInsight}
+                  className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-naturals-purple transition-all active:scale-[0.98] shadow-xl shadow-slate-900/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isGeneratingInsight ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5 text-naturals-purple" />
+                      Generate AI Insights
+                    </>
+                  )}
+                </button>
+              </div>
             </GlassCard>
             <InstagramMonitor />
           </div>
         </div>
       </div>
+
+      {/* AI Insight Modal */}
+      <AnimatePresence>
+        {aiInsight && (
+          <div className="fixed inset-0 z-[100] flex items-end justify-center p-4 sm:p-6 pb-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setAiInsight(null)}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-lg bg-white rounded-[2rem] shadow-2xl overflow-hidden border border-slate-200 max-h-[85vh] flex flex-col"
+            >
+              {/* Header */}
+              <div className="p-6 pb-4 flex items-center justify-between border-b border-slate-50 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-naturals-purple/10 rounded-xl">
+                    <Sparkles className="w-5 h-5 text-naturals-purple" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-slate-900 tracking-tight leading-none">Trend Intelligence</h3>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Groq Llama 3 Analysis</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setAiInsight(null)}
+                  className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4 text-slate-400" />
+                </button>
+              </div>
+
+              {/* Scrollable Content */}
+              <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                <div className="prose prose-slate max-w-none">
+                  <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 whitespace-pre-wrap text-[13px] font-medium leading-relaxed text-slate-600 italic">
+                    {aiInsight}
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-6 pt-4 border-t border-slate-50 shrink-0">
+                <button 
+                  onClick={() => setAiInsight(null)}
+                  className="w-full py-3.5 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-naturals-purple transition-colors shadow-lg shadow-slate-900/10"
+                >
+                  Close Analysis
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -813,40 +850,23 @@ function PremiumKPICard({
   );
 }
 
-function GlassCard({ 
-  title, 
-  subtitle, 
-  children,
-  headerAction
-}: { 
-  title: string; 
-  subtitle: string; 
-  children: React.ReactNode;
-  headerAction?: React.ReactNode;
-}) {
+function GlassCard({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      className="bg-white/80 backdrop-blur-2xl rounded-[3rem] border border-slate-200 p-8 shadow-xl shadow-slate-200/20 relative group h-full"
+      className="bg-white/80 backdrop-blur-2xl rounded-[3rem] border border-slate-200 p-8 shadow-xl shadow-slate-200/20 relative group"
     >
       <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-naturals-purple/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
       
-      <div className="flex items-start justify-between mb-8">
-        <div className="flex flex-col">
-          <h2 className="text-lg font-black italic tracking-tight text-slate-900 uppercase group-hover:text-naturals-purple transition-colors">
-            {title}
-          </h2>
-          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">
-            {subtitle}
-          </p>
-        </div>
-        {headerAction && (
-          <div className="flex-shrink-0">
-            {headerAction}
-          </div>
-        )}
+      <div className="flex flex-col mb-8">
+        <h2 className="text-lg font-black italic tracking-tight text-slate-900 uppercase group-hover:text-naturals-purple transition-colors">
+          {title}
+        </h2>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em]">
+          {subtitle}
+        </p>
       </div>
       
       {children}
@@ -867,7 +887,6 @@ function ForecastCard({
   stockPct,
   onRecordOrder 
 }: any) {
-  const [isUpdating, setIsUpdating] = useState(false);
   const colors: any = {
     orange: { bg: "bg-rose-500/10", border: "border-rose-500/20", text: "text-rose-600", badge: "bg-rose-500/20", bar: "bg-rose-500" },
     blue: { bg: "bg-indigo-500/10", border: "border-indigo-500/20", text: "text-indigo-600", badge: "bg-indigo-500/20", bar: "bg-indigo-500" },
@@ -923,27 +942,15 @@ function ForecastCard({
       </div>
 
       <button 
-        onClick={async () => {
-          setIsUpdating(true);
-          await onRecordOrder(id);
-          setIsUpdating(false);
-        }}
-        disabled={isUpdating}
+        onClick={() => onRecordOrder(id)}
         className={`w-full py-3 rounded-2xl border transition-all flex items-center justify-center gap-2 group/btn relative overflow-hidden ${
-          isUpdating ? 'opacity-50 cursor-not-allowed' :
           color === 'orange' 
           ? 'bg-rose-500 text-white border-rose-600 shadow-lg shadow-rose-500/20 hover:scale-[1.02]' 
           : 'bg-white/50 text-slate-600 border-slate-200 hover:bg-white hover:text-naturals-purple'
         }`}
       >
-        {isUpdating ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
-        ) : (
-          <>
-            <CheckCircle2 className={`w-4 h-4 ${color === 'orange' ? 'text-white' : 'text-naturals-purple'}`} />
-            <span className="text-[10px] font-black uppercase tracking-widest">Record Order Placed</span>
-          </>
-        )}
+        <CheckCircle2 className={`w-4 h-4 ${color === 'orange' ? 'text-white' : 'text-naturals-purple'}`} />
+        <span className="text-[10px] font-black uppercase tracking-widest">Record Order Placed</span>
       </button>
     </div>
   );
