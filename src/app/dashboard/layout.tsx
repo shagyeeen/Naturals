@@ -14,7 +14,6 @@ import {
   Scissors, 
   LineChart, 
   Users, 
-  BookOpen, 
   Bell, 
   LogOut,
   Menu,
@@ -40,13 +39,12 @@ const sidebarLinks = [
   { name: "Schedule Meeting", href: "/dashboard/meeting", icon: CalendarCheck, roles: ["customer"] },
   { name: "Raise Query", href: "/dashboard/queries", icon: Activity, roles: ["admin", "manager", "franchise_owner", "stylist", "customer"] },
   { name: "My Appointments", href: "/dashboard/appointments", icon: History, roles: ["customer"] },
-  { name: "Beauty Passport", href: "/dashboard/passport", icon: Target, roles: ["customer"] },
+  { name: "My Profile", href: "/dashboard/passport", icon: Target, roles: ["customer"] },
   { name: "Meeting Requests", href: "/dashboard/meeting-requests", icon: CalendarCheck, roles: ["admin", "manager", "franchise_owner", "stylist"] },
-  { name: "SOP Audit", href: "/dashboard/sop", icon: ShieldCheck, roles: ["admin", "manager", "franchise_owner"] },
-  { name: "Feedbacks", href: "/dashboard/feedbacks", icon: MessageSquareQuote, roles: ["admin", "franchise_owner"] },
+  { name: "Live Monitoring", href: "/dashboard/sop", icon: ShieldCheck, roles: ["admin", "manager", "franchise_owner"] },
+  { name: "Customer Reviews", href: "/dashboard/feedbacks", icon: MessageSquareQuote, roles: ["admin", "franchise_owner"] },
   { name: "Appointments", href: "/dashboard/appointments", icon: CalendarCheck, roles: ["stylist", "admin", "manager", "franchise_owner"] },
-  { name: "Trend Engine", href: "/dashboard/trends", icon: LineChart, roles: ["admin", "manager", "franchise_owner"] },
-  { name: "Academy", href: "/dashboard/academy", icon: BookOpen, roles: ["admin"] },
+  { name: "Trend Insights", href: "/dashboard/trends", icon: LineChart, roles: ["admin", "manager", "franchise_owner"] },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -98,8 +96,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     const generateNotifications = async () => {
       const notes = [
-        { id: 1, title: 'System Status', message: 'All AI Modules Online • Adyar Branch Synchronized', time: 'Just now', type: 'system' },
-        { id: 2, title: 'Welcome', message: 'Welcome to the new Naturals AI Experience!', time: '2h ago', type: 'info' }
+        { id: '1', title: 'System Status', message: 'All AI Modules Online • Adyar Branch Synchronized', time: 'Just now', type: 'system' },
+        { id: '2', title: 'Welcome', message: 'Welcome to the new Naturals AI Experience!', time: '2h ago', type: 'info' }
       ];
       // Fetch resolved queries for notifications via secure API
       if (userRole === 'customer' && profile?.id) {

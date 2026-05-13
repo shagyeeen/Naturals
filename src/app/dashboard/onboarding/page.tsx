@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { UserPlus, Calendar, Loader2, Check, User, Sparkles } from 'lucide-react'
 import NextImage from 'next/image'
+import { CustomDropdown } from '@/components/ui/CustomDropdown'
 
 const PREDEFINED_QUESTIONS = [
   {
@@ -391,45 +392,45 @@ export default function OnboardingPage() {
               {isManager && (
                 <div className="space-y-1 animate-in fade-in slide-in-from-top-4 duration-500">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-naturals-purple ml-2">Associated Franchise Owner / Company</label>
-                  <select
-                    value={formData.preferences.franchise_owner_id as string || ''}
-                    onChange={(e) => setFormData({ 
+                  <CustomDropdown
+                    value={(formData.preferences.franchise_owner_id as string) || ''}
+                    onChange={(val) => setFormData({ 
                       ...formData, 
-                      preferences: { ...formData.preferences, franchise_owner_id: e.target.value } 
+                      preferences: { ...formData.preferences, franchise_owner_id: val } 
                     })}
-                    className="w-full bg-white border border-naturals-purple/20 rounded-2xl py-4 px-6 text-deep-grape text-sm font-bold transition-all outline-none focus:border-naturals-purple shadow-lg shadow-naturals-purple/5"
-                  >
-                    <option value="">Select Associated Franchise...</option>
-                    <option value="Groom India Salon & Spa">Groom India Salon & Spa (Corporate)</option>
-                    <option value="Naturals Beauty Wellness">Naturals Beauty Wellness Pvt Ltd</option>
-                    <option value="Shyne Salon Partners">Shyne Salon Partners</option>
-                    <option value="Zenith Lifestyle Management">Zenith Lifestyle Management</option>
-                    <option value="South India Salon Network">South India Salon Network</option>
-                    <option value="Premium Branch Holdings">Premium Branch Holdings</option>
-                  </select>
+                    options={[
+                      { value: '', label: 'Select Associated Franchise...' },
+                      { value: 'Groom India Salon & Spa', label: 'Groom India Salon & Spa (Corporate)' },
+                      { value: 'Naturals Beauty Wellness', label: 'Naturals Beauty Wellness Pvt Ltd' },
+                      { value: 'Shyne Salon Partners', label: 'Shyne Salon Partners' },
+                      { value: 'Zenith Lifestyle Management', label: 'Zenith Lifestyle Management' },
+                      { value: 'South India Salon Network', label: 'South India Salon Network' },
+                      { value: 'Premium Branch Holdings', label: 'Premium Branch Holdings' },
+                    ]}
+                  />
                 </div>
               )}
 
               {!isCustomer && (
                 <div className="space-y-1 animate-in fade-in slide-in-from-top-4 duration-500">
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-naturals-purple ml-2">Assigned Branch / Location</label>
-                  <select
+                  <CustomDropdown
                     value={formData.notes || ''}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    className="w-full bg-white border border-naturals-purple/20 rounded-2xl py-4 px-6 text-deep-grape text-sm font-bold transition-all outline-none focus:border-naturals-purple shadow-lg shadow-naturals-purple/5"
-                  >
-                    <option value="">Select a Naturals Location...</option>
-                    <option value="Anna Nagar West">Anna Nagar West</option>
-                    <option value="Nungambakkam High Rd">Nungambakkam High Rd</option>
-                    <option value="Indiranagar 100ft Rd">Indiranagar 100ft Rd</option>
-                    <option value="Koramangala 4th Block">Koramangala 4th Block</option>
-                    <option value="Juhu Tara Road">Juhu Tara Road</option>
-                    <option value="T. Nagar G.N. Chetty">T. Nagar G.N. Chetty</option>
-                    <option value="Adyar Lattice Bridge">Adyar Lattice Bridge</option>
-                    <option value="Indra Nagar Metro">Indra Nagar Metro</option>
-                    <option value="Whitefield Palm Meadows">Whitefield Palm Meadows</option>
-                    <option value="Independent / Other">Independent / Other</option>
-                  </select>
+                    onChange={(val) => setFormData({ ...formData, notes: val })}
+                    options={[
+                      { value: '', label: 'Select a Naturals Location...' },
+                      { value: 'Anna Nagar West', label: 'Anna Nagar West' },
+                      { value: 'Nungambakkam High Rd', label: 'Nungambakkam High Rd' },
+                      { value: 'Indiranagar 100ft Rd', label: 'Indiranagar 100ft Rd' },
+                      { value: 'Koramangala 4th Block', label: 'Koramangala 4th Block' },
+                      { value: 'Juhu Tara Road', label: 'Juhu Tara Road' },
+                      { value: 'T. Nagar G.N. Chetty', label: 'T. Nagar G.N. Chetty' },
+                      { value: 'Adyar Lattice Bridge', label: 'Adyar Lattice Bridge' },
+                      { value: 'Indra Nagar Metro', label: 'Indra Nagar Metro' },
+                      { value: 'Whitefield Palm Meadows', label: 'Whitefield Palm Meadows' },
+                      { value: 'Independent / Other', label: 'Independent / Other' },
+                    ]}
+                  />
                 </div>
               )}
 

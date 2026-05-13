@@ -65,9 +65,13 @@ export default function AppointmentsPage() {
       setLoading(true);
       
       // Run maintenance to mark past sessions as completed
-      const userIdForMaintenance = isStylist ? profile?.id : customerProfile?.id;
-      if (userIdForMaintenance) {
-        await autoCompleteAppointments(userIdForMaintenance);
+      if (isAdmin) {
+        await autoCompleteAppointments(); // Global for admins
+      } else {
+        const userIdForMaintenance = isStylist ? profile?.id : customerProfile?.id;
+        if (userIdForMaintenance) {
+          await autoCompleteAppointments(userIdForMaintenance);
+        }
       }
 
       let query = supabase
@@ -468,7 +472,7 @@ export default function AppointmentsPage() {
                 </div>
 
                 {/* Feedback/Review Section for Completed */}
-                {appt.status === 'completed' && (
+                {appt.status === 'completed' && (appt.rating || (!isAdmin && !isStylist)) && (
                   <div className="px-8 pb-6 border-t border-black/5 pt-6 mt-auto">
                     {appt.rating ? (
                       <div className="bg-naturals-purple/5 p-4 rounded-2xl border border-naturals-purple/10 mb-4">

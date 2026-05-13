@@ -15,14 +15,17 @@ import {
   Phone,
   CheckCircle2,
   AlertCircle,
-  MessageSquare
+  MessageSquare,
+  ChevronDown
 } from "lucide-react";
+import { CustomDropdown } from "@/components/ui/CustomDropdown";
 
 export default function MeetingRequestsPage() {
   const { isAdmin, isManager, isFranchiseOwner, isStylist } = useAuth();
   const [meetings, setMeetings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
 
   const fetchMeetings = async () => {
     try {
@@ -172,101 +175,16 @@ export default function MeetingRequestsPage() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           <AnimatePresence>
             {filteredMeetings.map((meeting, idx) => (
-              <motion.div
+              <MeetingRequestCard 
                 key={meeting.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
-                className="glass-card bg-white border border-black/5 group hover:shadow-2xl hover:border-naturals-purple/20 transition-all flex flex-col"
-              >
-                <div className="p-8 pb-6">
-                  <div className="flex justify-between items-start mb-6">
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${getStatusStyle(meeting.status)}`}>
-                      {meeting.status === 'pending' ? <AlertCircle className="w-3 h-3" /> : <CheckCircle2 className="w-3 h-3" />}
-                      {meeting.status}
-                    </span>
-                    <span className="text-[10px] font-black text-deep-grape/20 uppercase tracking-widest">
-                      {new Date(meeting.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-
-                  <h3 className="text-xl font-black text-deep-grape italic mb-1 group-hover:text-naturals-purple transition-colors">
-                    {meeting.service_name}
-                  </h3>
-                  <p className="text-[10px] font-black text-naturals-purple uppercase tracking-[0.2em] mb-6">
-                    Premium Consultation Request
-                  </p>
-
-                  <div className="space-y-4 mb-8">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-warm-grey flex items-center justify-center text-naturals-purple shadow-sm">
-                        <User className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-widest mb-0.5">Customer</p>
-                        <p className="text-xs font-black text-deep-grape">{meeting.customer_name}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-warm-grey flex items-center justify-center text-naturals-purple shadow-sm">
-                        <Phone className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-widest mb-0.5">Contact</p>
-                        <p className="text-xs font-black text-deep-grape">{meeting.phone}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-warm-grey flex items-center justify-center text-naturals-purple shadow-sm">
-                        <Mail className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-widest mb-0.5">Email</p>
-                        <p className="text-xs font-black text-deep-grape lowercase">{meeting.email}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {meeting.notes && (
-                    <div className="p-4 bg-warm-grey/50 rounded-2xl border border-black/5 mb-6">
-                      <div className="flex items-center gap-2 mb-2">
-                        <MessageSquare className="w-3 h-3 text-deep-grape/30" />
-                        <span className="text-[8px] font-black uppercase tracking-widest text-deep-grape/30">Customer Notes</span>
-                      </div>
-                      <p className="text-[10px] font-bold text-deep-grape/60 italic leading-relaxed">
-                        "{meeting.notes}"
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="px-8 pb-8 mt-auto flex flex-col gap-3">
-                  <div className="flex items-center gap-2">
-                    <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-widest">Update Status:</p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <select 
-                      value={meeting.status}
-                      onChange={(e) => updateMeetingStatus(meeting.id, e.target.value)}
-                      className={`col-span-2 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all cursor-pointer focus:outline-none ${getStatusStyle(meeting.status)}`}
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="contacted">Contacted</option>
-                      <option value="scheduled">Scheduled</option>
-                      <option value="completed">Completed</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                    <button 
-                      onClick={() => deleteMeeting(meeting.id)}
-                      className="col-span-2 py-3 bg-red-500/10 text-red-500 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2"
-                    >
-                      <Trash2 className="w-3 h-3" /> Delete Request
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
+                meeting={meeting}
+                idx={idx}
+                updateMeetingStatus={updateMeetingStatus}
+                deleteMeeting={deleteMeeting}
+                getStatusStyle={getStatusStyle}
+                isOpen={activeDropdownId === meeting.id}
+                onOpenChange={(open) => setActiveDropdownId(open ? meeting.id : null)}
+              />
             ))}
           </AnimatePresence>
         </div>
@@ -282,5 +200,122 @@ export default function MeetingRequestsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function MeetingRequestCard({ 
+  meeting, 
+  idx, 
+  updateMeetingStatus, 
+  deleteMeeting, 
+  getStatusStyle,
+  isOpen,
+  onOpenChange
+}: { 
+  meeting: any, 
+  idx: number, 
+  updateMeetingStatus: (id: string, s: string) => void, 
+  deleteMeeting: (id: string) => void,
+  getStatusStyle: (s: string) => string,
+  isOpen: boolean,
+  onOpenChange: (open: boolean) => void
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: idx * 0.05 }}
+      className={`glass-card bg-white border border-black/5 group hover:shadow-2xl hover:border-naturals-purple/20 transition-all flex flex-col ${isOpen ? 'z-50 ring-2 ring-naturals-purple/20 relative' : 'z-0 relative'}`}
+    >
+      <div className="p-8 pb-6">
+        <div className="flex justify-between items-start mb-6">
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${getStatusStyle(meeting.status)}`}>
+            {meeting.status === 'pending' ? <AlertCircle className="w-3 h-3" /> : <CheckCircle2 className="w-3 h-3" />}
+            {meeting.status}
+          </span>
+          <span className="text-[10px] font-black text-deep-grape/20 uppercase tracking-widest">
+            {new Date(meeting.created_at).toLocaleDateString()}
+          </span>
+        </div>
+
+        <h3 className="text-xl font-black text-deep-grape italic mb-1 group-hover:text-naturals-purple transition-colors">
+          {meeting.service_name}
+        </h3>
+        <p className="text-[10px] font-black text-naturals-purple uppercase tracking-[0.2em] mb-6">
+          Premium Consultation Request
+        </p>
+
+        <div className="space-y-4 mb-8">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-warm-grey flex items-center justify-center text-naturals-purple shadow-sm">
+              <User className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-widest mb-0.5">Customer</p>
+              <p className="text-xs font-black text-deep-grape">{meeting.customer_name}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-warm-grey flex items-center justify-center text-naturals-purple shadow-sm">
+              <Phone className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-widest mb-0.5">Contact</p>
+              <p className="text-xs font-black text-deep-grape">{meeting.phone}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-warm-grey flex items-center justify-center text-naturals-purple shadow-sm">
+              <Mail className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-widest mb-0.5">Email</p>
+              <p className="text-xs font-black text-deep-grape lowercase">{meeting.email}</p>
+            </div>
+          </div>
+        </div>
+
+        {meeting.notes && (
+          <div className="p-4 bg-warm-grey/50 rounded-2xl border border-black/5 mb-6">
+            <div className="flex items-center gap-2 mb-2">
+              <MessageSquare className="w-3 h-3 text-deep-grape/30" />
+              <span className="text-[8px] font-black uppercase tracking-widest text-deep-grape/30">Customer Notes</span>
+            </div>
+            <p className="text-[10px] font-bold text-deep-grape/60 italic leading-relaxed">
+              "{meeting.notes}"
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="px-8 pb-8 mt-auto flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-widest">Update Status:</p>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <CustomDropdown
+            options={[
+              { value: 'pending', label: 'Pending', color: 'text-amber-500' },
+              { value: 'contacted', label: 'Contacted', color: 'text-blue-500' },
+              { value: 'scheduled', label: 'Scheduled', color: 'text-naturals-purple' },
+              { value: 'completed', label: 'Completed', color: 'text-green-500' },
+              { value: 'cancelled', label: 'Cancelled', color: 'text-red-500' },
+            ]}
+            value={meeting.status}
+            onChange={(newStatus) => updateMeetingStatus(meeting.id, newStatus)}
+            onOpenChange={onOpenChange}
+            className="col-span-2"
+          />
+        </div>
+        <button 
+          onClick={() => deleteMeeting(meeting.id)}
+          className="py-3 bg-red-500/10 text-red-500 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2"
+        >
+          <Trash2 className="w-3 h-3" /> Delete Request
+        </button>
+      </div>
+    </motion.div>
   );
 }

@@ -52,11 +52,11 @@ export default function DashboardPage() {
     <div className="space-y-12">
       <div className="flex justify-between items-center">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.3em] text-naturals-purple mb-2">Authenticated Session</p>
+          <p className="text-xs font-black uppercase tracking-[0.3em] text-naturals-purple mb-2">Welcome Back</p>
           <h1 className="text-4xl font-black text-deep-grape italic tracking-tight">
-            {isAdmin ? "Central Command" :
+            {isAdmin ? "Admin Dashboard" :
              isCustomer ? `Hello, ${customerProfile?.full_name?.split(' ')[0] || 'User'}` : 
-             isStylist ? "Stylist Workspace" : "Management Hub"}
+             isStylist ? "Stylist Dashboard" : "Manager Dashboard"}
           </h1>
         </div>
       </div>
@@ -157,8 +157,8 @@ function CustomerOverview({ customerProfile }: { customerProfile: any }) {
                  </div>
                  <ChevronRight className="w-4 h-4 text-white/30 group-hover/card:translate-x-1 transition-transform" />
               </div>
-              <p className="text-[8px] font-black text-white/40 uppercase tracking-[0.3em] mb-1">Style Insight</p>
-              <h3 className="text-xl font-black italic uppercase tracking-tight">Beauty Passport</h3>
+              <p className="text-[8px] font-black text-white/40 uppercase tracking-[0.3em] mb-1">Style Tips</p>
+              <h3 className="text-xl font-black italic uppercase tracking-tight">My Beauty Profile</h3>
               <Link href="/dashboard/passport" className="mt-6 text-[9px] font-black uppercase tracking-widest text-naturals-purple flex items-center gap-2 group/link">
                  View Profile <div className="w-1 h-1 bg-naturals-purple rounded-full animate-pulse" />
               </Link>
@@ -193,7 +193,7 @@ function CustomerOverview({ customerProfile }: { customerProfile: any }) {
                </div>
                <div>
                   <h4 className="text-sm font-black text-deep-grape uppercase tracking-widest">Appointments</h4>
-                  <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-[0.1em]">Visit Logs</p>
+                  <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-[0.1em]">Past Visits</p>
                </div>
             </div>
             <p className="text-xs font-bold text-deep-grape/50 leading-relaxed mb-8">
@@ -213,9 +213,9 @@ function CustomerOverview({ customerProfile }: { customerProfile: any }) {
                   <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 text-orange-600 text-[10px] font-black uppercase tracking-[0.2em] mb-6">
                     <Flame className="w-3 h-3 animate-pulse" /> Trending Styles
                   </div>
-                  <h3 className="text-4xl font-black italic text-deep-grape mb-6 tracking-tight">Signature Service Rewards</h3>
+                  <h3 className="text-4xl font-black italic text-deep-grape mb-6 tracking-tight">Special Service Offers</h3>
                   <p className="text-sm font-bold text-deep-grape/40 uppercase tracking-widest leading-relaxed mb-8">
-                     Your Beauty Passport tier grants you access to exclusive reductions on our most requested AI-mapped services.
+                     Your membership level gives you access to special offers on our most requested personalized services.
                   </p>
                   <div className="flex flex-wrap gap-4">
                      <div className="px-6 py-4 bg-warm-grey rounded-2xl border border-black/5 flex flex-col gap-1">
@@ -245,11 +245,11 @@ function CustomerOverview({ customerProfile }: { customerProfile: any }) {
             <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
                <div className="max-w-xl">
                   <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-naturals-purple text-[10px] font-black uppercase tracking-[0.2em] mb-6 shadow-sm">
-                    <Sparkles className="w-3 h-3" /> Naturals BAE Cosmetics
+                    <Sparkles className="w-3 h-3" /> Naturals Products
                   </div>
-                  <h3 className="text-4xl font-black italic text-deep-grape mb-6 tracking-tight">Exclusive BAE Vouchers</h3>
+                  <h3 className="text-4xl font-black italic text-deep-grape mb-6 tracking-tight">Shopping Discounts</h3>
                   <p className="text-sm font-bold text-deep-grape/60 uppercase tracking-widest leading-relaxed mb-8">
-                     Unlock specialized rewards for our premium cosmetics line. Your Beauty Passport entitles you to early access on seasonal collections.
+                     Get special discounts on our premium products. Your beauty profile gives you early access to new collections.
                   </p>
                   <div className="flex flex-wrap gap-4">
                      <div className="px-6 py-4 bg-white rounded-2xl border border-naturals-purple/10 flex flex-col gap-1">

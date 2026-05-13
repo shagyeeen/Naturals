@@ -133,44 +133,44 @@ const MOCK_ANALYTICS: FeedbackAnalytics = {
 
 const MOCK_INVENTORY: InventoryData = {
   alerts: [
-    { 
-      id: "f8b18514-79a9-4597-bd92-949bf75d6ab5", 
-      productName: "L'Oreal Absolut Repair Shampoo (500ml)", 
-      category: "Shampoo", 
-      branch: "Adyar", 
+    {
+      id: "f8b18514-79a9-4597-bd92-949bf75d6ab5",
+      productName: "L'Oreal Absolut Repair Shampoo (500ml)",
+      category: "Shampoo",
+      branch: "Adyar",
       lastBookedDate: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
       deadlineDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(),
       usageDuration: "14 / 15 days used",
       stockPct: 15,
-      status: "critical", 
-      type: "DEADLINE EXPIRED", 
-      reason: "Order deadline has passed or is imminent." 
+      status: "critical",
+      type: "DEADLINE EXPIRED",
+      reason: "Order deadline has passed or is imminent."
     },
-    { 
-      id: "4fa4ec5f-c5d6-48f7-9143-5625aa80041b", 
-      productName: "GK Hair Keratin Mix", 
-      category: "Hair Care", 
-      branch: "RS Puram", 
+    {
+      id: "4fa4ec5f-c5d6-48f7-9143-5625aa80041b",
+      productName: "GK Hair Keratin Mix",
+      category: "Hair Care",
+      branch: "RS Puram",
       lastBookedDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
       deadlineDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
       usageDuration: "10 / 20 days used",
       stockPct: 50,
-      status: "low", 
-      type: "ORDER SOON", 
-      reason: "Approximately 10 days remaining." 
+      status: "low",
+      type: "ORDER SOON",
+      reason: "Approximately 10 days remaining."
     },
-    { 
-      id: "32df6a4f-8543-4e18-a356-548ee145ecf3", 
-      productName: "Wella Color Mix", 
-      category: "Oils", 
-      branch: "Adyar", 
+    {
+      id: "32df6a4f-8543-4e18-a356-548ee145ecf3",
+      productName: "Wella Color Mix",
+      category: "Oils",
+      branch: "Adyar",
       lastBookedDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
       deadlineDate: new Date(Date.now() + 40 * 24 * 60 * 60 * 1000).toISOString(),
       usageDuration: "5 / 45 days used",
       stockPct: 89,
-      status: "optimal", 
-      type: "OPTIMAL", 
-      reason: "Approximately 40 days remaining." 
+      status: "optimal",
+      type: "OPTIMAL",
+      reason: "Approximately 40 days remaining."
     },
   ],
   summary: {
@@ -182,9 +182,10 @@ const MOCK_INVENTORY: InventoryData = {
   },
   recentOrders: []
 };
+import { CustomDropdown } from "@/components/ui/CustomDropdown";
 
-export default function TrendIntelligence() {
-  const [selectedRegion, setSelectedRegion] = useState("All Branches");
+export default function TrendInsights() {
+  const [selectedRegion, setSelectedRegion] = useState("");
   const [isAutomating, setIsAutomating] = useState(false);
   const [analytics, setAnalytics] = useState<FeedbackAnalytics | null>(null);
   const [inventory, setInventory] = useState<InventoryData | null>(null);
@@ -192,8 +193,26 @@ export default function TrendIntelligence() {
   const [isLoadingInventory, setIsLoadingInventory] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [procurementResult, setProcurementResult] = useState<ProcurementResult | null>(null);
-  const [isGeneratingInsight, setIsGeneratingInsight] = useState(false);
+  const [generatingInsightType, setGeneratingInsightType] = useState<string | null>(null);
   const [aiInsight, setAiInsight] = useState<string | null>(null);
+  const [branches, setBranches] = useState<string[]>([]);
+
+  const fetchBranches = async () => {
+    try {
+      const res = await fetch("/api/branches");
+      if (res.ok) {
+        const data = await res.json();
+        // Only keep Adyar for now as requested
+        const filtered = data.filter((b: string) => b.toUpperCase().includes("ADYAR"));
+        setBranches(filtered);
+        if (filtered.length > 0) {
+          setSelectedRegion(filtered[0]);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch branches:", err);
+    }
+  };
 
   const fetchAnalytics = async () => {
     setIsLoading(true);
@@ -202,7 +221,7 @@ export default function TrendIntelligence() {
       const res = await fetch("/api/feedback");
       if (!res.ok) throw new Error("Failed to fetch feedback data");
       const data = await res.json();
-      
+
       // If data is empty (table doesn't exist or no records), use Mock for visibility
       if (data.totalFeedbacks === 0) {
         setAnalytics(MOCK_ANALYTICS);
@@ -224,7 +243,7 @@ export default function TrendIntelligence() {
       const res = await fetch(`/api/inventory${branchParam}`);
       if (!res.ok) throw new Error("Failed to fetch inventory");
       const data = await res.json();
-      
+
       if (!data.alerts || data.alerts.length === 0) {
         setInventory(MOCK_INVENTORY);
       } else {
@@ -239,6 +258,7 @@ export default function TrendIntelligence() {
   };
 
   useEffect(() => {
+    fetchBranches();
     fetchAnalytics();
     fetchInventory();
   }, []);
@@ -246,6 +266,10 @@ export default function TrendIntelligence() {
   useEffect(() => {
     fetchInventory();
   }, [selectedRegion]);
+
+  const handleRefresh = async () => {
+    await Promise.all([fetchAnalytics(), fetchInventory()]);
+  };
 
   const handleAutomateOrders = async () => {
     setIsAutomating(true);
@@ -292,14 +316,51 @@ export default function TrendIntelligence() {
     }
   };
 
-  const handleGenerateAIInsight = async () => {
-    if (!analytics?.serviceTrends) return;
-    setIsGeneratingInsight(true);
+  const handleGenerateAIInsight = async (type: 'trends' | 'sentiment' | 'quality' | 'ratings' | 'reviews' | 'instagram' = 'trends') => {
+    if (!analytics) return;
+
+    setGeneratingInsightType(type);
     try {
+      let body: any = {};
+
+      switch (type) {
+        case 'trends':
+          body = { trends: analytics.serviceTrends };
+          break;
+        case 'sentiment':
+          body = { sentiment: analytics.sentimentBreakdown };
+          break;
+        case 'quality':
+          body = {
+            quality: {
+              service: analytics.avgServiceQuality,
+              behavior: analytics.avgStylistBehaviour,
+              cleanliness: analytics.avgCleanliness,
+              pricing: analytics.avgValueForMoney
+            }
+          };
+          break;
+        case 'ratings':
+          body = { ratings: analytics.ratingDistribution };
+          break;
+        case 'reviews':
+          body = { reviews: analytics.recentFeedbacks.slice(0, 10) };
+          break;
+        case 'instagram':
+          body = {
+            instagram: {
+              followers: "68.8K",
+              posts: "3,479",
+              engagement: "3.8"
+            }
+          };
+          break;
+      }
+
       const res = await fetch("/api/ai/insights", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ trends: analytics.serviceTrends }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (data.insight) {
@@ -308,7 +369,7 @@ export default function TrendIntelligence() {
     } catch (err) {
       console.error("AI Insight error:", err);
     } finally {
-      setIsGeneratingInsight(false);
+      setGeneratingInsightType(null);
     }
   };
 
@@ -328,7 +389,7 @@ export default function TrendIntelligence() {
       <div className="max-w-7xl mx-auto space-y-8 relative z-10">
         {/* Page Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
           >
@@ -345,7 +406,7 @@ export default function TrendIntelligence() {
             </p>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center gap-3"
@@ -353,26 +414,20 @@ export default function TrendIntelligence() {
             <div className="relative group">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-naturals-purple to-indigo-600 rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
               <div className="relative">
-                <select
-                  value={selectedRegion}
-                  onChange={(e) => setSelectedRegion(e.target.value)}
-                  className="appearance-none bg-white border border-slate-200 rounded-xl px-5 py-3 pr-12 text-sm font-bold text-slate-900 cursor-pointer hover:border-naturals-purple/50 transition-all focus:outline-none shadow-sm"
-                >
-                  <option>All Branches</option>
-                  <option>Chennai — Adyar</option>
-                  <option>Coimbatore — RS Puram</option>
-                  <option>Bangalore — Indiranagar</option>
-                </select>
-                <ChevronDown className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <BranchDropdown 
+                  selected={selectedRegion} 
+                  options={branches} 
+                  onChange={setSelectedRegion} 
+                />
               </div>
             </div>
-            
+
             <button
-              onClick={fetchAnalytics}
-              disabled={isLoading}
+              onClick={handleRefresh}
+              disabled={isLoading || isLoadingInventory}
               className="p-3 bg-white border border-slate-200 rounded-xl hover:border-naturals-purple/50 transition-all cursor-pointer group shadow-sm"
             >
-              <RefreshCw className={`w-5 h-5 text-slate-400 group-hover:text-naturals-purple transition-colors ${isLoading ? "animate-spin" : ""}`} />
+              <RefreshCw className={`w-5 h-5 text-slate-400 group-hover:text-naturals-purple transition-colors ${isLoading || isLoadingInventory ? "animate-spin" : ""}`} />
             </button>
           </motion.div>
         </div>
@@ -382,11 +437,11 @@ export default function TrendIntelligence() {
           <PremiumKPICard
             icon={<Globe className="w-5 h-5" />}
             color="purple"
-            label="Review Score"
+            label="Happy Score"
             value={analytics ? analytics.sentimentVelocity.toFixed(1) : null}
             suffix="%"
             trend={trend}
-            description="Overall satisfaction score"
+            description="Overall satisfaction level"
           />
           <PremiumKPICard
             icon={<Star className="w-5 h-5" />}
@@ -412,8 +467,8 @@ export default function TrendIntelligence() {
               !analytics
                 ? null
                 : analytics.totalFeedbacks > 0
-                ? `${Math.round((analytics.sentimentBreakdown.positive / analytics.totalFeedbacks) * 100)}%`
-                : "0%"
+                  ? `${Math.round((analytics.sentimentBreakdown.positive / analytics.totalFeedbacks) * 100)}%`
+                  : "0%"
             }
             description="Good review percentage"
           />
@@ -424,187 +479,256 @@ export default function TrendIntelligence() {
           <div className="lg:col-span-8 space-y-8">
             <div className="grid md:grid-cols-2 gap-8">
               {/* Sentiment Breakdown */}
-              <GlassCard title="Customer Feelings" subtitle="Good vs Bad reviews">
+              <GlassCard title="Review Feelings" subtitle="Good vs Bad reviews">
                 {analytics ? (
-                  <div className="space-y-6">
-                    {[
-                      {
-                        label: "Positive",
-                        count: analytics.sentimentBreakdown.positive,
-                        color: "from-emerald-400 to-teal-500",
-                        glow: "shadow-emerald-500/20",
-                        textColor: "text-emerald-600",
-                        icon: <ThumbsUp className="w-4 h-4" />,
-                      },
-                      {
-                        label: "Neutral",
-                        count: analytics.sentimentBreakdown.neutral,
-                        color: "from-gray-400 to-slate-500",
-                        glow: "shadow-gray-500/20",
-                        textColor: "text-gray-400",
-                        icon: <Minus className="w-4 h-4" />,
-                      },
-                      {
-                        label: "Negative",
-                        count: analytics.sentimentBreakdown.negative,
-                        color: "from-rose-400 to-red-600",
-                        glow: "shadow-red-500/20",
-                        textColor: "text-rose-600",
-                        icon: <ThumbsDown className="w-4 h-4" />,
-                      },
-                    ].map((item, i) => {
-                      const total = analytics.sentimentBreakdown.positive + analytics.sentimentBreakdown.neutral + analytics.sentimentBreakdown.negative;
-                      const pct = total > 0 ? Math.round((item.count / total) * 100) : 0;
-                      return (
-                        <div key={item.label} className="group">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className={`text-xs font-bold uppercase tracking-[0.15em] flex items-center gap-2 ${item.textColor}`}>
-                              {item.icon} {item.label}
-                            </span>
-                            <span className="text-sm font-black text-slate-900 tabular-nums">
-                              {pct}%
-                            </span>
+                  <>
+                    <div className="space-y-4">
+                      {[
+                        {
+                          label: "Positive",
+                          count: analytics.sentimentBreakdown.positive,
+                          color: "from-emerald-400 to-teal-600",
+                          glow: "shadow-emerald-500/20",
+                          textColor: "text-emerald-600",
+                          icon: <ThumbsUp className="w-4 h-4" />,
+                        },
+                        {
+                          label: "Neutral",
+                          count: analytics.sentimentBreakdown.neutral,
+                          color: "from-gray-400 to-slate-500",
+                          glow: "shadow-gray-500/20",
+                          textColor: "text-gray-400",
+                          icon: <Minus className="w-4 h-4" />,
+                        },
+                        {
+                          label: "Negative",
+                          count: analytics.sentimentBreakdown.negative,
+                          color: "from-rose-400 to-red-600",
+                          glow: "shadow-red-500/20",
+                          textColor: "text-rose-600",
+                          icon: <ThumbsDown className="w-4 h-4" />,
+                        },
+                      ].map((item, i) => {
+                        const total = analytics.sentimentBreakdown.positive + analytics.sentimentBreakdown.neutral + analytics.sentimentBreakdown.negative;
+                        const pct = total > 0 ? Math.round((item.count / total) * 100) : 0;
+                        return (
+                          <div key={item.label} className="group">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className={`text-xs font-bold uppercase tracking-[0.15em] flex items-center gap-2 ${item.textColor}`}>
+                                {item.icon} {item.label}
+                              </span>
+                              <span className="text-sm font-black text-slate-900 tabular-nums">
+                                {pct}%
+                              </span>
+                            </div>
+                            <div className="h-3 bg-slate-100 rounded-full overflow-hidden p-[2px] border border-slate-200/50">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${pct}%` }}
+                                transition={{ duration: 1, delay: 0.2 + (i * 0.1), ease: "circOut" }}
+                                className={`h-full bg-gradient-to-r ${item.color} rounded-full shadow-[0_0_15px_rgba(0,0,0,0.5)] ${item.glow}`}
+                              />
+                            </div>
                           </div>
-                          <div className="h-3 bg-slate-100 rounded-full overflow-hidden p-[2px] border border-slate-200/50">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ width: `${pct}%` }}
-                              transition={{ duration: 1, delay: 0.2 + (i * 0.1), ease: "circOut" }}
-                              className={`h-full bg-gradient-to-r ${item.color} rounded-full shadow-[0_0_15px_rgba(0,0,0,0.5)] ${item.glow}`}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-6 pt-6 border-t border-slate-100">
+                      <button
+                        onClick={() => handleGenerateAIInsight('sentiment')}
+                        disabled={generatingInsightType !== null}
+                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-emerald-600 transition-all active:scale-[0.98] shadow-xl shadow-slate-900/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {generatingInsightType === 'sentiment' ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                            Review Check
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </>
                 ) : <SkeletonList count={3} />}
               </GlassCard>
 
-              {/* Quality Dimensions */}
               <GlassCard title="Service Quality" subtitle="Performance by category">
                 {analytics ? (
-                  <div className="space-y-6">
-                    {[
-                      { label: "Service", value: analytics.avgServiceQuality, color: "text-blue-400" },
-                      { label: "Staff Behavior", value: analytics.avgStylistBehaviour, color: "text-violet-400" },
-                      { label: "Cleanliness", value: analytics.avgCleanliness, color: "text-emerald-600" },
-                      { label: "Pricing", value: analytics.avgValueForMoney, color: "text-amber-500" },
-                    ].map((dim, i) => (
-                      <div key={dim.label} className="flex items-center justify-between p-3 rounded-2xl bg-slate-100 border border-slate-200/60 hover:bg-slate-200 transition-all">
-                        <div>
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{dim.label}</p>
-                          <div className="flex gap-1">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <Star 
-                                key={star} 
-                                className={`w-3.5 h-3.5 ${star <= Math.round(dim.value) ? dim.color + ' fill-current' : 'text-slate-300'}`} 
-                              />
-                            ))}
+                  <>
+                    <div className="space-y-6">
+                      {[
+                        { label: "Service", value: analytics.avgServiceQuality, color: "text-blue-400" },
+                        { label: "Staff Behavior", value: analytics.avgStylistBehaviour, color: "text-violet-400" },
+                        { label: "Cleanliness", value: analytics.avgCleanliness, color: "text-emerald-600" },
+                        { label: "Pricing", value: analytics.avgValueForMoney, color: "text-amber-500" },
+                      ].map((dim, i) => (
+                        <div key={dim.label} className="flex items-center justify-between p-3 rounded-2xl bg-slate-100 border border-slate-200/60 hover:bg-slate-200 transition-all">
+                          <div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{dim.label}</p>
+                            <div className="flex gap-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`w-3.5 h-3.5 ${star <= Math.round(dim.value) ? dim.color + ' fill-current' : 'text-slate-300'}`}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className={`text-lg font-black italic tracking-tighter ${dim.color}`}>{dim.value}</p>
+                            <p className="text-[8px] font-bold text-slate-900/20 uppercase tracking-widest">Average</p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className={`text-lg font-black italic tracking-tighter ${dim.color}`}>{dim.value}</p>
-                          <p className="text-[8px] font-bold text-slate-900/20 uppercase tracking-widest">Average</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                    <div className="mt-6 pt-6 border-t border-slate-100">
+                      <button
+                        onClick={() => handleGenerateAIInsight('quality')}
+                        disabled={generatingInsightType !== null}
+                        className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-violet-600 transition-all active:scale-[0.98] shadow-xl shadow-slate-900/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {generatingInsightType === 'quality' ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+                            Analyze Quality Metrics
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </>
                 ) : <SkeletonList count={4} />}
               </GlassCard>
             </div>
 
             {/* Rating distribution chart */}
-            <GlassCard title="Rating Summary" subtitle="Star breakdown">
+            <GlassCard title="Rating Breakdown" subtitle="Star count">
               {analytics ? (
-                <div className="pt-4 h-48 flex items-end gap-3 sm:gap-6">
-                  {[1, 2, 3, 4, 5].map((star, i) => {
-                    const count = analytics.ratingDistribution[star] || 0;
-                    const maxCount = Math.max(...Object.values(analytics.ratingDistribution), 1);
-                    const barHeight = (count / maxCount) * 100;
-                    return (
-                      <div key={star} className="flex-1 flex flex-col items-center gap-4 h-full justify-end group">
-                        <motion.div 
-                          initial={{ opacity: 0, scale: 0 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className="text-[10px] font-black text-slate-400 tabular-nums mb-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          {count}
-                        </motion.div>
-                        <div className="w-full relative flex flex-col items-center justify-end h-full">
+                <>
+                  <div className="pt-4 h-48 flex items-end gap-3 sm:gap-6">
+                    {[1, 2, 3, 4, 5].map((star, i) => {
+                      const count = analytics.ratingDistribution[star] || 0;
+                      const maxCount = Math.max(...Object.values(analytics.ratingDistribution), 1);
+                      const barHeight = (count / maxCount) * 100;
+                      return (
+                        <div key={star} className="flex-1 flex flex-col items-center gap-4 h-full justify-end group">
                           <motion.div
-                            initial={{ height: 0 }}
-                            animate={{ height: `${Math.max(barHeight, 4)}%` }}
-                            transition={{ duration: 1, delay: i * 0.1, ease: "backOut" }}
-                            className={`w-full rounded-t-xl transition-all relative overflow-hidden shadow-sm ${
-                              star >= 4
-                                ? "bg-gradient-to-t from-emerald-50 to-emerald-500"
-                                : star === 3
-                                ? "bg-gradient-to-t from-amber-50 to-amber-400"
-                                : "bg-gradient-to-t from-rose-50 to-rose-500"
-                            }`}
+                            initial={{ opacity: 0, scale: 0 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="text-[10px] font-black text-slate-400 tabular-nums mb-1 opacity-0 group-hover:opacity-100 transition-opacity"
                           >
-                            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20" />
+                            {count}
                           </motion.div>
+                          <div className="w-full relative flex flex-col items-center justify-end h-full">
+                            <motion.div
+                              initial={{ height: 0 }}
+                              animate={{ height: `${Math.max(barHeight, 4)}%` }}
+                              transition={{ duration: 1, delay: i * 0.1, ease: "backOut" }}
+                              className={`w-full rounded-t-xl transition-all relative overflow-hidden shadow-sm ${star >= 4
+                                  ? "bg-gradient-to-t from-emerald-50 to-emerald-500"
+                                  : star === 3
+                                    ? "bg-gradient-to-t from-amber-50 to-amber-400"
+                                    : "bg-gradient-to-t from-rose-50 to-rose-500"
+                                }`}
+                            >
+                              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20" />
+                            </motion.div>
+                          </div>
+                          <span className="text-xs font-black text-slate-400 italic tracking-tighter">{star}★</span>
                         </div>
-                        <span className="text-xs font-black text-slate-400 italic tracking-tighter">{star}★</span>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-8 pt-6 border-t border-slate-100">
+                    <button
+                      onClick={() => handleGenerateAIInsight('ratings')}
+                      disabled={generatingInsightType !== null}
+                      className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-amber-600 transition-all active:scale-[0.98] shadow-xl shadow-slate-900/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {generatingInsightType === 'ratings' ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                          Brand Insights
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </>
               ) : <div className="h-48 bg-slate-100 rounded-2xl animate-pulse" />}
             </GlassCard>
 
             {/* Recent Neural Feed */}
-            <GlassCard title="Customer Reviews" subtitle="Latest feedback messages">
+            <GlassCard title="Recent Reviews" subtitle="Latest feedback messages">
               {analytics && analytics.recentFeedbacks.length > 0 ? (
-                <div className="grid md:grid-cols-2 gap-4">
-                  {analytics.recentFeedbacks.slice(0, 6).map((fb, i) => (
-                    <motion.div
-                      key={fb.id}
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: i * 0.05 }}
-                      className="p-4 rounded-2xl bg-slate-50/50 border border-slate-200/60 hover:bg-slate-50 hover:border-naturals-purple/30 transition-all group"
-                    >
-                      <div className="flex gap-4 items-start">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border ${
-                          fb.sentiment_label === "positive" ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600" :
-                          fb.sentiment_label === "negative" ? "bg-rose-500/10 border-rose-500/30 text-rose-600" :
-                          "bg-slate-100 border-slate-200 text-slate-400"
-                        }`}>
-                          {fb.sentiment_label === "positive" ? <ThumbsUp className="w-3.5 h-3.5" /> : 
-                           fb.sentiment_label === "negative" ? <ThumbsDown className="w-3.5 h-3.5" /> : 
-                           <Minus className="w-3.5 h-3.5" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-slate-600 font-medium">
-                            "{fb.comment || "Signal detected without semantic payload."}"
-                          </p>
-                          <div className="flex items-center gap-3 mt-3">
-                            <div className="flex gap-0.5">
-                              {[...Array(5)].map((_, i) => (
-                                <Star key={i} className={`w-2.5 h-2.5 ${i < fb.rating ? "text-amber-600 fill-amber-400" : "text-slate-300"}`} />
-                              ))}
+                <>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {analytics.recentFeedbacks.slice(0, 6).map((fb, i) => (
+                      <motion.div
+                        key={fb.id}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: i * 0.05 }}
+                        className="p-4 rounded-2xl bg-slate-50/50 border border-slate-200/60 hover:bg-slate-50 hover:border-naturals-purple/30 transition-all group"
+                      >
+                        <div className="flex gap-4 items-start">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border ${fb.sentiment_label === "positive" ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600" :
+                              fb.sentiment_label === "negative" ? "bg-rose-500/10 border-rose-500/30 text-rose-600" :
+                                "bg-slate-100 border-slate-200 text-slate-400"
+                            }`}>
+                            {fb.sentiment_label === "positive" ? <ThumbsUp className="w-3.5 h-3.5" /> :
+                              fb.sentiment_label === "negative" ? <ThumbsDown className="w-3.5 h-3.5" /> :
+                                <Minus className="w-3.5 h-3.5" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-slate-600 font-medium">
+                              "{fb.comment || "No comment provided."}"
+                            </p>
+                            <div className="flex items-center gap-3 mt-3">
+                              <div className="flex gap-0.5">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star key={i} className={`w-2.5 h-2.5 ${i < fb.rating ? "text-amber-600 fill-amber-400" : "text-slate-300"}`} />
+                                ))}
+                              </div>
+                              <span className="text-[9px] font-black uppercase tracking-widest text-naturals-purple bg-naturals-purple/10 px-2 py-0.5 rounded-full border border-naturals-purple/20">
+                                {fb.source}
+                              </span>
+                              <span className="text-[9px] text-slate-400 font-bold flex items-center gap-1">
+                                <MapPin className="w-2.5 h-2.5" /> {fb.branch_location}
+                              </span>
                             </div>
-                            <span className="text-[9px] font-black uppercase tracking-widest text-naturals-purple bg-naturals-purple/10 px-2 py-0.5 rounded-full border border-naturals-purple/20">
-                              {fb.source}
-                            </span>
-                            <span className="text-[9px] text-slate-400 font-bold flex items-center gap-1">
-                              <MapPin className="w-2.5 h-2.5" /> {fb.branch_location}
-                            </span>
                           </div>
                         </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                  <div className="mt-8 pt-6 border-t border-slate-100">
+                    <button
+                      onClick={() => handleGenerateAIInsight('reviews')}
+                      disabled={generatingInsightType !== null}
+                      className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-naturals-purple transition-all active:scale-[0.98] shadow-xl shadow-slate-900/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {generatingInsightType === 'reviews' ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Sparkles className="w-3.5 h-3.5 text-naturals-purple" />
+                          Customer Stories
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </>
               ) : <SkeletonList count={4} className="grid grid-cols-2 gap-4" />}
             </GlassCard>
           </div>
 
           {/* Right Column: Inventory & Logistics */}
           <div className="lg:col-span-4 space-y-8">
-            <GlassCard title="Stock Management" subtitle="Inventory and orders">
+            <GlassCard title="Inventory" subtitle="Stock and orders">
               <div className="space-y-6">
                 {/* Stats Summary */}
                 {inventory && (
@@ -645,7 +769,7 @@ export default function TrendIntelligence() {
                   {!isLoadingInventory && inventory?.alerts.length === 0 && (
                     <div className="py-20 text-center">
                       <Package className="w-12 h-12 text-slate-900/5 mx-auto mb-4" />
-                      <p className="text-sm font-bold text-slate-900/20 uppercase tracking-[0.2em]">No logistic anomalies</p>
+                      <p className="text-sm font-bold text-slate-900/20 uppercase tracking-[0.2em]">No stock issues</p>
                     </div>
                   )}
                 </div>
@@ -656,9 +780,8 @@ export default function TrendIntelligence() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.9 }}
-                      className={`rounded-2xl p-4 border backdrop-blur-xl ${
-                        procurementResult.success ? "bg-emerald-500/10 border-emerald-500/30" : "bg-rose-500/10 border-rose-500/30"
-                      }`}
+                      className={`rounded-2xl p-4 border backdrop-blur-xl ${procurementResult.success ? "bg-emerald-500/10 border-emerald-500/30" : "bg-rose-500/10 border-rose-500/30"
+                        }`}
                     >
                       <div className="flex gap-3">
                         <div className={`p-2 rounded-xl ${procurementResult.success ? "bg-emerald-500/20" : "bg-rose-500/20"}`}>
@@ -704,12 +827,12 @@ export default function TrendIntelligence() {
                 )}
               </div>
               <div className="mt-6 pt-6 border-t border-slate-100">
-                <button 
-                  onClick={handleGenerateAIInsight}
-                  disabled={isGeneratingInsight}
+                <button
+                  onClick={() => handleGenerateAIInsight('trends')}
+                  disabled={generatingInsightType !== null}
                   className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-naturals-purple transition-all active:scale-[0.98] shadow-xl shadow-slate-900/10 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isGeneratingInsight ? (
+                  {generatingInsightType === 'trends' ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
                     <>
@@ -720,7 +843,7 @@ export default function TrendIntelligence() {
                 </button>
               </div>
             </GlassCard>
-            <InstagramMonitor />
+            <InstagramMonitor onGenerateInsight={handleGenerateAIInsight} isGenerating={generatingInsightType} />
           </div>
         </div>
       </div>
@@ -729,14 +852,14 @@ export default function TrendIntelligence() {
       <AnimatePresence>
         {aiInsight && (
           <div className="fixed inset-0 z-[100] flex items-end justify-center p-4 sm:p-6 pb-4">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setAiInsight(null)}
               className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -749,11 +872,11 @@ export default function TrendIntelligence() {
                     <Sparkles className="w-5 h-5 text-naturals-purple" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-black text-slate-900 tracking-tight leading-none">Trend Intelligence</h3>
+                    <h3 className="text-lg font-black text-slate-900 tracking-tight leading-none">AI Insight</h3>
                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Groq Llama 3 Analysis</p>
                   </div>
                 </div>
-                <button 
+                <button
                   onClick={() => setAiInsight(null)}
                   className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
                 >
@@ -772,7 +895,7 @@ export default function TrendIntelligence() {
 
               {/* Footer */}
               <div className="p-6 pt-4 border-t border-slate-50 shrink-0">
-                <button 
+                <button
                   onClick={() => setAiInsight(null)}
                   className="w-full py-3.5 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-naturals-purple transition-colors shadow-lg shadow-slate-900/10"
                 >
@@ -789,20 +912,20 @@ export default function TrendIntelligence() {
 
 /* ── UI Components ────────────────────────── */
 
-function PremiumKPICard({ 
-  icon, 
-  color, 
-  label, 
-  value, 
-  suffix, 
-  trend, 
-  description 
-}: { 
-  icon: React.ReactNode; 
-  color: "purple" | "amber" | "blue" | "emerald"; 
-  label: string; 
-  value: string | null; 
-  suffix?: string; 
+function PremiumKPICard({
+  icon,
+  color,
+  label,
+  value,
+  suffix,
+  trend,
+  description
+}: {
+  icon: React.ReactNode;
+  color: "purple" | "amber" | "blue" | "emerald";
+  label: string;
+  value: string | null;
+  suffix?: string;
   trend?: "up" | "down" | "stable";
   description: string;
 }) {
@@ -814,14 +937,14 @@ function PremiumKPICard({
   };
 
   return (
-    <motion.div 
+    <motion.div
       whileHover={{ y: -5, scale: 1.02 }}
       className={`p-6 rounded-[2.5rem] bg-gradient-to-br ${themes[color]} border backdrop-blur-xl relative overflow-hidden group shadow-2xl`}
     >
       <div className="absolute top-0 right-0 p-8 opacity-5 transform translate-x-1/4 -translate-y-1/4 group-hover:translate-x-0 transition-transform duration-700">
         <Activity className="w-24 h-24" />
       </div>
-      
+
       <div className="flex items-center justify-between mb-4">
         <div className={`w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center border border-slate-200 ${themes[color].split(' ').pop()}`}>
           {icon}
@@ -835,7 +958,7 @@ function PremiumKPICard({
       </div>
 
       <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 mb-1">{label}</p>
-      
+
       {value === null ? (
         <div className="h-10 w-24 bg-slate-100 rounded-xl animate-pulse" />
       ) : (
@@ -844,7 +967,7 @@ function PremiumKPICard({
           <span className="text-lg font-black text-slate-300 italic tracking-tighter uppercase">{suffix}</span>
         </div>
       )}
-      
+
       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-2">{description}</p>
     </motion.div>
   );
@@ -852,14 +975,14 @@ function PremiumKPICard({
 
 function GlassCard({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       className="bg-white/80 backdrop-blur-2xl rounded-[3rem] border border-slate-200 p-8 shadow-xl shadow-slate-200/20 relative group"
     >
       <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-naturals-purple/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-      
+
       <div className="flex flex-col mb-8">
         <h2 className="text-lg font-black italic tracking-tight text-slate-900 uppercase group-hover:text-naturals-purple transition-colors">
           {title}
@@ -868,24 +991,24 @@ function GlassCard({ title, subtitle, children }: { title: string; subtitle: str
           {subtitle}
         </p>
       </div>
-      
+
       {children}
     </motion.div>
   );
 }
 
-function ForecastCard({ 
+function ForecastCard({
   id,
-  type, 
-  title, 
-  reason, 
-  color, 
-  branch, 
+  type,
+  title,
+  reason,
+  color,
+  branch,
   lastBookedDate,
   deadlineDate,
   usageDuration,
   stockPct,
-  onRecordOrder 
+  onRecordOrder
 }: any) {
   const colors: any = {
     orange: { bg: "bg-rose-500/10", border: "border-rose-500/20", text: "text-rose-600", badge: "bg-rose-500/20", bar: "bg-rose-500" },
@@ -912,7 +1035,7 @@ function ForecastCard({
       </div>
 
       <h4 className="text-sm font-black text-slate-900 mb-1 italic tracking-tight group-hover:text-naturals-purple transition-colors">{title}</h4>
-      
+
       <div className="grid grid-cols-2 gap-4 my-4">
         <div className="space-y-1">
           <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Last Booked</p>
@@ -941,13 +1064,12 @@ function ForecastCard({
         </div>
       </div>
 
-      <button 
+      <button
         onClick={() => onRecordOrder(id)}
-        className={`w-full py-3 rounded-2xl border transition-all flex items-center justify-center gap-2 group/btn relative overflow-hidden ${
-          color === 'orange' 
-          ? 'bg-rose-500 text-white border-rose-600 shadow-lg shadow-rose-500/20 hover:scale-[1.02]' 
-          : 'bg-white/50 text-slate-600 border-slate-200 hover:bg-white hover:text-naturals-purple'
-        }`}
+        className={`w-full py-3 rounded-2xl border transition-all flex items-center justify-center gap-2 group/btn relative overflow-hidden ${color === 'orange'
+            ? 'bg-rose-500 text-white border-rose-600 shadow-lg shadow-rose-500/20 hover:scale-[1.02]'
+            : 'bg-white/50 text-slate-600 border-slate-200 hover:bg-white hover:text-naturals-purple'
+          }`}
       >
         <CheckCircle2 className={`w-4 h-4 ${color === 'orange' ? 'text-white' : 'text-naturals-purple'}`} />
         <span className="text-[10px] font-black uppercase tracking-widest">Record Order Placed</span>
@@ -956,7 +1078,7 @@ function ForecastCard({
   );
 }
 
-function InstagramMonitor() {
+function InstagramMonitor({ onGenerateInsight, isGenerating }: { onGenerateInsight: (type: 'instagram') => void, isGenerating: string | null }) {
   const [metrics, setMetrics] = useState({
     followers: 'Fetching...',
     reach: 482900,
@@ -971,7 +1093,7 @@ function InstagramMonitor() {
     try {
       const res = await fetch('/api/instagram');
       const data = await res.json();
-      
+
       // Always update metrics if data is returned, even if success is false (fallback data)
       if (data.followers || data.posts) {
         setMetrics(prev => ({
@@ -1005,13 +1127,13 @@ function InstagramMonitor() {
           <div className="absolute top-0 right-0 p-6 opacity-5 rotate-12 group-hover:rotate-0 transition-transform duration-1000">
             <Instagram className="w-24 h-24" />
           </div>
-          
+
           <div className="flex items-center gap-4 relative z-10">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 p-[2px] shadow-2xl animate-pulse">
               <div className="w-full h-full rounded-2xl bg-white flex items-center justify-center overflow-hidden">
-                <img 
-                  src="/naturalslogo.png" 
-                  alt="Naturals" 
+                <img
+                  src="/naturalslogo.png"
+                  alt="Naturals"
                   className="w-10 h-10 object-contain"
                 />
               </div>
@@ -1024,10 +1146,10 @@ function InstagramMonitor() {
               </div>
             </div>
           </div>
-          
-          <a 
-            href="https://www.instagram.com/naturalssalon/" 
-            target="_blank" 
+
+          <a
+            href="https://www.instagram.com/naturalssalon/"
+            target="_blank"
             rel="noopener noreferrer"
             className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center hover:bg-slate-200 hover:border-naturals-purple transition-all group relative z-10"
           >
@@ -1049,7 +1171,7 @@ function InstagramMonitor() {
               </span>
             </div>
           </div>
-          
+
           <div className="p-4 rounded-2xl bg-slate-100 border border-slate-200/60 space-y-1">
             <div className="flex items-center gap-2 text-[10px] font-bold text-slate-900/20 uppercase tracking-widest">
               <Package className="w-3 h-3" /> Total Posts
@@ -1080,10 +1202,27 @@ function InstagramMonitor() {
             />
           </div>
           <p className="text-[8px] font-black text-slate-900/20 uppercase tracking-[0.2em] mt-3 text-center">
-            {metrics.lastUpdated 
-              ? `Last Synced: ${new Date(metrics.lastUpdated).toLocaleTimeString()}` 
+            {metrics.lastUpdated
+              ? `Last Synced: ${new Date(metrics.lastUpdated).toLocaleTimeString()}`
               : "Data synced with official profile"}
           </p>
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-slate-100/50">
+          <button
+            onClick={() => onGenerateInsight('instagram')}
+            disabled={!!isGenerating || metrics.loading}
+            className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-pink-600 transition-all active:scale-[0.98] shadow-xl shadow-slate-900/10 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isGenerating === 'instagram' ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <>
+                <Sparkles className="w-3.5 h-3.5 text-pink-400" />
+                Social Media Strategy
+              </>
+            )}
+          </button>
         </div>
       </div>
     </GlassCard>
@@ -1097,5 +1236,20 @@ function SkeletonList({ count, className }: any) {
         <div key={i} className="h-16 bg-slate-100 rounded-2xl animate-pulse" />
       ))}
     </div>
+  );
+}
+function BranchDropdown({ selected, options, onChange }: { selected: string, options: string[], onChange: (s: string) => void }) {
+  const dropdownOptions = options.map(opt => ({
+    value: opt,
+    label: opt.toUpperCase()
+  }));
+
+  return (
+    <CustomDropdown
+      options={dropdownOptions}
+      value={selected}
+      onChange={onChange}
+      buttonClassName="min-w-[220px]"
+    />
   );
 }

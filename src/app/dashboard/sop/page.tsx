@@ -38,25 +38,28 @@ import {
   X,
   Maximize2,
   Volume2,
-  MapPin
+  MapPin,
+  Play
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { CustomDropdown } from "@/components/ui/CustomDropdown";
 
-export default function ProtocolAccreditation() {
-  const [activeTab, setActiveTab] = useState<"accreditation" | "audit" | "workflow">("accreditation");
+export default function StaffCheck() {
+  const [activeTab, setActiveTab] = useState<"accreditation" | "audit" | "workflow">("audit");
   const [isAuditing, setIsAuditing] = useState(false);
   const [auditProgress, setAuditProgress] = useState(0);
   const [showAuditResult, setShowAuditResult] = useState(false);
   const [personnelGrade, setPersonnelGrade] = useState("L2_ADVANCED");
   const [activeBadge, setActiveBadge] = useState<string | null>(null);
-  const [showDeploymentMap, setShowDeploymentMap] = useState(false);
-  const [isOptimizing, setIsOptimizing] = useState(false);
-  const [optimizationProgress, setOptimizationProgress] = useState(0);
-  const [optimizationLog, setOptimizationLog] = useState<string[]>([]);
+  const [showWorkAnalysis, setShowWorkAnalysis] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   
   const [isAuditingProficiency, setIsAuditingProficiency] = useState(false);
+  const [selectedBranch, setSelectedBranch] = useState("");
+  const [branches, setBranches] = useState<string[]>([]);
+  const [isLivePlaying, setIsLivePlaying] = useState(false);
+  const [runningAppointments, setRunningAppointments] = useState<any[]>([]);
   const [proficiencyMetrics, setProficiencyMetrics] = useState({
     precision: 0,
     ergonomics: 0,
@@ -70,8 +73,95 @@ export default function ProtocolAccreditation() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    fetchBranches();
     fetchWorkflowData();
   }, []);
+
+  useEffect(() => {
+    if ((activeTab === "audit" || activeTab === "workflow") && selectedBranch) {
+      fetchRealtimeAppointments();
+      const interval = setInterval(fetchRealtimeAppointments, 30000); // Refresh every 30s
+      return () => clearInterval(interval);
+    }
+  }, [activeTab, selectedBranch]);
+
+  const fetchRealtimeAppointments = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const now = new Date().toLocaleTimeString('en-GB', { hour12: false });
+
+      // 1. Fetch ALL confirmed appointments up to today to auto-complete
+      const { data: allConfirmed, error: fetchError } = await supabase
+        .from('appointments')
+        .select('id, appointment_date, end_time, status')
+        .lte('appointment_date', today)
+        .eq('status', 'confirmed');
+        
+      if (fetchError) throw fetchError;
+
+      // Filter for those that should be completed
+      const toComplete = allConfirmed?.filter(apt => {
+        if (apt.appointment_date < today) return true;
+        return apt.end_time < now;
+      }) || [];
+
+      if (toComplete.length > 0) {
+        await supabase
+          .from('appointments')
+          .update({ status: 'completed' })
+          .in('id', toComplete.map(apt => apt.id));
+      }
+
+      // 2. Fetch specific branch appointments for the UI
+      if (!selectedBranch) return;
+
+      const branchSearch = selectedBranch.split(' — ')[1] || selectedBranch;
+
+      const { data, error } = await supabase
+        .from('appointments')
+        .select(`
+          id,
+          appointment_date,
+          start_time,
+          end_time,
+          status,
+          customer:customers(full_name),
+          stylist:stylists!inner(full_name, branch_location),
+          service:services(name)
+        `)
+        .eq('appointment_date', today)
+        .eq('status', 'confirmed')
+        .ilike('stylists.branch_location', `%${branchSearch}%`);
+        
+      if (error) throw error;
+      
+      // Filter for appointments that are actually running now
+      const running = data?.filter(apt => {
+        return apt.start_time <= now && apt.end_time >= now;
+      }) || [];
+
+      setRunningAppointments(running);
+    } catch (err) {
+      console.error("Failed to fetch realtime appointments:", err);
+    }
+  };
+
+  const fetchBranches = async () => {
+    try {
+      const res = await fetch("/api/branches");
+      if (res.ok) {
+        const data = await res.json();
+        // Only keep Adyar for now as requested
+        const filtered = data.filter((b: string) => b.toUpperCase().includes("ADYAR"));
+        setBranches(filtered);
+        if (filtered.length > 0) {
+          setSelectedBranch(filtered[0]);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch branches:", err);
+    }
+  };
 
   const fetchWorkflowData = async () => {
     try {
@@ -119,40 +209,6 @@ export default function ProtocolAccreditation() {
     }, 400);
   };
 
-  const handleOptimizeDistribution = () => {
-    setIsOptimizing(true);
-    setOptimizationProgress(0);
-    setOptimizationLog([]);
-
-    const logs = [
-      "Analyzing live appointment queue...",
-      "Mapping staff specialties to zone demand...",
-      "Recalibrating station occupancy for peak throughput...",
-      "Minimizing inter-zone transit delays...",
-      "Finalizing autonomous reallocation map."
-    ];
-
-    let i = 0;
-    const interval = setInterval(() => {
-      if (i < 5) {
-        setOptimizationProgress((i + 1) * 20);
-        setOptimizationLog(prev => [...prev, logs[i]]);
-        i++;
-      } else {
-        clearInterval(interval);
-        setTimeout(() => {
-          // Simulate shuffling staff for "optimization"
-          const shuffled = [...activeStaff].sort(() => Math.random() - 0.5);
-          setActiveStaff(shuffled);
-          setIsOptimizing(false);
-          setToastMessage("Distribution Optimized: Staff reallocated to maximize throughput.");
-          setShowSuccessToast(true);
-          setTimeout(() => setShowSuccessToast(false), 5000);
-        }, 800);
-      }
-    }, 1000);
-  };
-
   const startProficiencyAudit = () => {
     setIsAuditingProficiency(true);
     let count = 0;
@@ -185,9 +241,8 @@ export default function ProtocolAccreditation() {
         <div className="flex justify-center mb-8">
           <div className="bg-white p-1.5 rounded-2xl shadow-sm border border-black/5 flex gap-1">
             {[
-              { id: "accreditation", label: "Accreditation", icon: Award },
-              { id: "audit", label: "Remote Audit", icon: Video },
-              { id: "workflow", label: "Workflow", icon: ClipboardCheck },
+              { id: "audit", label: "Live Camera", icon: Video },
+              { id: "workflow", label: "Current Progress", icon: ClipboardCheck },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -224,18 +279,18 @@ export default function ProtocolAccreditation() {
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative z-10">
                     <div className="space-y-3">
                       <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-naturals-purple/5 text-naturals-purple text-[10px] font-black uppercase tracking-[0.2em] border border-naturals-purple/10">
-                        <ShieldCheck className="w-3.5 h-3.5" /> Service Standards
+                        <ShieldCheck className="w-3.5 h-3.5" /> Service Quality
                       </div>
                       <h1 className="text-4xl md:text-5xl font-black text-deep-grape tracking-tighter italic leading-none">
-                        Professional Quality Audit
+                        Live Monitoring
                       </h1>
                       <p className="text-deep-grape/40 font-bold uppercase tracking-widest text-xs max-w-2xl leading-relaxed">
-                        Advanced personnel benchmarking and autonomous skill assessment for regional franchise operational parity.
+                        Staff performance checks and skill tests to keep branch quality high across all locations.
                       </p>
                     </div>
 
                     <div className="flex flex-col items-end gap-2 shrink-0">
-                      <span className="text-[10px] font-black text-deep-grape/20 uppercase tracking-[0.3em]">Personnel Grade</span>
+                      <span className="text-[10px] font-black text-deep-grape/20 uppercase tracking-[0.3em]">Staff Level</span>
                       <motion.div 
                         whileHover={{ scale: 1.05 }}
                         className="bg-[#1A0B2E] text-white px-8 py-4 rounded-2xl shadow-xl shadow-indigo-900/20 flex items-center gap-4 border border-white/10 group/grade cursor-pointer"
@@ -254,21 +309,21 @@ export default function ProtocolAccreditation() {
                   <div className="lg:col-span-8 space-y-6">
                     <div className="flex items-center gap-4 mb-4 px-2">
                       <Activity className="w-5 h-5 text-naturals-purple opacity-40" />
-                      <h3 className="text-xs font-black text-deep-grape/30 uppercase tracking-[0.4em]">Progression Track: L3 Operational Authority</h3>
+                      <h3 className="text-xs font-black text-deep-grape/30 uppercase tracking-[0.4em]">Skill Level: Senior Stylist Path</h3>
                     </div>
 
                     <TaskItem 
                       status="completed"
-                      title="Foundational Chromatic Theory"
-                      subtitle="Audit Score: 92% • Valid through Q4 2026"
+                      title="Basic Hair Coloring"
+                      subtitle="Test Score: 92% • Valid through Q4 2026"
                       onAction={handleStartAudit}
                       actionLabel="RE-AUDIT"
                     />
 
                     <TaskItem 
                       status="pending"
-                      title="Structural Molecular Restoration"
-                      subtitle="Mastery of high-density chemical bonding, thermal mitigation strategies, and autonomous diagnostic mapping."
+                      title="Hair Damage Repair"
+                      subtitle="Expertise in chemical treatments, heat protection, and hair health checks."
                       tags={["DEMAND SPIKE", "PROFICIENCY TEST PENDING"]}
                       onAction={() => {
                         setToastMessage("Initializing Neural Proficiency Test Interface...");
@@ -280,8 +335,8 @@ export default function ProtocolAccreditation() {
 
                     <TaskItem 
                       status="locked"
-                      title="Cranial Symmetry & Volumetric Mapping"
-                      subtitle="Unlock L3 Advanced status to access precision style standards."
+                      title="Head Shape & Volume Styling"
+                      subtitle="Unlock Level 3 status to access advanced style standards."
                       actionLabel="LOCKED"
                     />
                   </div>
@@ -290,20 +345,20 @@ export default function ProtocolAccreditation() {
                   <div className="lg:col-span-4 bg-white/60 backdrop-blur-xl rounded-[2.5rem] border border-black/5 p-8 shadow-sm">
                     <div className="flex items-center gap-3 mb-8">
                       <Star className="w-5 h-5 text-naturals-purple/60" />
-                      <h3 className="text-xs font-black text-deep-grape/40 uppercase tracking-[0.3em]">Verified Accreditations</h3>
+                      <h3 className="text-xs font-black text-deep-grape/40 uppercase tracking-[0.3em]">Approved Work</h3>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                      <BadgeCard icon={Scissors} label="Precision Cutting" active={activeBadge === "cutting"} onClick={() => setActiveBadge("cutting")} />
-                      <BadgeCard icon={Shield} label="SOP Auditor" active={activeBadge === "sop"} onClick={() => setActiveBadge("sop")} />
-                      <BadgeCard icon={Heart} label="CX Optimization" active={activeBadge === "cx"} onClick={() => setActiveBadge("cx")} />
-                      <BadgeCard icon={Sparkles} label="Hygiene Standards" active={activeBadge === "sterility"} onClick={() => setActiveBadge("sterility")} />
+                      <BadgeCard icon={Scissors} label="Haircuts" active={activeBadge === "cutting"} onClick={() => setActiveBadge("cutting")} />
+                      <BadgeCard icon={Shield} label="Checking" active={activeBadge === "sop"} onClick={() => setActiveBadge("sop")} />
+                      <BadgeCard icon={Heart} label="Friendly" active={activeBadge === "cx"} onClick={() => setActiveBadge("cx")} />
+                      <BadgeCard icon={Sparkles} label="Cleaning" active={activeBadge === "sterility"} onClick={() => setActiveBadge("sterility")} />
                     </div>
 
                     <div className="mt-8 p-6 bg-black/[0.02] border border-black/[0.03] rounded-3xl">
-                      <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-widest mb-4">System Insight</p>
+                      <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-widest mb-4">Staff Feedback</p>
                       <p className="text-sm font-bold text-deep-grape/60 italic leading-relaxed">
-                        "Personnel demonstrates high dexterity in chemical application but requires calibration on thermal mitigation timing."
+                        "Staff is good at applying color but needs to work on heat styling timing."
                       </p>
                     </div>
                   </div>
@@ -316,31 +371,84 @@ export default function ProtocolAccreditation() {
                 initial={{ opacity: 0, scale: 0.98 }} 
                 animate={{ opacity: 1, scale: 1 }} 
                 exit={{ opacity: 0, scale: 1.02 }}
-                className="bg-white rounded-[2.5rem] p-12 text-center border border-black/5 shadow-sm relative overflow-hidden min-h-[500px] flex flex-col items-center justify-center"
+                className="bg-white rounded-[2.5rem] p-8 border border-black/5 shadow-sm relative min-h-[600px] flex flex-col"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-naturals-purple/5 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-br from-naturals-purple/5 to-transparent rounded-[2.5rem] overflow-hidden pointer-events-none" />
                 
+                {/* Audit Header with Branch Selection */}
+                <div className="relative z-30 flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+                  <div>
+                    <h2 className="text-2xl font-black italic tracking-tighter text-deep-grape flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                      Live Feed: Camera View
+                    </h2>
+                    <p className="text-[10px] font-bold text-deep-grape/40 uppercase tracking-[0.2em] mt-1">
+                      Watching staff work in different branches.
+                    </p>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <div className="w-48">
+                      <CustomDropdown
+                        value={selectedBranch}
+                        options={branches.map(b => ({ value: b, label: b.toUpperCase() }))}
+                        onChange={(val) => setSelectedBranch(val)}
+                        placeholder="Select Branch"
+                      />
+                    </div>
+                    <button className="p-3 bg-warm-grey rounded-xl border border-black/5 hover:bg-black/5 transition-all">
+                      <RefreshCw className="w-4 h-4 text-naturals-purple" />
+                    </button>
+                  </div>
+                </div>
+
                 {isAuditingProficiency ? (
-                  <div className="relative z-10 w-full max-w-2xl space-y-8">
-                    {/* Simulated Camera Feed */}
+                  <div className="relative z-10 w-full max-w-4xl mx-auto space-y-8">
+                    {/* Simulated Camera Feed (Expanded) */}
                     <div className="relative aspect-video bg-[#0A0514] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl">
-                      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-40 mix-blend-overlay grayscale" />
+                      {selectedBranch.toUpperCase().includes("ADYAR") ? (
+                        <iframe 
+                          src="https://open.ivideon.com/embed/v3/?server=100-ihdCnObHQHAVtJwXErcX3c&camera=0&width=&height=&lang=en&ap=1&noibw="
+                          className="absolute inset-0 w-[110%] h-[115%] -left-[5%] top-0 grayscale opacity-60 mix-blend-overlay border-0"
+                          allowFullScreen
+                        />
+                      ) : (
+                        <div 
+                          className="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-overlay grayscale" 
+                          style={{ backgroundImage: 'none' }}
+                        />
+                      )}
+                      
+                      {!selectedBranch.toUpperCase().includes("ADYAR") && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] z-10">
+                          <div className="w-16 h-16 border-2 border-white/10 rounded-full flex items-center justify-center mb-4">
+                            <Video className="w-8 h-8 text-white/20" />
+                          </div>
+                          <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">Signal Lost: {selectedBranch.split(' — ')[1] || selectedBranch}</p>
+                          <p className="text-[8px] font-bold text-white/20 uppercase tracking-widest mt-2">Connecting to branch...</p>
+                        </div>
+                      )}
                       <div className="absolute inset-0 bg-gradient-to-t from-[#0A0514] to-transparent opacity-60" />
                       
-                      {/* Scanning Lines */}
+                      {selectedBranch.toUpperCase().includes("ADYAR") && (
+                        <div className="absolute top-6 right-6 flex items-center gap-2 z-20 bg-red-500/80 backdrop-blur-sm px-3 py-1 rounded-lg">
+                          <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                          <span className="text-[10px] font-black text-white uppercase tracking-widest">Live Feed</span>
+                        </div>
+                      )}
+                      
                       <motion.div 
                         className="absolute inset-x-0 h-0.5 bg-naturals-purple shadow-[0_0_15px_rgba(142,62,150,0.8)] z-20"
                         animate={{ top: ['0%', '100%', '0%'] }}
                         transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
                       />
 
-                      {/* AI Markers */}
                       <div className="absolute inset-0 z-10 p-8">
                         <div className="flex justify-between items-start">
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
                               <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                              <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">REC • 1080P</span>
+                              <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">AUDIT IN PROGRESS • {selectedBranch.toUpperCase()}</span>
                             </div>
                             <p className="text-[8px] font-bold text-white/40 uppercase tracking-widest">ISO 400 • F/2.8 • 1/60</p>
                           </div>
@@ -350,7 +458,6 @@ export default function ProtocolAccreditation() {
                           </div>
                         </div>
                         
-                        {/* Center Focus */}
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                           <div className="w-48 h-48 border border-white/10 rounded-full flex items-center justify-center">
                             <div className="w-32 h-32 border border-white/20 rounded-full flex items-center justify-center">
@@ -361,7 +468,6 @@ export default function ProtocolAccreditation() {
                       </div>
                     </div>
 
-                    {/* Live Telemetry */}
                     <div className="grid grid-cols-3 gap-4">
                       <div className="bg-white/5 border border-black/5 p-4 rounded-2xl">
                         <p className="text-[8px] font-black text-deep-grape/30 uppercase tracking-widest mb-1">Precision</p>
@@ -377,28 +483,92 @@ export default function ProtocolAccreditation() {
                       </div>
                     </div>
 
-                    <button 
-                      onClick={() => setIsAuditingProficiency(false)}
-                      className="px-8 py-3 bg-red-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-red-600 transition-all"
-                    >
-                      Terminate Audit
-                    </button>
+                    <div className="flex justify-center">
+                      <button 
+                        onClick={() => setIsAuditingProficiency(false)}
+                        className="px-8 py-3 bg-red-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-red-600 transition-all"
+                      >
+                        Terminate Audit
+                      </button>
+                    </div>
                   </div>
                 ) : (
-                  <div className="relative z-10">
-                    <div className="w-20 h-20 bg-lavender rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner">
-                      <Video className="w-10 h-10 text-naturals-purple animate-pulse" />
+                  <div className="relative z-10 flex flex-col lg:flex-row gap-8 flex-grow py-12">
+                    <div className="flex-grow flex flex-col items-center justify-center">
+                      {selectedBranch && (
+                        <div className="group relative w-full max-w-2xl aspect-video bg-black rounded-3xl overflow-hidden border border-black/5 shadow-2xl">
+                          {isLivePlaying && selectedBranch.toUpperCase().includes("ADYAR") ? (
+                            <iframe 
+                              src="https://open.ivideon.com/embed/v3/?server=100-ihdCnObHQHAVtJwXErcX3c&camera=0&width=&height=&lang=en&ap=1&noibw="
+                              className={`absolute inset-0 w-[110%] h-[115%] -left-[5%] top-0 grayscale group-hover:grayscale-0 transition-all duration-700 opacity-60 border-0`}
+                              allowFullScreen
+                            />
+                          ) : (
+                            <div 
+                              className={`absolute inset-0 bg-cover bg-center grayscale opacity-20 ${!isLivePlaying && selectedBranch.toUpperCase().includes("ADYAR") ? 'blur-md' : ''}`}
+                              style={{ 
+                                backgroundImage: selectedBranch.toUpperCase().includes("ADYAR") 
+                                  ? `url(https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80)` 
+                                  : 'none' 
+                              }}
+                            />
+                          )}
+                          
+                          {!isLivePlaying && selectedBranch.toUpperCase().includes("ADYAR") && (
+                            <div className="absolute inset-0 flex items-center justify-center z-20">
+                              <button 
+                                onClick={() => setIsLivePlaying(true)}
+                                className="w-16 h-16 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 flex items-center justify-center transition-all group/play"
+                              >
+                                <Play className="w-8 h-8 text-white fill-white group-hover/play:scale-110 transition-transform" />
+                              </button>
+                            </div>
+                          )}
+                          
+                          {isLivePlaying && selectedBranch.toUpperCase().includes("ADYAR") && (
+                            <div className="absolute top-4 right-4 flex items-center gap-2 z-20 bg-red-500/80 backdrop-blur-sm px-2 py-0.5 rounded-md">
+                              <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                              <span className="text-[8px] font-black text-white uppercase tracking-widest">Live</span>
+                            </div>
+                          )}
+                          
+                          {!selectedBranch.toUpperCase().includes("ADYAR") && (
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/20">
+                              <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">No Signal</span>
+                            </div>
+                          )}
+                          
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20" />
+                          
+                          <div className="absolute top-4 left-4 flex items-center gap-2">
+                            <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${selectedBranch.toUpperCase().includes("ADYAR") ? "bg-red-500" : "bg-white/20"}`} />
+                            <span className="text-[8px] font-black text-white uppercase tracking-widest">
+                              {selectedBranch.toUpperCase().includes("ADYAR") ? "CAM 01 - ADYAR" : `CAM 01 - ${selectedBranch.split(' — ')[1] || selectedBranch.toUpperCase()}`}
+                            </span>
+                          </div>
+                          
+                          <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
+                            <span className="text-[8px] font-bold text-white/40 tabular-nums">
+                              {new Date().toLocaleTimeString()}
+                            </span>
+                          </div>
+
+                          {/* Scanning Effect */}
+                          <div className="absolute inset-0 pointer-events-none opacity-20 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
+                        </div>
+                      )}
+                      
+                      <div className="mt-8 text-center">
+                        <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-[0.4em]">
+                          {selectedBranch.toUpperCase().includes("ADYAR") ? "Active Node: ADYAR" : "Branches Offline"}
+                        </p>
+                        <p className="text-[8px] font-bold text-deep-grape/20 uppercase tracking-widest mt-2">
+                          {selectedBranch.toUpperCase().includes("ADYAR") 
+                            ? "Adyar branch is currently sending live video." 
+                            : "This branch is currently not sending video."}
+                        </p>
+                      </div>
                     </div>
-                    <h2 className="text-3xl font-black italic tracking-tighter text-deep-grape">Proficiency Audit Interface</h2>
-                    <p className="text-deep-grape/40 font-bold uppercase tracking-[0.3em] text-[10px] mt-4 max-w-md mx-auto leading-relaxed">
-                      Initialize visual monitoring for technical proficiency assessment. AI will audit movement precision, ergonomics, and speed.
-                    </p>
-                    <button 
-                      onClick={startProficiencyAudit}
-                      className="mt-12 px-10 py-4 bg-deep-grape text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-naturals-purple transition-all shadow-2xl"
-                    >
-                      Initialize Interface
-                    </button>
                   </div>
                 )}
               </motion.div>
@@ -417,7 +587,7 @@ export default function ProtocolAccreditation() {
                   <div className="flex items-center justify-between px-2">
                     <div className="flex items-center gap-4">
                       <div className="w-2 h-2 rounded-full bg-green-500 animate-ping" />
-                      <h3 className="text-xs font-black text-deep-grape/30 uppercase tracking-[0.4em]">Live Operations Queue</h3>
+                      <h3 className="text-[10px] font-black text-deep-grape/30 uppercase tracking-[0.3em]">Current Progress</h3>
                     </div>
                     <button onClick={fetchWorkflowData} className="p-2 hover:bg-black/5 rounded-xl transition-all">
                       <RefreshCw className={`w-4 h-4 text-naturals-purple ${loading ? 'animate-spin' : ''}`} />
@@ -425,7 +595,7 @@ export default function ProtocolAccreditation() {
                   </div>
 
                   <div className="space-y-4">
-                    {liveQueue.length > 0 ? liveQueue.map((appt, idx) => (
+                    {runningAppointments.length > 0 ? runningAppointments.map((appt, idx) => (
                       <div key={appt.id} className="bg-white p-6 rounded-[2rem] border border-black/5 shadow-sm flex items-center justify-between group hover:border-naturals-purple/20 transition-all">
                         <div className="flex items-center gap-6">
                           <div className="w-12 h-12 rounded-2xl bg-warm-grey flex items-center justify-center text-deep-grape/20 font-black italic text-xl">
@@ -479,41 +649,14 @@ export default function ProtocolAccreditation() {
                         </div>
                       ))}
                         <button 
-                          onClick={() => setShowDeploymentMap(true)}
+                          onClick={() => setShowWorkAnalysis(true)}
                           className="w-full py-3 bg-warm-grey rounded-xl text-[9px] font-black text-deep-grape/40 uppercase tracking-widest hover:bg-lavender hover:text-naturals-purple transition-all"
                         >
-                          View Deployment Map
+                          Work Analysis
                         </button>
                     </div>
                   </div>
 
-                  {/* Inventory Alerts */}
-                  <div className="bg-[#1A0B2E] text-white rounded-[2.5rem] p-8 shadow-xl shadow-indigo-900/20 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-8 opacity-[0.05]">
-                      <Zap className="w-24 h-24" />
-                    </div>
-                    <div className="relative z-10">
-                      <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">Critical Alerts</h3>
-                        <AlertTriangle className="w-4 h-4 text-amber-500" />
-                      </div>
-                      <div className="space-y-4">
-                        {inventoryAlerts.length > 0 ? inventoryAlerts.map(item => (
-                          <div key={item.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
-                            <div>
-                              <p className="text-[10px] font-black uppercase tracking-tight">{item.product_name}</p>
-                              <p className="text-[8px] font-bold text-white/40 uppercase">Stock: {item.current_stock} {item.unit}</p>
-                            </div>
-                            <button className="p-2 bg-amber-500/20 text-amber-500 rounded-lg">
-                              <Plus className="w-3 h-3" />
-                            </button>
-                          </div>
-                        )) : (
-                          <p className="text-[9px] font-bold text-white/30 italic text-center py-4">All logistics within threshold</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </motion.div>
             )}
@@ -548,8 +691,8 @@ export default function ProtocolAccreditation() {
               </div>
 
               <div className="space-y-2">
-                <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase">Initializing AI Personnel Audit</h2>
-                <p className="text-white/40 font-bold uppercase tracking-[0.3em] text-[10px]">Scanning regional footage archives</p>
+                <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase">Starting Staff Skill Test</h2>
+                <p className="text-white/40 font-bold uppercase tracking-[0.3em] text-[10px]">Checking recorded sessions</p>
               </div>
 
               <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
@@ -561,9 +704,9 @@ export default function ProtocolAccreditation() {
               </div>
 
               <div className="flex flex-wrap justify-center gap-2">
-                {auditProgress > 20 && <StatusTag label="BIO-METRIC SYNC" />}
-                {auditProgress > 45 && <StatusTag label="DEXTERITY MAPPING" />}
-                {auditProgress > 70 && <StatusTag label="SOP VALIDATION" />}
+                {auditProgress > 20 && <StatusTag label="PROFILE SYNC" />}
+                {auditProgress > 45 && <StatusTag label="TECHNIQUE CHECK" />}
+                {auditProgress > 70 && <StatusTag label="STANDARD CHECK" />}
               </div>
             </div>
           </motion.div>
@@ -647,14 +790,14 @@ export default function ProtocolAccreditation() {
 
       {/* --- Deployment Map Modal --- */}
       <AnimatePresence>
-        {showDeploymentMap && (
+        {showWorkAnalysis && (
           <motion.div 
             className="fixed inset-0 z-[110] flex items-center justify-center p-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <div className="absolute inset-0 bg-[#0A0514]/80 backdrop-blur-xl" onClick={() => setShowDeploymentMap(false)} />
+            <div className="absolute inset-0 bg-[#0A0514]/80 backdrop-blur-xl" onClick={() => setShowWorkAnalysis(false)} />
             <motion.div 
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -662,80 +805,97 @@ export default function ProtocolAccreditation() {
             >
               <div className="p-8 border-b border-black/5 flex justify-between items-center bg-warm-grey/30">
                 <div>
-                  <h3 className="text-2xl font-black italic tracking-tighter text-deep-grape">Stylist Deployment Map</h3>
-                  <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-widest">Real-time personnel distribution • Regional Hub: Chennai South</p>
+                  <h3 className="text-2xl font-black italic tracking-tighter text-deep-grape">Work Analysis</h3>
+                  <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-widest">Stylist Productivity • Appointments Overview</p>
                 </div>
-                <button onClick={() => setShowDeploymentMap(false)} className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-black/5 flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-all">
+                <button onClick={() => setShowWorkAnalysis(false)} className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-black/5 flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-all">
                   <X className="w-6 h-6" />
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-10 bg-warm-grey/10">
-                <div className="grid grid-cols-4 gap-8">
-                  {/* Map Legend */}
-                  <div className="col-span-4 flex gap-6 mb-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-naturals-purple shadow-[0_0_10px_rgba(142,62,150,0.5)]" />
-                      <span className="text-[9px] font-black uppercase tracking-widest text-deep-grape/40">Active Station</span>
+              <div className="flex-1 overflow-y-auto p-10 bg-warm-grey/5">
+                <div className="bg-white rounded-[2.5rem] border border-black/5 p-12 shadow-sm">
+                  <div className="flex items-center justify-between mb-12">
+                    <div>
+                      <h4 className="text-xl font-black italic tracking-tighter text-deep-grape">Appointments per Stylist</h4>
+                      <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-widest">Today's workload distribution</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-white border border-black/10" />
-                      <span className="text-[9px] font-black uppercase tracking-widest text-deep-grape/40">Available Zone</span>
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-naturals-purple" />
+                        <span className="text-[9px] font-black uppercase tracking-widest text-deep-grape/40">Total Sessions</span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Salon Grid Layout */}
-                  {['Zone A - Hair Artistry', 'Zone B - Skin Therapy', 'Zone C - Premium Spa', 'Zone D - Diagnostics'].map((zone, zIdx) => (
-                    <div key={zone} className="space-y-4">
-                      <div className="flex items-center gap-2 px-2">
-                        <MapPin className="w-3 h-3 text-naturals-purple" />
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-deep-grape/60">{zone}</h4>
-                      </div>
-                      <div className="grid gap-4">
-                        {[1, 2, 3].map(station => {
-                          const staff = activeStaff[zIdx * 3 + (station - 1)];
-                          const isOccupied = !!staff;
-                          return (
-                            <motion.div 
-                              key={station}
-                              whileHover={{ y: -5 }}
-                              className={`p-6 rounded-3xl border transition-all ${
-                                isOccupied ? 'bg-white border-naturals-purple shadow-lg shadow-naturals-purple/5' : 'bg-white/40 border-black/5 border-dashed'
-                              }`}
-                            >
-                              <div className="flex justify-between items-start mb-4">
-                                <span className="text-[8px] font-black text-deep-grape/20 uppercase tracking-widest">Station {zIdx + 1}-{station}</span>
-                                <div className={`w-1.5 h-1.5 rounded-full ${isOccupied ? 'bg-green-500 animate-pulse' : 'bg-black/10'}`} />
-                              </div>
-                              
-                              {isOccupied ? (
-                                <div className="space-y-3">
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-xl bg-naturals-purple text-white flex items-center justify-center font-black text-xs shadow-md">
-                                      {staff.full_name[0]}
-                                    </div>
-                                    <div>
-                                      <p className="text-xs font-black text-deep-grape">{staff.full_name}</p>
-                                      <p className="text-[8px] font-black text-naturals-purple uppercase tracking-widest">{staff.specialty || 'Stylist'}</p>
-                                    </div>
-                                  </div>
-                                  <div className="pt-3 border-t border-black/5">
-                                    <span className="text-[8px] font-black text-deep-grape/30 uppercase tracking-widest block mb-1">Current Service</span>
-                                    <p className="text-[10px] font-bold text-deep-grape italic">Active Engagement</p>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="py-6 text-center">
-                                  <Plus className="w-5 h-5 text-deep-grape/5 mx-auto mb-2" />
-                                  <p className="text-[8px] font-black text-deep-grape/20 uppercase tracking-widest">Ready for Deployment</p>
-                                </div>
-                              )}
-                            </motion.div>
-                          );
-                        })}
-                      </div>
+                  <div className="relative h-80 flex items-end justify-around gap-2 px-12 border-b border-black/10 pb-10">
+                    {/* Y-Axis Labels */}
+                    <div className="absolute left-4 top-0 bottom-10 flex flex-col justify-between text-[8px] font-black text-deep-grape/20 pointer-events-none">
+                      <span>10</span>
+                      <span>8</span>
+                      <span>6</span>
+                      <span>4</span>
+                      <span>2</span>
+                      <span>0</span>
                     </div>
-                  ))}
+
+                    {activeStaff.slice(0, 10).map((staff, i) => {
+                      const apptCount = liveQueue.filter(a => a.stylist_id === staff.id).length;
+                      const barHeight = Math.min((apptCount / 10) * 100, 100);
+                      
+                      return (
+                        <div key={staff.id} className="flex flex-col items-center gap-4 group relative h-full justify-end w-16">
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="absolute -top-6 text-[10px] font-black text-naturals-purple opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            {apptCount}
+                          </motion.div>
+                          
+                          <motion.div 
+                            initial={{ height: 0 }}
+                            animate={{ height: `${barHeight}%` }}
+                            transition={{ duration: 1, delay: i * 0.1, ease: "circOut" }}
+                            className="w-10 bg-gradient-to-t from-naturals-purple to-fuchsia-500 rounded-t-xl shadow-lg shadow-naturals-purple/20 relative group-hover:brightness-110 transition-all cursor-pointer"
+                          >
+                            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </motion.div>
+
+                          <div className="absolute -bottom-8 flex justify-center w-full">
+                            <p className="text-[9px] font-black uppercase tracking-tighter text-deep-grape/40 whitespace-nowrap text-center">
+                              {staff.full_name.split(' ')[0]}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-6 mt-12">
+                  <div className="p-8 bg-white rounded-3xl border border-black/5 shadow-sm">
+                    <p className="text-[9px] font-black text-deep-grape/30 uppercase tracking-widest mb-1">Busyest Stylist</p>
+                    <p className="text-xl font-black italic text-naturals-purple">
+                      {(() => {
+                        const counts = activeStaff.map(s => ({ name: s.full_name, count: liveQueue.filter(a => a.stylist_id === s.id).length }));
+                        const max = counts.reduce((prev, current) => (prev.count > current.count) ? prev : current, { name: 'N/A', count: 0 });
+                        return max.count > 0 ? max.name : 'No Activity';
+                      })()}
+                    </p>
+                  </div>
+                  <div className="p-8 bg-white rounded-3xl border border-black/5 shadow-sm">
+                    <p className="text-[9px] font-black text-deep-grape/30 uppercase tracking-widest mb-1">Daily Capacity</p>
+                    <p className="text-xl font-black italic text-deep-grape">
+                      {Math.round((liveQueue.length / (activeStaff.length * 8)) * 100)}%
+                    </p>
+                  </div>
+                  <div className="p-8 bg-white rounded-3xl border border-black/5 shadow-sm">
+                    <p className="text-[9px] font-black text-deep-grape/30 uppercase tracking-widest mb-1">Total Throughput</p>
+                    <p className="text-xl font-black italic text-deep-grape">
+                      {liveQueue.length} Sessions
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -750,70 +910,8 @@ export default function ProtocolAccreditation() {
                     <span className="text-lg font-black text-deep-grape">12m</span>
                   </div>
                 </div>
-                <div className="flex gap-4">
-                  <button 
-                    onClick={handleOptimizeDistribution}
-                    disabled={isOptimizing}
-                    className="px-8 py-4 bg-deep-grape text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-naturals-purple transition-all shadow-xl disabled:opacity-50 flex items-center gap-2"
-                  >
-                    {isOptimizing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Cpu className="w-4 h-4" />}
-                    {isOptimizing ? 'Optimizing...' : 'Optimize Distribution'}
-                  </button>
-                </div>
               </div>
 
-              {/* Optimization Overlay */}
-              <AnimatePresence>
-                {isOptimizing && (
-                  <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="absolute inset-0 z-50 bg-[#0A0514]/90 backdrop-blur-2xl flex flex-col items-center justify-center p-12 text-center"
-                  >
-                    <div className="relative mb-12">
-                      <motion.div 
-                        className="w-32 h-32 rounded-full border-2 border-naturals-purple/30 flex items-center justify-center"
-                        animate={{ rotate: 360 }}
-                        transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
-                      >
-                        <Cpu className="w-12 h-12 text-naturals-purple" />
-                      </motion.div>
-                      <motion.div 
-                        className="absolute inset-[-10px] rounded-full border border-naturals-purple/50 border-t-transparent"
-                        animate={{ rotate: -360 }}
-                        transition={{ repeat: Infinity, duration: 2.5, ease: "linear" }}
-                      />
-                    </div>
-
-                    <div className="space-y-6 w-full max-w-md">
-                      <div className="space-y-2">
-                        <h4 className="text-2xl font-black text-white italic tracking-tighter uppercase">Autonomous Optimization</h4>
-                        <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
-                          <motion.div 
-                            className="h-full bg-naturals-purple"
-                            initial={{ width: 0 }}
-                            animate={{ width: `${optimizationProgress}%` }}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        {optimizationLog.map((log, idx) => (
-                          <motion.p 
-                            key={idx}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="text-[9px] font-black text-white/40 uppercase tracking-widest text-left"
-                          >
-                            <span className="text-naturals-purple mr-2">›</span> {log}
-                          </motion.p>
-                        ))}
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </motion.div>
           </motion.div>
         )}

@@ -16,30 +16,37 @@ export async function POST(req: Request) {
     const today = now.toISOString().split('T')[0];
     const currentTime = now.toTimeString().split(' ')[0];
 
-    console.log(`[Maintenance] Checking appointments for ${userId}. Date: ${today}, Time: ${currentTime}`);
-
-    // 1. Mark appointments from past dates as completed
-    const { error: pastError } = await supabaseAdmin
+    console.log(`[Maintenance] Running maintenance. Target User: ${userId || 'GLOBAL'}. Date: ${today}, Time: ${currentTime}`);
+    
+    // Create base queries
+    let pastQuery = supabaseAdmin
       .from('appointments')
       .update({ status: 'completed' })
-      .eq('customer_id', userId)
       .in('status', ['confirmed', 'pending'])
       .lt('appointment_date', today);
-
-    if (pastError) console.error("[Maintenance] Past dates error:", pastError);
-
-    // 2. Mark appointments from today with past end times as completed
-    const { error: todayError } = await supabaseAdmin
+      
+    let todayQuery = supabaseAdmin
       .from('appointments')
       .update({ status: 'completed' })
-      .eq('customer_id', userId)
       .in('status', ['confirmed', 'pending'])
       .eq('appointment_date', today)
       .lt('end_time', currentTime);
 
+    // Apply user filter only if userId is provided
+    if (userId) {
+      pastQuery = pastQuery.eq('customer_id', userId);
+      todayQuery = todayQuery.eq('customer_id', userId);
+    }
+
+    const [{ error: pastError }, { error: todayError }] = await Promise.all([
+      pastQuery,
+      todayQuery
+    ]);
+
+    if (pastError) console.error("[Maintenance] Past dates error:", pastError);
     if (todayError) console.error("[Maintenance] Today past time error:", todayError);
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, mode: userId ? 'user' : 'global' });
   } catch (err: any) {
     console.error("[Maintenance] API Error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });

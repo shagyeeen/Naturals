@@ -2,8 +2,7 @@ import { getActiveAppointments, createAppointment, cancelAppointment } from './d
 import { supabase } from '@/lib/supabase'
 import type { Appointment } from '@/lib/supabase'
 
-export const autoCompleteAppointments = async (customerId: string) => {
-  if (!customerId) return;
+export const autoCompleteAppointments = async (customerId?: string) => {
   
   try {
     await fetch('/api/appointments/maintenance', {

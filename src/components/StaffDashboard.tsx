@@ -177,6 +177,8 @@ export default function StaffDashboard() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [requestToDelete, setRequestToDelete] = useState<string | null>(null);
+  const [isNewCustomer, setIsNewCustomer] = useState(false);
+  const [searchEmail, setSearchEmail] = useState('');
   const [aptFilter, setAptFilter] = useState<{status: string, date: string}>({status: 'all', date: 'all'});
   const [aptSort, setAptSort] = useState<'date_asc' | 'date_desc' | 'client_name'>('date_desc');
   const [formData, setFormData] = useState<FormData>({
@@ -1486,48 +1488,52 @@ export default function StaffDashboard() {
                 </div>
               ) : (
                 <>
-                <div className="space-y-1 relative">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Full Legal Name</label>
-                  <input
-                    type="text"
-                    value={formData.fullName}
-                    onChange={(e) => {
-                      setFormData({ ...formData, fullName: e.target.value });
-                      if (formErrors.fullName) setFormErrors({ ...formErrors, fullName: '' });
-                    }}
-                    className={`w-full bg-warm-grey/40 border rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold transition-all outline-none ${
-                       formErrors.fullName ? 'border-red-500 bg-red-50/10' : 'border-naturals-purple/20 focus:bg-white focus:border-naturals-purple'
-                    }`}
-                  />
-                  <ValidationError field="fullName" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1 relative">
-                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Phone</label>
+                {(modalType !== 'add-appointment' || isNewCustomer) && (
+                  <>
+                    <div className="space-y-1 relative">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Full Legal Name</label>
                       <input
-                        type="tel"
-                        value={formData.phone}
+                        type="text"
+                        value={formData.fullName}
                         onChange={(e) => {
-                          setFormData({ ...formData, phone: e.target.value });
-                          if (formErrors.phone) setFormErrors({ ...formErrors, phone: '' });
+                          setFormData({ ...formData, fullName: e.target.value });
+                          if (formErrors.fullName) setFormErrors({ ...formErrors, fullName: '' });
                         }}
                         className={`w-full bg-warm-grey/40 border rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold transition-all outline-none ${
-                          formErrors.phone ? 'border-red-500 bg-red-50/10' : 'border-naturals-purple/20 focus:bg-white focus:border-naturals-purple'
+                           formErrors.fullName ? 'border-red-500 bg-red-50/10' : 'border-naturals-purple/20 focus:bg-white focus:border-naturals-purple'
                         }`}
                       />
-                      <ValidationError field="phone" />
+                      <ValidationError field="fullName" />
                     </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Email</label>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
-                    />
-                  </div>
-                </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1 relative">
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Phone</label>
+                          <input
+                            type="tel"
+                            value={formData.phone}
+                            onChange={(e) => {
+                              setFormData({ ...formData, phone: e.target.value });
+                              if (formErrors.phone) setFormErrors({ ...formErrors, phone: '' });
+                            }}
+                            className={`w-full bg-warm-grey/40 border rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold transition-all outline-none ${
+                              formErrors.phone ? 'border-red-500 bg-red-50/10' : 'border-naturals-purple/20 focus:bg-white focus:border-naturals-purple'
+                            }`}
+                          />
+                          <ValidationError field="phone" />
+                        </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Email</label>
+                        <input
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   {(modalType === 'add-customer' || (modalType === 'edit' && activeTab === 'customers')) && (
@@ -1757,24 +1763,48 @@ export default function StaffDashboard() {
 
                 {(modalType === 'add-appointment' || (modalType === 'edit' && activeTab === 'appointments')) && (
                   <div className="space-y-4 pt-2">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Customer</label>
-                        <select
-                          value={formData.appointmentCustomerId}
-                          onChange={(e) => setFormData({ ...formData, appointmentCustomerId: e.target.value })}
-                          className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
+                    {!editingId && (
+                      <div className="flex gap-3 p-1 bg-warm-grey/20 rounded-[1.5rem] border border-black/5 mb-4">
+                        <button
+                          type="button"
+                          onClick={() => setIsNewCustomer(false)}
+                          className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
+                            !isNewCustomer ? 'bg-white text-naturals-purple shadow-lg scale-[1.02]' : 'text-deep-grape/40 hover:text-deep-grape/60'
+                          }`}
                         >
-                          <option value="">Select Customer</option>
-                          {customers.map(c => (
-                            <option key={c.id} value={c.id}>{c.full_name}</option>
-                          ))}
-                        </select>
+                          Existing Customer
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsNewCustomer(true)}
+                          className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
+                            isNewCustomer ? 'bg-white text-naturals-purple shadow-lg scale-[1.02]' : 'text-deep-grape/40 hover:text-deep-grape/60'
+                          }`}
+                        >
+                          New Customer
+                        </button>
                       </div>
-                      <div className="space-y-1">
+                    )}
+                    <div className="grid grid-cols-2 gap-4">
+                      {!isNewCustomer && (
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Customer</label>
+                          <select
+                            value={formData.appointmentCustomerId || ''}
+                            onChange={(e) => setFormData({ ...formData, appointmentCustomerId: e.target.value })}
+                            className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
+                          >
+                            <option value="">Select Customer</option>
+                            {customers.map(c => (
+                              <option key={c.id} value={c.id}>{c.full_name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      <div className={`space-y-1 ${isNewCustomer ? 'col-span-2' : ''}`}>
                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Stylist</label>
                         <select
-                          value={formData.appointmentStylistId}
+                          value={formData.appointmentStylistId || ''}
                           onChange={(e) => setFormData({ ...formData, appointmentStylistId: e.target.value })}
                           className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
                         >
@@ -1788,7 +1818,7 @@ export default function StaffDashboard() {
                     <div className="space-y-1">
                       <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Service</label>
                       <select
-                        value={formData.appointmentServiceId}
+                        value={formData.appointmentServiceId || ''}
                         onChange={(e) => setFormData({ ...formData, appointmentServiceId: e.target.value })}
                         className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
                       >
@@ -1803,7 +1833,7 @@ export default function StaffDashboard() {
                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Date</label>
                         <input
                           type="date"
-                          value={formData.appointmentDate}
+                          value={formData.appointmentDate || ''}
                           onChange={(e) => setFormData({ ...formData, appointmentDate: e.target.value })}
                           className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
                         />
@@ -1812,7 +1842,7 @@ export default function StaffDashboard() {
                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Start</label>
                         <input
                           type="time"
-                          value={formData.appointmentStartTime}
+                          value={formData.appointmentStartTime || ''}
                           onChange={(e) => setFormData({ ...formData, appointmentStartTime: e.target.value })}
                           className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
                         />
@@ -1821,7 +1851,7 @@ export default function StaffDashboard() {
                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">End</label>
                         <input
                           type="time"
-                          value={formData.appointmentEndTime}
+                          value={formData.appointmentEndTime || ''}
                           onChange={(e) => setFormData({ ...formData, appointmentEndTime: e.target.value })}
                           className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
                         />
