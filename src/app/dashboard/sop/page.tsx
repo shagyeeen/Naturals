@@ -8,12 +8,6 @@ import {
   Video, 
   Activity, 
   Clock, 
-  AlertTriangle, 
-  ArrowRight, 
-  CheckCircle2, 
-  X, 
-  Maximize2, 
-  Volume2, 
   FileText, 
   Download, 
   Eye, 
@@ -35,8 +29,18 @@ import {
   UserCheck,
   Heart,
   Sparkles,
-  Star
+  Star,
+  Plus,
+  Calendar,
+  CheckCircle2,
+  AlertTriangle,
+  ArrowRight,
+  X,
+  Maximize2,
+  Volume2,
+  MapPin
 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 export default function ProtocolAccreditation() {
   const [activeTab, setActiveTab] = useState<"accreditation" | "audit" | "workflow">("accreditation");
@@ -45,6 +49,41 @@ export default function ProtocolAccreditation() {
   const [showAuditResult, setShowAuditResult] = useState(false);
   const [personnelGrade, setPersonnelGrade] = useState("L2_ADVANCED");
   const [activeBadge, setActiveBadge] = useState<string | null>(null);
+  const [showDeploymentMap, setShowDeploymentMap] = useState(false);
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const [optimizationProgress, setOptimizationProgress] = useState(0);
+  const [optimizationLog, setOptimizationLog] = useState<string[]>([]);
+  
+  // Real-time workflow data
+  const [liveQueue, setLiveQueue] = useState<any[]>([]);
+  const [activeStaff, setActiveStaff] = useState<any[]>([]);
+  const [inventoryAlerts, setInventoryAlerts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchWorkflowData();
+  }, []);
+
+  const fetchWorkflowData = async () => {
+    try {
+      setLoading(true);
+      const today = new Date().toISOString().split('T')[0];
+
+      const [apptRes, staffRes, invRes] = await Promise.all([
+        supabase.from('appointments').select('*, customer:customer_id(full_name), service:service_id(name)').eq('appointment_date', today).order('start_time'),
+        supabase.from('stylists').select('*').eq('is_active', true),
+        supabase.from('inventory').select('*').lt('current_stock', 10).limit(5)
+      ]);
+
+      setLiveQueue(apptRes.data || []);
+      setActiveStaff(staffRes.data || []);
+      setInventoryAlerts(invRes.data || []);
+    } catch (err) {
+      console.error("Workflow Fetch Error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Debug log to check if component renders
   useEffect(() => {
@@ -69,6 +108,38 @@ export default function ProtocolAccreditation() {
         }, 500);
       }
     }, 400);
+  };
+
+  const handleOptimizeDistribution = () => {
+    setIsOptimizing(true);
+    setOptimizationProgress(0);
+    setOptimizationLog([]);
+
+    const logs = [
+      "Analyzing live appointment queue...",
+      "Mapping staff specialties to zone demand...",
+      "Recalibrating station occupancy for peak throughput...",
+      "Minimizing inter-zone transit delays...",
+      "Finalizing autonomous reallocation map."
+    ];
+
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i < 5) {
+        setOptimizationProgress((i + 1) * 20);
+        setOptimizationLog(prev => [...prev, logs[i]]);
+        i++;
+      } else {
+        clearInterval(interval);
+        setTimeout(() => {
+          // Simulate shuffling staff for "optimization"
+          const shuffled = [...activeStaff].sort(() => Math.random() - 0.5);
+          setActiveStaff(shuffled);
+          setIsOptimizing(false);
+          alert("Distribution Optimized: Staff reallocated to maximize throughput.");
+        }, 800);
+      }
+    }, 1000);
   };
 
   return (
@@ -208,14 +279,138 @@ export default function ProtocolAccreditation() {
             {activeTab === "audit" && (
               <motion.div 
                 key="audit-view" 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                exit={{ opacity: 0 }}
-                className="bg-white rounded-[2.5rem] p-20 text-center border border-black/5 shadow-sm"
+                initial={{ opacity: 0, scale: 0.98 }} 
+                animate={{ opacity: 1, scale: 1 }} 
+                exit={{ opacity: 0, scale: 1.02 }}
+                className="bg-white rounded-[2.5rem] p-20 text-center border border-black/5 shadow-sm relative overflow-hidden"
               >
-                <Video className="w-16 h-16 text-naturals-purple/20 mx-auto mb-6" />
-                <h2 className="text-2xl font-black italic tracking-tighter">Remote Audit Hub</h2>
-                <p className="text-deep-grape/40 font-bold uppercase tracking-widest text-xs mt-2">Connecting to regional live stream network...</p>
+                <div className="absolute inset-0 bg-gradient-to-br from-naturals-purple/5 to-transparent" />
+                <div className="relative z-10">
+                  <div className="w-20 h-20 bg-lavender rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner">
+                    <Video className="w-10 h-10 text-naturals-purple animate-pulse" />
+                  </div>
+                  <h2 className="text-3xl font-black italic tracking-tighter text-deep-grape">Remote Audit Hub</h2>
+                  <p className="text-deep-grape/40 font-bold uppercase tracking-[0.3em] text-[10px] mt-4 max-w-md mx-auto leading-relaxed">
+                    Connecting to regional live stream network... Autonomous SOP validation engaged.
+                  </p>
+                  <button className="mt-12 px-10 py-4 bg-deep-grape text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-naturals-purple transition-all shadow-2xl">
+                    Initialize Neural Stream
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === "workflow" && (
+              <motion.div 
+                key="workflow-view" 
+                initial={{ opacity: 0, y: 20 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                exit={{ opacity: 0, y: -20 }}
+                className="grid lg:grid-cols-12 gap-8"
+              >
+                {/* Live Operations Queue */}
+                <div className="lg:col-span-8 space-y-6">
+                  <div className="flex items-center justify-between px-2">
+                    <div className="flex items-center gap-4">
+                      <div className="w-2 h-2 rounded-full bg-green-500 animate-ping" />
+                      <h3 className="text-xs font-black text-deep-grape/30 uppercase tracking-[0.4em]">Live Operations Queue</h3>
+                    </div>
+                    <button onClick={fetchWorkflowData} className="p-2 hover:bg-black/5 rounded-xl transition-all">
+                      <RefreshCw className={`w-4 h-4 text-naturals-purple ${loading ? 'animate-spin' : ''}`} />
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {liveQueue.length > 0 ? liveQueue.map((appt, idx) => (
+                      <div key={appt.id} className="bg-white p-6 rounded-[2rem] border border-black/5 shadow-sm flex items-center justify-between group hover:border-naturals-purple/20 transition-all">
+                        <div className="flex items-center gap-6">
+                          <div className="w-12 h-12 rounded-2xl bg-warm-grey flex items-center justify-center text-deep-grape/20 font-black italic text-xl">
+                            {appt.start_time.slice(0, 2)}
+                          </div>
+                          <div>
+                            <h4 className="text-lg font-black italic tracking-tight text-deep-grape">{(appt.service as any)?.name || 'Premium Service'}</h4>
+                            <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-widest">{(appt.customer as any)?.full_name} • ID: {appt.id.slice(0, 8)}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                            appt.status === 'confirmed' ? 'bg-green-500/10 text-green-600 border-green-500/20' : 
+                            appt.status === 'pending' ? 'bg-amber-500/10 text-amber-600 border-amber-500/20' :
+                            'bg-blue-500/10 text-blue-600 border-blue-500/20'
+                          }`}>
+                            {appt.status}
+                          </span>
+                          <button className="w-10 h-10 rounded-xl bg-warm-grey flex items-center justify-center text-deep-grape/40 hover:bg-naturals-purple hover:text-white transition-all">
+                            <ArrowRight className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    )) : (
+                      <div className="bg-white/50 border border-dashed border-black/10 rounded-[2.5rem] p-20 text-center">
+                        <Calendar className="w-12 h-12 text-deep-grape/5 mx-auto mb-4" />
+                        <p className="text-[10px] font-black text-deep-grape/20 uppercase tracking-[0.2em]">No active sessions in queue</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Operations Sidebar */}
+                <div className="lg:col-span-4 space-y-8">
+                  {/* Staff Deployment */}
+                  <div className="bg-white rounded-[2.5rem] p-8 border border-black/5 shadow-sm">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-[10px] font-black text-deep-grape/30 uppercase tracking-[0.3em]">Staff Deployment</h3>
+                      <UserCheck className="w-4 h-4 text-naturals-purple/40" />
+                    </div>
+                    <div className="space-y-4">
+                      {activeStaff.slice(0, 4).map(staff => (
+                        <div key={staff.id} className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-naturals-purple/10 flex items-center justify-center text-naturals-purple font-black text-[10px]">
+                              {staff.full_name[0]}
+                            </div>
+                            <span className="text-xs font-bold text-deep-grape">{staff.full_name}</span>
+                          </div>
+                          <div className="w-2 h-2 rounded-full bg-green-500" />
+                        </div>
+                      ))}
+                        <button 
+                          onClick={() => setShowDeploymentMap(true)}
+                          className="w-full py-3 bg-warm-grey rounded-xl text-[9px] font-black text-deep-grape/40 uppercase tracking-widest hover:bg-lavender hover:text-naturals-purple transition-all"
+                        >
+                          View Deployment Map
+                        </button>
+                    </div>
+                  </div>
+
+                  {/* Inventory Alerts */}
+                  <div className="bg-[#1A0B2E] text-white rounded-[2.5rem] p-8 shadow-xl shadow-indigo-900/20 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-8 opacity-[0.05]">
+                      <Zap className="w-24 h-24" />
+                    </div>
+                    <div className="relative z-10">
+                      <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">Critical Alerts</h3>
+                        <AlertTriangle className="w-4 h-4 text-amber-500" />
+                      </div>
+                      <div className="space-y-4">
+                        {inventoryAlerts.length > 0 ? inventoryAlerts.map(item => (
+                          <div key={item.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-tight">{item.product_name}</p>
+                              <p className="text-[8px] font-bold text-white/40 uppercase">Stock: {item.current_stock} {item.unit}</p>
+                            </div>
+                            <button className="p-2 bg-amber-500/20 text-amber-500 rounded-lg">
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )) : (
+                          <p className="text-[9px] font-bold text-white/30 italic text-center py-4">All logistics within threshold</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -341,6 +536,180 @@ export default function ProtocolAccreditation() {
                   </button>
                 </div>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* --- Deployment Map Modal --- */}
+      <AnimatePresence>
+        {showDeploymentMap && (
+          <motion.div 
+            className="fixed inset-0 z-[110] flex items-center justify-center p-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <div className="absolute inset-0 bg-[#0A0514]/80 backdrop-blur-xl" onClick={() => setShowDeploymentMap(false)} />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              className="relative z-10 w-full max-w-5xl bg-white rounded-[3rem] shadow-2xl border border-black/5 overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              <div className="p-8 border-b border-black/5 flex justify-between items-center bg-warm-grey/30">
+                <div>
+                  <h3 className="text-2xl font-black italic tracking-tighter text-deep-grape">Stylist Deployment Map</h3>
+                  <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-widest">Real-time personnel distribution • Regional Hub: Chennai South</p>
+                </div>
+                <button onClick={() => setShowDeploymentMap(false)} className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-black/5 flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-all">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-10 bg-warm-grey/10">
+                <div className="grid grid-cols-4 gap-8">
+                  {/* Map Legend */}
+                  <div className="col-span-4 flex gap-6 mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-naturals-purple shadow-[0_0_10px_rgba(142,62,150,0.5)]" />
+                      <span className="text-[9px] font-black uppercase tracking-widest text-deep-grape/40">Active Station</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-white border border-black/10" />
+                      <span className="text-[9px] font-black uppercase tracking-widest text-deep-grape/40">Available Zone</span>
+                    </div>
+                  </div>
+
+                  {/* Salon Grid Layout */}
+                  {['Zone A - Hair Artistry', 'Zone B - Skin Therapy', 'Zone C - Premium Spa', 'Zone D - Diagnostics'].map((zone, zIdx) => (
+                    <div key={zone} className="space-y-4">
+                      <div className="flex items-center gap-2 px-2">
+                        <MapPin className="w-3 h-3 text-naturals-purple" />
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-deep-grape/60">{zone}</h4>
+                      </div>
+                      <div className="grid gap-4">
+                        {[1, 2, 3].map(station => {
+                          const staff = activeStaff[zIdx * 3 + (station - 1)];
+                          const isOccupied = !!staff;
+                          return (
+                            <motion.div 
+                              key={station}
+                              whileHover={{ y: -5 }}
+                              className={`p-6 rounded-3xl border transition-all ${
+                                isOccupied ? 'bg-white border-naturals-purple shadow-lg shadow-naturals-purple/5' : 'bg-white/40 border-black/5 border-dashed'
+                              }`}
+                            >
+                              <div className="flex justify-between items-start mb-4">
+                                <span className="text-[8px] font-black text-deep-grape/20 uppercase tracking-widest">Station {zIdx + 1}-{station}</span>
+                                <div className={`w-1.5 h-1.5 rounded-full ${isOccupied ? 'bg-green-500 animate-pulse' : 'bg-black/10'}`} />
+                              </div>
+                              
+                              {isOccupied ? (
+                                <div className="space-y-3">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-naturals-purple text-white flex items-center justify-center font-black text-xs shadow-md">
+                                      {staff.full_name[0]}
+                                    </div>
+                                    <div>
+                                      <p className="text-xs font-black text-deep-grape">{staff.full_name}</p>
+                                      <p className="text-[8px] font-black text-naturals-purple uppercase tracking-widest">{staff.specialty || 'Stylist'}</p>
+                                    </div>
+                                  </div>
+                                  <div className="pt-3 border-t border-black/5">
+                                    <p className="text-[8px] font-black text-deep-grape/30 uppercase tracking-widest mb-1">Current Service</p>
+                                    <p className="text-[10px] font-bold text-deep-grape italic">Active Engagement</p>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="py-6 text-center">
+                                  <Plus className="w-5 h-5 text-deep-grape/5 mx-auto mb-2" />
+                                  <p className="text-[8px] font-black text-deep-grape/20 uppercase tracking-widest">Ready for Deployment</p>
+                                </div>
+                              )}
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="p-8 bg-white border-t border-black/5 flex justify-between items-center">
+                <div className="flex gap-4">
+                  <div className="px-6 py-3 bg-warm-grey rounded-2xl border border-black/5 flex flex-col gap-0.5">
+                    <span className="text-[8px] font-black text-deep-grape/30 uppercase tracking-widest">Occupancy Rate</span>
+                    <span className="text-lg font-black text-naturals-purple">{Math.round((activeStaff.length / 12) * 100)}%</span>
+                  </div>
+                  <div className="px-6 py-3 bg-warm-grey rounded-2xl border border-black/5 flex flex-col gap-0.5">
+                    <span className="text-[8px] font-black text-deep-grape/30 uppercase tracking-widest">Wait Time Avg</span>
+                    <span className="text-lg font-black text-deep-grape">12m</span>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <button 
+                    onClick={handleOptimizeDistribution}
+                    disabled={isOptimizing}
+                    className="px-8 py-4 bg-deep-grape text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-naturals-purple transition-all shadow-xl disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {isOptimizing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Cpu className="w-4 h-4" />}
+                    {isOptimizing ? 'Optimizing...' : 'Optimize Distribution'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Optimization Overlay */}
+              <AnimatePresence>
+                {isOptimizing && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 z-50 bg-[#0A0514]/90 backdrop-blur-2xl flex flex-col items-center justify-center p-12 text-center"
+                  >
+                    <div className="relative mb-12">
+                      <motion.div 
+                        className="w-32 h-32 rounded-full border-2 border-naturals-purple/30 flex items-center justify-center"
+                        animate={{ rotate: 360 }}
+                        transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+                      >
+                        <Cpu className="w-12 h-12 text-naturals-purple" />
+                      </motion.div>
+                      <motion.div 
+                        className="absolute inset-[-10px] rounded-full border border-naturals-purple/50 border-t-transparent"
+                        animate={{ rotate: -360 }}
+                        transition={{ repeat: Infinity, duration: 2.5, ease: "linear" }}
+                      />
+                    </div>
+
+                    <div className="space-y-6 w-full max-w-md">
+                      <div className="space-y-2">
+                        <h4 className="text-2xl font-black text-white italic tracking-tighter uppercase">Autonomous Optimization</h4>
+                        <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                          <motion.div 
+                            className="h-full bg-naturals-purple"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${optimizationProgress}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        {optimizationLog.map((log, idx) => (
+                          <motion.p 
+                            key={idx}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="text-[9px] font-black text-white/40 uppercase tracking-widest text-left"
+                          >
+                            <span className="text-naturals-purple mr-2">›</span> {log}
+                          </motion.p>
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           </motion.div>
         )}
