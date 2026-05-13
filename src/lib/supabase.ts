@@ -32,6 +32,7 @@ export interface User {
   full_name?: string
   gender?: Gender
   location?: string
+  profile_photo_url?: string
   is_active: boolean
   created_at: string
   updated_at: string
@@ -97,6 +98,7 @@ export interface Customer {
   preferred_branch_location?: string
   preferred_salon_id?: string
   notes?: string
+  profile_photo_url?: string
   is_active: boolean
   created_at: string
   updated_at: string

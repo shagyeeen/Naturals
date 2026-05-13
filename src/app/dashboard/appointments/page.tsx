@@ -24,6 +24,7 @@ import {
   Search
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { autoCompleteAppointments } from "@/modules/customer/booking/service";
 
 export default function AppointmentsPage() {
   const { profile, customerProfile, isStylist, isAdmin, loading: authLoading } = useAuth();
@@ -53,6 +54,13 @@ export default function AppointmentsPage() {
     
     try {
       setLoading(true);
+      
+      // Run maintenance to mark past sessions as completed
+      const userIdForMaintenance = isStylist ? profile?.id : customerProfile?.id;
+      if (userIdForMaintenance) {
+        await autoCompleteAppointments(userIdForMaintenance);
+      }
+
       let query = supabase
         .from('appointments')
         .select(`
@@ -140,23 +148,28 @@ export default function AppointmentsPage() {
     
     try {
       setIsSubmittingReview(true);
-      const { error } = await supabase
-        .from('appointments')
-        .update({ 
-          rating: reviewRating, 
-          feedback: reviewText 
+      
+      const response = await fetch('/api/feedbacks/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          appointmentId: selectedAppt.id,
+          customerId: customerProfile.id,
+          rating: reviewRating,
+          comment: reviewText
         })
-        .eq('id', selectedAppt.id);
+      });
 
-      if (error) throw error;
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to submit feedback");
       
       setReviewModalOpen(false);
       setReviewText("");
       setReviewRating(5);
       fetchAppointments();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error submitting review:", error);
-      alert("Failed to submit review. If database columns are missing, this might fail.");
+      alert(error.message || "Failed to submit review. Please try again.");
     } finally {
       setIsSubmittingReview(false);
     }
@@ -352,19 +365,19 @@ export default function AppointmentsPage() {
                           "{appt.feedback || "No comment provided."}"
                         </p>
                       </div>
-                    ) : null}
-                    
-                    <button 
-                      onClick={() => { 
-                        setSelectedAppt(appt); 
-                        setReviewRating(appt.rating || 5);
-                        setReviewText(appt.feedback || "");
-                        setReviewModalOpen(true); 
-                      }}
-                      className="w-full py-3 rounded-xl border-2 border-dashed border-naturals-purple/30 text-naturals-purple text-[10px] font-black uppercase tracking-widest hover:bg-naturals-purple/5 hover:border-naturals-purple transition-all flex items-center justify-center gap-2"
-                    >
-                      <MessageSquare className="w-3 h-3" /> {appt.rating ? "Edit Feedback" : "Leave Feedback"}
-                    </button>
+                    ) : (
+                      <button 
+                        onClick={() => { 
+                          setSelectedAppt(appt); 
+                          setReviewRating(5);
+                          setReviewText("");
+                          setReviewModalOpen(true); 
+                        }}
+                        className="w-full py-3 rounded-xl border-2 border-dashed border-naturals-purple/30 text-naturals-purple text-[10px] font-black uppercase tracking-widest hover:bg-naturals-purple/5 hover:border-naturals-purple transition-all flex items-center justify-center gap-2"
+                      >
+                        <MessageSquare className="w-3 h-3" /> Leave Feedback
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -378,14 +391,7 @@ export default function AppointmentsPage() {
                       {cancellingId === appt.id ? "CANCELLING..." : "Cancel"}
                     </button>
                   )}
-                  {appt.status === 'completed' || appt.status === 'cancelled' ? (
-                    <button 
-                      onClick={() => handleRebook(appt)}
-                      className="flex-1 py-3 bg-naturals-purple text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:scale-105 transition-transform flex items-center justify-center gap-2 shadow-lg shadow-naturals-purple/20"
-                    >
-                      <RefreshCw className="w-3 h-3" /> Rebook
-                    </button>
-                  ) : (
+                  {appt.status !== 'completed' && appt.status !== 'cancelled' && (
                     <button 
                       onClick={() => {
                         setSelectedAppt(appt);
@@ -568,23 +574,30 @@ export default function AppointmentsPage() {
                 <div className="bg-warm-grey/30 p-6 rounded-[2rem] border border-black/5">
                   <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-[0.2em] mb-4">Included Services</p>
                   <div className="space-y-3">
-                    {selectedAppt.appointment_services?.map((as, i) => (
-                      <div key={i} className="flex justify-between items-center p-4 bg-white rounded-2xl border border-black/5 shadow-sm group/item hover:border-naturals-purple/20 transition-all">
-                        <div>
-                          <p className="text-xs font-black text-deep-grape italic uppercase tracking-tight">{as.service.name}</p>
-                          <p className="text-[8px] font-black text-deep-grape/20 uppercase tracking-[0.2em]">{as.service.category}</p>
+                    {(selectedAppt.appointment_services && selectedAppt.appointment_services.length > 0)
+                      ? selectedAppt.appointment_services.map((as, i) => (
+                        <div key={i} className="flex justify-between items-center p-4 bg-white rounded-2xl border border-black/5 shadow-sm group/item hover:border-naturals-purple/20 transition-all">
+                          <div>
+                            <p className="text-xs font-black text-deep-grape italic uppercase tracking-tight">{as.service.name}</p>
+                            <p className="text-[8px] font-black text-deep-grape/20 uppercase tracking-[0.2em]">{as.service.category}</p>
+                          </div>
+                          <p className="text-xs font-black text-naturals-purple tracking-tighter">₹{as.service.price}</p>
                         </div>
-                        <p className="text-xs font-black text-naturals-purple tracking-tighter">₹{as.service.price}</p>
-                      </div>
-                    )) || (
-                      <div className="flex justify-between items-center p-6 bg-white rounded-3xl border border-black/5 shadow-sm">
-                        <div>
-                          <p className="text-sm font-black text-deep-grape italic uppercase tracking-tight">{selectedAppt.service?.name}</p>
-                          <p className="text-[9px] font-black text-deep-grape/20 uppercase tracking-[0.2em]">{selectedAppt.service?.category || 'Service'}</p>
-                        </div>
-                        <p className="text-sm font-black text-naturals-purple tracking-tighter">₹{selectedAppt.service?.price}</p>
-                      </div>
-                    )}
+                      ))
+                      : selectedAppt.service
+                        ? (
+                          <div className="flex justify-between items-center p-6 bg-white rounded-3xl border border-black/5 shadow-sm">
+                            <div>
+                              <p className="text-sm font-black text-deep-grape italic uppercase tracking-tight">{selectedAppt.service.name}</p>
+                              <p className="text-[9px] font-black text-deep-grape/20 uppercase tracking-[0.2em]">{selectedAppt.service.category || 'Service'}</p>
+                            </div>
+                            <p className="text-sm font-black text-naturals-purple tracking-tighter">₹{selectedAppt.service.price}</p>
+                          </div>
+                        )
+                        : (
+                          <p className="text-xs text-deep-grape/30 font-bold italic text-center py-4">No service details available</p>
+                        )
+                    }
                   </div>
                 </div>
 

@@ -25,13 +25,24 @@ import { getServices } from "@/modules/franchise_owner/services/dao";
 import { getAllActiveOffers } from "@/modules/franchise_owner/offers/dao";
 import type { Service, Offer } from "@/lib/supabase";
 
+import { useAuth } from "@/lib/auth";
+import { useRouter } from "next/navigation";
+
 export default function LandingPage() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [services, setServices] = useState<Service[]>([]);
   const [offers, setOffers] = useState<(Offer & { service?: { name: string } })[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>("Hair");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewingService, setViewingService] = useState<Service | null>(null);
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace('/dashboard');
+    }
+  }, [user, authLoading, router]);
 
   useEffect(() => {
     async function loadData() {
@@ -130,7 +141,7 @@ export default function LandingPage() {
             <div className="flex flex-col md:flex-row justify-between items-center gap-8">
               <div>
                 <h2 className="text-4xl md:text-6xl font-black italic text-deep-grape mb-4 tracking-tighter">Services Offered</h2>
-                <p className="text-xs font-black uppercase tracking-[0.3em] text-deep-grape/40">Select a category to explore our protocols</p>
+                <p className="text-xs font-black uppercase tracking-[0.3em] text-deep-grape/40">Select a category to explore our services</p>
               </div>
               <div className="relative w-full max-w-md">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-deep-grape/20" />
@@ -253,7 +264,7 @@ export default function LandingPage() {
               )}
               {searchQuery.length > 0 && services.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.category?.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
                  <div className="col-span-full py-20 text-center">
-                    <p className="text-xs font-black uppercase tracking-[0.4em] text-deep-grape/20">No matching protocols found for &quot;{searchQuery}&quot;</p>
+                    <p className="text-xs font-black uppercase tracking-[0.4em] text-deep-grape/20">No matching services found for &quot;{searchQuery}&quot;</p>
                  </div>
               )}
             </div>
@@ -307,7 +318,7 @@ export default function LandingPage() {
                        }`}>
                          {viewingService.category}
                        </div>
-                       <span className="text-[10px] font-black text-deep-grape/20 uppercase tracking-[0.4em]">• AI Protocol</span>
+                       <span className="text-[10px] font-black text-deep-grape/20 uppercase tracking-[0.4em]">• AI Analysis</span>
                    </div>
 
                    <h2 className="text-4xl md:text-5xl font-black italic text-deep-grape mb-8 tracking-tight leading-none">
@@ -332,7 +343,7 @@ export default function LandingPage() {
                    </div>
 
                    <div className="mb-12">
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-deep-grape/40 mb-4 italic">Protocol Intelligence</h4>
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-deep-grape/40 mb-4 italic">About Service</h4>
                       <p className="text-sm font-bold text-deep-grape/60 leading-relaxed italic">
                         {viewingService.description || "Experience the pinnacle of salon precision. This professional service is designed by Naturals AI specialists to deliver optimal aesthetic results tailored to your unique features."}
                       </p>
@@ -401,14 +412,14 @@ function HeroCarousel() {
     {
       image: "/offers/hair.png",
       title: "AI HAIR\nTRANSFORMATION",
-      desc: "Experience the pinnacle of hair precision with our AI-driven scalp analysis and deep restoration protocols.",
+      desc: "Experience the pinnacle of hair precision with our AI-driven scalp analysis and restoration styles.",
       badge: "₹500 OFF",
       theme: "from-deep-grape/95",
       btnColor: "bg-naturals-purple"
     },
     {
       image: "/offers/skin.png",
-      title: "ELITE RADIANCE\nPROTOCOL",
+      title: "ELITE RADIANCE\nTREATMENT",
       desc: "Our premium AI-mapped facial therapy designed for immediate luminosity and cellular skin health.",
       badge: "30% DISCOUNT",
       theme: "from-orange-950/95",

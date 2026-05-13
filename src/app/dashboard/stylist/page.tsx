@@ -42,7 +42,7 @@ export default function StylistCopilot() {
       <div className="flex justify-between items-start">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-naturals-purple/10 text-naturals-purple text-[10px] font-black uppercase tracking-[0.2em] mb-4 border border-naturals-purple/20">
-            <Calendar className="w-3 h-3" /> Protocol 01: Active Operations Stream
+            <Calendar className="w-3 h-3" /> Daily Operations
           </div>
           <h1 className="text-3xl font-black text-deep-grape mb-2 flex items-center gap-3 italic tracking-tighter">
             Personnel Duty Roster
@@ -54,7 +54,7 @@ export default function StylistCopilot() {
           <div className="bg-naturals-purple/10 border border-naturals-purple/20 rounded-2xl p-4 flex items-center gap-4 animate-pulse">
             <div className="w-3 h-3 rounded-full bg-naturals-purple animate-ping" />
             <div className="text-[10px] font-black uppercase tracking-widest text-naturals-purple">
-              Protocol Execution in Progress
+              Service in Progress
             </div>
           </div>
         )}
@@ -85,7 +85,7 @@ export default function StylistCopilot() {
                     )}
                     <div className="flex justify-between items-start mb-6">
                       <div>
-                        <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-[0.2em] mb-1">Upcoming Protocol</p>
+                        <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-[0.2em] mb-1">Next Service</p>
                         <h4 className="font-black text-lg text-deep-grape italic leading-tight">{appt.service?.name || "Premium Procedure"}</h4>
                       </div>
                       {!isActive && <span className="px-3 py-1 bg-naturals-purple/10 text-naturals-purple text-[9px] font-black rounded-lg uppercase tracking-widest">CONFIRMED</span>}

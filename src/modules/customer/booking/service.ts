@@ -1,7 +1,25 @@
 import { getActiveAppointments, createAppointment, cancelAppointment } from './dao'
+import { supabase } from '@/lib/supabase'
 import type { Appointment } from '@/lib/supabase'
 
+export const autoCompleteAppointments = async (customerId: string) => {
+  if (!customerId) return;
+  
+  try {
+    await fetch('/api/appointments/maintenance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: customerId })
+    });
+  } catch (err) {
+    console.error("[Maintenance] Auto-complete trigger failed:", err);
+  }
+}
+
 export const fetchUpcomingBookings = async (customerId: string) => {
+  // Run maintenance before fetching
+  await autoCompleteAppointments(customerId);
+  
   const { data, error } = await getActiveAppointments(customerId)
   if (error) throw new Error(error.message)
   return data

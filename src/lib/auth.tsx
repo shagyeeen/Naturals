@@ -72,11 +72,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { userData, customerData } = fullData;
 
       if (userData) {
+        // Sync Google Profile Image to User record if missing
+        if (!userData.profile_photo_url && authUser.photoURL) {
+          await supabase.from('users').update({ profile_photo_url: authUser.photoURL }).eq('id', userData.id);
+          userData.profile_photo_url = authUser.photoURL;
+        }
         setProfile(userData);
+
         if (customerData) {
-          // Sync Google Profile Image if the customer doesn't have one
+          // Sync Google Profile Image to Customer record if missing
           if (!customerData.profile_photo_url && authUser.photoURL) {
             await supabase.from('customers').update({ profile_photo_url: authUser.photoURL }).eq('id', customerData.id);
+            customerData.profile_photo_url = authUser.photoURL;
           }
           setCustomerProfile(customerData);
         } else {

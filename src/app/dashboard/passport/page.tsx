@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/lib/auth";
 import { usePreferences } from "@/modules/customer/preferences/hooks";
 import { searchCustomer } from "@/modules/admin/customers/service";
-import { User, Activity, Calendar, Award, Droplets, Sun, Sparkles, Map as MapIcon, Leaf, Search, ShieldCheck, Edit2, Loader2, Check } from "lucide-react";
+import { User, Activity, Calendar, Award, Sparkles, Search, ShieldCheck, Edit2, Loader2, Check } from "lucide-react";
 
 interface Question {
   id: string;
@@ -15,13 +15,18 @@ interface Question {
 }
 
 const questionnaireData: Question[] = [
+  { id: 'hair_wash_preference', question: 'Hair Wash Preference', options: ['Before SPA', 'After SPA', 'Both'] },
+  { id: 'water_temp', question: 'Water Temperature', options: ['Cold', 'Lukewarm', 'Warm'] },
+  { id: 'scalp_massage', question: 'Scalp Massage', options: ['Soft', 'Medium', 'Strong', 'None'] },
   { id: 'conversation', question: 'Conversation Level', options: ['Quiet Professional', 'Friendly Chat', 'Social/Engaging'] },
+  { id: 'hairstyle_female', question: 'Preferred Style (Women)', options: ['Layered Cut', 'Bob', 'Pixie', 'Curls', 'Straight', 'Waves'], gender: ['female'] },
+  { id: 'hairstyle_male', question: 'Preferred Style (Men)', options: ['Crew Cut', 'Undercut', 'Fade', 'Pompadour', 'Spiky', 'Long'], gender: ['male'] },
   { id: 'beverage', question: 'Beverage Preference', options: ['Coffee', 'Green Tea', 'Water', 'None'] },
   { id: 'reading', question: 'Reading Material', options: ['Fashion', 'News', 'Entertainment', 'None'] }
 ];
 
 export default function BeautyPassport() {
-  const { profile, customerProfile } = useAuth();
+  const { user, profile, customerProfile } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(customerProfile);
@@ -44,11 +49,13 @@ export default function BeautyPassport() {
     ? draft
     : {
         hair_wash_preference:  dbPrefs?.hairwash_preference || '',
-        hairstyle_male:        (dbPrefs?.preferred_hairstyle && (selectedCustomer?.gender === 'male' || profile?.gender === 'male' || customerProfile?.gender === 'male')) ? [dbPrefs.preferred_hairstyle] : [],
-        hairstyle_female:      (dbPrefs?.preferred_hairstyle && (selectedCustomer?.gender === 'female' || profile?.gender === 'female' || customerProfile?.gender === 'female')) ? [dbPrefs.preferred_hairstyle] : [],
         water_temp:            dbPrefs?.water_temperature || '',
         scalp_massage:         dbPrefs?.scalp_massage_intensity || '',
         conversation:          dbPrefs?.conversation_level || '',
+        hairstyle_female:      (dbPrefs?.preferred_hairstyle && (selectedCustomer?.gender === 'female' || profile?.gender === 'female' || customerProfile?.gender === 'female')) ? [dbPrefs.preferred_hairstyle] : [],
+        hairstyle_male:        (dbPrefs?.preferred_hairstyle && (selectedCustomer?.gender === 'male' || profile?.gender === 'male' || customerProfile?.gender === 'male')) ? [dbPrefs.preferred_hairstyle] : [],
+        beverage:              dbPrefs?.special_instructions ? JSON.parse(dbPrefs.special_instructions).beverage : '',
+        reading:               dbPrefs?.special_instructions ? JSON.parse(dbPrefs.special_instructions).reading : '',
       };
 
   const handleEditStart = () => {
@@ -62,10 +69,11 @@ export default function BeautyPassport() {
       const extractSingle = (val: string | string[] | undefined) => Array.isArray(val) ? val[0] : val;
       
       await savePrefs({
-        hairwash_preference: dbPrefs?.hairwash_preference || 'Both',
-        water_temperature: dbPrefs?.water_temperature || 'Lukewarm',
-        scalp_massage_intensity: dbPrefs?.scalp_massage_intensity || 'None',
-        conversation_level:      (extractSingle(draft.conversation) as 'Quiet Professional' | 'Friendly Chat' | 'Social/Engaging') || 'Quiet Professional',
+        hairwash_preference:     (extractSingle(draft.hair_wash_preference) as any) || 'Both',
+        water_temperature:       (extractSingle(draft.water_temp) as any) || 'Lukewarm',
+        scalp_massage_intensity: (extractSingle(draft.scalp_massage) as any) || 'None',
+        conversation_level:      (extractSingle(draft.conversation) as any) || 'Quiet Professional',
+        preferred_hairstyle:     extractSingle(draft.hairstyle_female) || extractSingle(draft.hairstyle_male),
         special_instructions: JSON.stringify({
           beverage: extractSingle(draft.beverage),
           reading: extractSingle(draft.reading)
@@ -123,13 +131,18 @@ export default function BeautyPassport() {
         <div className="flex flex-col gap-6">
           <div className="glass-card p-10 flex flex-col items-center text-center relative overflow-hidden border border-black/5 bg-white">
              <div className="absolute top-0 right-0 left-0 h-32 bg-warm-grey" />
-             <div className="w-32 h-32 rounded-3xl border-8 border-white shadow-2xl relative z-10 overflow-hidden bg-white mt-12 mb-6 transform rotate-3 flex items-center justify-center">
-               {customerProfile?.profile_photo_url || profile?.profile_photo_url ? (
-                 <img src={customerProfile?.profile_photo_url || profile?.profile_photo_url} alt="Profile" className="w-full h-full object-cover" />
-               ) : (
-                 <User className="w-12 h-12 text-naturals-purple/20" />
-               )}
-             </div>
+              <div className="w-32 h-32 rounded-3xl border-8 border-white shadow-2xl relative z-10 overflow-hidden bg-white mt-12 mb-6 transform rotate-3 flex items-center justify-center">
+                {customerProfile?.profile_photo_url || profile?.profile_photo_url || user?.photoURL ? (
+                  <img 
+                    src={customerProfile?.profile_photo_url || profile?.profile_photo_url || user?.photoURL} 
+                    alt="Profile" 
+                    className="w-full h-full object-cover" 
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <User className="w-12 h-12 text-naturals-purple/20" />
+                )}
+              </div>
              <h2 className="text-2xl font-black text-deep-grape italic tracking-tighter">{selectedCustomer?.full_name || profile?.full_name || "Guest User"}</h2>
               <p className="text-[10px] font-black text-naturals-purple uppercase tracking-[0.3em] mb-10 flex gap-2 items-center justify-center">
                 <Award className="w-4 h-4" /> {selectedCustomer?.is_premium ? "Premium Member" : "Registered Client"}
@@ -147,23 +160,6 @@ export default function BeautyPassport() {
               </div>
           </div>
 
-          <div className="glass-card p-10 border border-black/5 bg-white">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-deep-grape/30 mb-8 flex items-center gap-3"><MapIcon className="w-4 h-4 opacity-50" /> Environment Calibration</h3>
-            <div className="space-y-6">
-              <div className="flex justify-between items-center border-b border-black/5 pb-4">
-                <span className="text-[9px] font-black uppercase tracking-widest text-deep-grape/40 flex gap-3 items-center"><Sun className="w-4 h-4" /> Climate Exposure</span>
-                <span className="text-[10px] font-black text-orange-600 uppercase">Critical Humidity</span>
-              </div>
-              <div className="flex justify-between items-center border-b border-black/5 pb-4">
-                <span className="text-[9px] font-black uppercase tracking-widest text-deep-grape/40 flex gap-3 items-center"><Droplets className="w-4 h-4" /> Resource Quality</span>
-                <span className="text-[10px] font-black text-red-500 uppercase">Hard Water (Node: MAA)</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-[9px] font-black uppercase tracking-widest text-deep-grape/40 flex gap-3 items-center"><Leaf className="w-4 h-4" /> Behavioral Activity</span>
-                <span className="text-[10px] font-black text-green-600 uppercase">High Frequency Maintenance</span>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Center/Right Container: Service Preferences */}

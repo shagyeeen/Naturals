@@ -99,7 +99,7 @@ function CustomerLoginForm() {
         if (needsOnboarding) {
           router.push('/dashboard/onboarding');
         } else {
-          router.push('/dashboard/passport');
+          router.push('/dashboard');
         }
       }
     }

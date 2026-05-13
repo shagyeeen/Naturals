@@ -71,14 +71,29 @@ export default function NeuralAssistantPage() {
   const userName = profile?.full_name || customerProfile?.full_name || user?.email?.split('@')[0] || "Guest";
   const chatContainerRef = useRef<HTMLDivElement>(null);
   
-  const [messages, setMessages] = useState([
-    { role: "bot", text: `Welcome back, ${userName}! I've retrieved your profile and styling details. How can I assist you with your beauty journey today?` }
-  ]);
+  const [messages, setMessages] = useState<any[]>([]);
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [speakingIdx, setSpeakingIdx] = useState<number | null>(null);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
+
+  // Initial loading delay and welcome message
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const welcomeText = `Welcome back, ${userName}! I've retrieved your profile and styling details. How can I assist you with your beauty journey today?`;
+      setIsInitialLoading(false);
+      setMessages([{ role: "bot", text: welcomeText }]);
+      
+      // Delay speech slightly to ensure voices are loaded
+      setTimeout(() => {
+        handleSpeak(welcomeText, 0);
+      }, 500);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [userName]);
 
   // Initialize Speech Recognition once on mount
   useEffect(() => {
@@ -174,8 +189,13 @@ export default function NeuralAssistantPage() {
     // Cancel previous speech before starting new one to avoid overlap
     stopSpeech();
 
-    // Clean markdown for better speech
-    const cleanText = text.replace(/[#*`_~]/g, '');
+    // Clean markdown and minimize sentence pauses for a more continuous flow
+    const cleanText = text
+      .replace(/[#*`_~]/g, '')
+      .replace(/\.(?=\s|$)/g, ' ') // Replace periods followed by space/end with space to reduce pause
+      .replace(/\n+/g, ' ')        // Replace newlines with spaces
+      .trim();
+
     const utterance = new SpeechSynthesisUtterance(cleanText);
     
     // Set voice to English by default
@@ -185,6 +205,8 @@ export default function NeuralAssistantPage() {
       utterance.voice = englishVoice;
     }
     utterance.lang = 'en-US';
+    utterance.rate = 1.5; // Significantly faster for high-speed delivery
+    utterance.pitch = 1.1; // Slightly higher pitch for clarity at high speed
 
     // Handle end/error to update UI state
     utterance.onend = () => setSpeakingIdx(null);
@@ -303,10 +325,24 @@ export default function NeuralAssistantPage() {
             <div className="absolute top-0 right-0 w-96 h-96 bg-naturals-purple/10 blur-[80px] rounded-full pointer-events-none" />
          </div>
 
-         <div 
+          <div 
           ref={chatContainerRef}
-          className="flex-1 overflow-y-auto p-2 md:p-3 space-y-2 bg-[#fafafa] scroll-smooth custom-scrollbar"
+          className="flex-1 overflow-y-auto p-2 md:p-3 space-y-2 bg-[#fafafa] scroll-smooth custom-scrollbar relative"
          >
+            {isInitialLoading && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm z-20">
+                <div className="flex flex-col items-center gap-6">
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-full border-4 border-naturals-purple/10 border-t-naturals-purple animate-spin" />
+                    <Bot className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-6 h-6 text-naturals-purple" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-naturals-purple animate-pulse">Initializing Intelligence</p>
+                    <p className="text-[8px] font-black uppercase tracking-[0.1em] text-deep-grape/30 mt-1">Naturals AI v2.0</p>
+                  </div>
+                </div>
+              </div>
+            )}
             <AnimatePresence>
               {messages.map((msg, idx) => (
                 <motion.div 

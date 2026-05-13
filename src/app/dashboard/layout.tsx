@@ -25,20 +25,25 @@ import {
   CalendarCheck,
   Star,
   MapPin,
-  ChevronDown
+  ChevronDown,
+  X,
+  Search,
+  MessageSquareQuote
 } from "lucide-react";
 import { Tooltip } from "@/components/Tooltip";
 import Image from "next/image";
 
 const sidebarLinks = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["admin", "manager", "franchise_owner", "stylist", "customer"] },
+  { name: "AI Assistance", href: "/dashboard/assistant", icon: Bot, roles: ["admin", "manager", "franchise_owner", "stylist", "customer"] },
   { name: "Book Appointment", href: "/dashboard/booking", icon: Calendar, roles: ["customer"] },
   { name: "Schedule Meeting", href: "/dashboard/meeting", icon: CalendarCheck, roles: ["customer"] },
+  { name: "Raise Query", href: "/dashboard/queries", icon: Activity, roles: ["admin", "manager", "franchise_owner", "stylist", "customer"] },
   { name: "My Appointment", href: "/dashboard/appointments", icon: History, roles: ["customer"] },
-  { name: "Meeting Requests", href: "/dashboard/meeting-requests", icon: CalendarCheck, roles: ["admin", "manager", "franchise_owner", "stylist"] },
-  { name: "AI Assistance", href: "/dashboard/assistant", icon: Bot, roles: ["admin", "manager", "franchise_owner", "stylist", "customer"] },
   { name: "Beauty Passport", href: "/dashboard/passport", icon: Target, roles: ["customer"] },
+  { name: "Meeting Requests", href: "/dashboard/meeting-requests", icon: CalendarCheck, roles: ["admin", "manager", "franchise_owner", "stylist"] },
   { name: "SOP Audit", href: "/dashboard/sop", icon: ShieldCheck, roles: ["admin", "manager"] },
+  { name: "Feedbacks", href: "/dashboard/feedbacks", icon: MessageSquareQuote, roles: ["admin", "franchise_owner"] },
   { name: "Appointments", href: "/dashboard/appointments", icon: CalendarCheck, roles: ["stylist", "admin"] },
   { name: "Trend Engine", href: "/dashboard/trends", icon: LineChart, roles: ["admin", "manager"] },
   { name: "Academy", href: "/dashboard/academy", icon: BookOpen, roles: ["admin"] },
@@ -91,17 +96,43 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [userRole, customerProfile]);
 
   useEffect(() => {
-    const generateNotifications = () => {
+    const generateNotifications = async () => {
       const notes = [
         { id: 1, title: 'System Status', message: 'All AI Modules Online • Adyar Branch Synchronized', time: 'Just now', type: 'system' },
         { id: 2, title: 'Welcome', message: 'Welcome to the new Naturals AI Experience!', time: '2h ago', type: 'info' }
       ];
+      // Fetch resolved queries for notifications via secure API
+      if (userRole === 'customer' && profile?.id) {
+        try {
+          const res = await fetch(`/api/support/queries?userId=${profile.id}`);
+          if (res.ok) {
+            const queryData = await res.json();
+            const resolvedQueries = Array.isArray(queryData) 
+              ? queryData.filter((q: any) => q.status === 'resolved')
+              : [];
 
-      if (upcomingCount > 0) {
-        notes.unshift({ id: 3, title: 'Appointment Reminder', message: `You have ${upcomingCount} confirmed appointment(s) scheduled.`, time: 'Recently', type: 'alert' });
+            if (resolvedQueries.length > 0) {
+              resolvedQueries.forEach((q: any) => {
+                notes.unshift({ 
+                  id: `q-${q.id}`, 
+                  title: 'Query Resolved', 
+                  message: q.admin_notes 
+                    ? `Your query "${q.subject}" has a response: ${q.admin_notes}` 
+                    : `Your query "${q.subject}" has been marked as resolved.`, 
+                  time: 'Recently', 
+                  type: 'info' 
+                });
+              });
+            }
+          }
+        } catch (e) {
+          console.error("Failed to fetch notifications:", e);
+        }
       }
 
-      setNotifications(notes);
+      const dismissed = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('dismissed_notifications') || '[]') : [];
+      const filteredNotes = notes.filter(n => !dismissed.includes(n.id.toString()));
+      setNotifications(filteredNotes);
     };
 
     if (!loading && user) {
@@ -182,7 +213,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   };
 
-  const filteredLinks = sidebarLinks.filter(link => {
+  const isSupportStaff = isAdmin || userRole === 'franchise_owner' || userRole === 'manager';
+
+  const filteredLinks = sidebarLinks.map(link => {
+    if (link.href === "/dashboard/queries") {
+      return { ...link, name: isSupportStaff ? "Queries" : "Raise Query" };
+    }
+    return link;
+  }).filter(link => {
     if (userRole === "customer" && !customerProfile) return false;
     if (needsOnboarding) return false;
     return link.roles.includes(userRole) || (isAdmin && link.roles.includes("admin"));
@@ -375,10 +413,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     {notifications.length > 0 ? notifications.map((note) => (
                       <div key={note.id} className="p-4 rounded-2xl bg-warm-grey/30 hover:bg-naturals-purple/5 transition-all group cursor-default">
                         <div className="flex justify-between items-start mb-1">
-                          <h4 className="text-[11px] font-black text-deep-grape group-hover:text-naturals-purple transition-colors italic">{note.title}</h4>
-                          <span className="text-[8px] font-black text-deep-grape/30 uppercase">{note.time}</span>
+                          <div className="flex-1 pr-2">
+                            <h4 className="text-[11px] font-black text-deep-grape group-hover:text-naturals-purple transition-colors italic">{note.title}</h4>
+                            <p className="text-[10px] font-bold text-deep-grape/60 leading-relaxed">{note.message}</p>
+                          </div>
+                          <div className="flex flex-col items-end gap-2">
+                            <span className="text-[8px] font-black text-deep-grape/30 uppercase">{note.time}</span>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const id = note.id.toString();
+                                const dismissed = JSON.parse(localStorage.getItem('dismissed_notifications') || '[]');
+                                if (!dismissed.includes(id)) {
+                                  dismissed.push(id);
+                                  localStorage.setItem('dismissed_notifications', JSON.stringify(dismissed));
+                                }
+                                setNotifications(prev => prev.filter(n => n.id !== note.id));
+                              }}
+                              className="p-1 rounded-md hover:bg-red-50 text-deep-grape/20 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
                         </div>
-                        <p className="text-[10px] font-bold text-deep-grape/60 leading-relaxed">{note.message}</p>
                       </div>
                     )) : (
                       <div className="py-12 text-center">
@@ -387,13 +444,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       </div>
                     )}
                   </div>
-                  
-                  <button 
-                    onClick={() => setNotificationsOpen(false)}
-                    className="w-full mt-6 py-3 text-[10px] font-black uppercase tracking-widest text-deep-grape/40 hover:text-naturals-purple transition-all border-t border-black/5 pt-6"
-                  >
-                    Dismiss All
-                  </button>
                 </div>
               )}
               <div className="flex items-center gap-4 pl-6 border-l border-black/5">

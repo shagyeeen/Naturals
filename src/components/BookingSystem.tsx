@@ -146,7 +146,7 @@ export default function BookingPage() {
     } else {
       if (error) console.error('Scheduling Intelligence Error:', error);
       // Professional Fallback: Generate standard slots from 10 AM to 7 PM
-      console.log('Scheduling through standard availability protocol...');
+      console.log('Scheduling through standard booking system...');
       const fallbackSlots: TimeSlot[] = [];
       for (let h = 10; h < 19; h++) {
         const hour = h.toString().padStart(2, '0');
@@ -502,7 +502,7 @@ export default function BookingPage() {
             <p className="text-xs font-black uppercase tracking-widest text-deep-grape/40 italic">
               Specialist Fully Booked or Duration Too Long for Available Windows
             </p>
-            <p className="text-[10px] text-deep-grape/20 mt-2">Try another date or specialist for this protocol.</p>
+            <p className="text-[10px] text-deep-grape/20 mt-2">Try another date or specialist for this service.</p>
           </div>
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
@@ -652,7 +652,7 @@ export default function BookingPage() {
               <span className="font-bold text-deep-grape">{selectedStylist.full_name}</span>
             </div>
             <div className="flex justify-between py-2 border-b border-black/5">
-              <span className="text-deep-grape/60 text-sm italic">Protocol Selections</span>
+              <span className="text-deep-grape/60 text-sm italic">Your Selection</span>
               <div className="text-right">
                 {selectedServices.map(s => (
                   <p key={s.id} className="font-bold text-deep-grape text-xs">{s.name}</p>

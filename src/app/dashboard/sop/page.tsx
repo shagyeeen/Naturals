@@ -34,7 +34,8 @@ import {
   Scissors,
   UserCheck,
   Heart,
-  Sparkles
+  Sparkles,
+  Star
 } from "lucide-react";
 
 export default function ProtocolAccreditation() {
@@ -121,10 +122,10 @@ export default function ProtocolAccreditation() {
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative z-10">
                     <div className="space-y-3">
                       <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-naturals-purple/5 text-naturals-purple text-[10px] font-black uppercase tracking-[0.2em] border border-naturals-purple/10">
-                        <ShieldCheck className="w-3.5 h-3.5" /> Protocol 08: Strategic Advancement
+                        <ShieldCheck className="w-3.5 h-3.5" /> Service Standards
                       </div>
                       <h1 className="text-4xl md:text-5xl font-black text-deep-grape tracking-tighter italic leading-none">
-                        Professional Protocol Accreditation
+                        Professional Quality Audit
                       </h1>
                       <p className="text-deep-grape/40 font-bold uppercase tracking-widest text-xs max-w-2xl leading-relaxed">
                         Advanced personnel benchmarking and autonomous skill assessment for regional franchise operational parity.
@@ -174,7 +175,7 @@ export default function ProtocolAccreditation() {
                     <TaskItem 
                       status="locked"
                       title="Cranial Symmetry & Volumetric Mapping"
-                      subtitle="Unlock L3 Advanced status to access precision morphology protocols."
+                      subtitle="Unlock L3 Advanced status to access precision style standards."
                       actionLabel="LOCKED"
                     />
                   </div>
@@ -190,7 +191,7 @@ export default function ProtocolAccreditation() {
                       <BadgeCard icon={Scissors} label="Precision Cutting" active={activeBadge === "cutting"} onClick={() => setActiveBadge("cutting")} />
                       <BadgeCard icon={Shield} label="SOP Auditor" active={activeBadge === "sop"} onClick={() => setActiveBadge("sop")} />
                       <BadgeCard icon={Heart} label="CX Optimization" active={activeBadge === "cx"} onClick={() => setActiveBadge("cx")} />
-                      <BadgeCard icon={Sparkles} label="Sterility Protocols" active={activeBadge === "sterility"} onClick={() => setActiveBadge("sterility")} />
+                      <BadgeCard icon={Sparkles} label="Hygiene Standards" active={activeBadge === "sterility"} onClick={() => setActiveBadge("sterility")} />
                     </div>
 
                     <div className="mt-8 p-6 bg-black/[0.02] border border-black/[0.03] rounded-3xl">
