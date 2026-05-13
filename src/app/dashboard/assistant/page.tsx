@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Activity, Bot, Send, Sparkles, Wand2, ShieldCheck, Zap, Volume2, Square, Mic, MicOff, RotateCcw } from "lucide-react";
+import { Activity, Bot, Send, Sparkles, Wand2, ShieldCheck, Zap, Volume2, Square, Mic, MicOff, RotateCcw, AlertCircle } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -80,9 +81,30 @@ export default function NeuralAssistantPage() {
   const recognitionRef = useRef<any>(null);
 
   // Initial loading delay and welcome message
-  useEffect(() => {
+  const startAssistant = async () => {
+    setIsInitialLoading(true);
+    setMessages([]);
+    stopSpeech();
+    
+    // Check for skipped appointments to provide reassurance
+    let skipMessage = "";
+    if (customerProfile?.id) {
+      const { data: skippedAppts } = await supabase
+        .from('appointments')
+        .select('*, service:service_id(name)')
+        .eq('customer_id', customerProfile.id)
+        .eq('status', 'skipped')
+        .limit(1);
+      
+      if (skippedAppts && skippedAppts.length > 0) {
+        const appt = skippedAppts[0];
+        skipMessage = ` I noticed your ${appt.service?.name} session was skipped recently. Don't worry! Our administrator is already working on reassigning a new top-tier stylist for you. You'll receive a notification as soon as it's confirmed.`;
+      }
+    }
+
+    const welcomeText = `Welcome back, ${userName}! I've retrieved your profile and styling details.${skipMessage || " How can I assist you with your beauty journey today?"}`;
+    
     const timer = setTimeout(() => {
-      const welcomeText = `Welcome back, ${userName}! I've retrieved your profile and styling details. How can I assist you with your beauty journey today?`;
       setIsInitialLoading(false);
       setMessages([{ role: "bot", text: welcomeText }]);
       
@@ -92,7 +114,18 @@ export default function NeuralAssistantPage() {
       }, 500);
     }, 2000);
 
-    return () => clearTimeout(timer);
+    return timer;
+  };
+
+  useEffect(() => {
+    let currentTimer: any = null;
+    const runStart = async () => {
+      currentTimer = await startAssistant();
+    };
+    runStart();
+    return () => {
+      if (currentTimer) clearTimeout(currentTimer);
+    };
   }, [userName]);
 
   // Initialize Speech Recognition once on mount
@@ -314,10 +347,7 @@ export default function NeuralAssistantPage() {
             </div>
             
             <div className="hidden sm:flex gap-4 relative z-10">
-               <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-colors cursor-pointer">
-                  <ShieldCheck className="w-5 h-5" />
-               </div>
-               <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-colors cursor-pointer" onClick={() => { setMessages([messages[0]]); stopSpeech(); }}>
+               <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-colors cursor-pointer" onClick={() => startAssistant()}>
                   <RotateCcw className="w-5 h-5" />
                </div>
             </div>
@@ -406,14 +436,6 @@ export default function NeuralAssistantPage() {
             onChange={(e) => setInputText(e.target.value)}
             className="flex-1 bg-warm-grey/50 border border-transparent focus:border-naturals-purple focus:bg-white rounded-2xl px-8 py-5 outline-none text-xs font-bold text-deep-grape transition-all shadow-inner" 
            />
-           <button 
-            type="button"
-            onClick={() => { setMessages([messages[0]]); stopSpeech(); }}
-            className="w-14 h-14 rounded-2xl bg-warm-grey text-deep-grape/40 flex items-center justify-center shadow-2xl hover:text-red-500 transition-all shrink-0 group"
-            title="Reset AI Conversation"
-           >
-             <RotateCcw className="w-6 h-6 group-hover:rotate-[-45deg] transition-transform" />
-           </button>
            <button 
             type="button"
             onClick={toggleListening}

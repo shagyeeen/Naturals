@@ -29,6 +29,10 @@ import {
   Zap,
   Globe,
   PieChart,
+  Instagram,
+  Heart,
+  Share2,
+  ExternalLink,
 } from "lucide-react";
 
 interface FeedbackAnalytics {
@@ -631,6 +635,7 @@ export default function TrendIntelligence() {
                 ))}
               </div>
             </GlassCard>
+            <InstagramMonitor />
           </div>
         </div>
       </div>
@@ -779,6 +784,119 @@ function ForecastCard({ type, title, reason, action, color, branch, stock, thres
         </div>
       )}
     </div>
+  );
+}
+
+function InstagramMonitor() {
+  const [metrics, setMetrics] = useState({
+    followers: 124582,
+    reach: 842900,
+    engagement: 4.2,
+    isLive: true
+  });
+
+  useEffect(() => {
+    // Simulate real-time signal flux
+    const interval = setInterval(() => {
+      setMetrics(prev => ({
+        ...prev,
+        followers: prev.followers + Math.floor(Math.random() * 3),
+        reach: prev.reach + Math.floor(Math.random() * 12)
+      }));
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <GlassCard title="Social Neural Pulse" subtitle="Real-time Instagram Signal Processing">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between p-5 rounded-[2rem] bg-gradient-to-br from-pink-500/10 to-violet-600/10 border border-white/10 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-6 opacity-5 rotate-12 group-hover:rotate-0 transition-transform duration-1000">
+            <Instagram className="w-24 h-24" />
+          </div>
+          
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 p-[2px] shadow-2xl animate-pulse">
+              <div className="w-full h-full rounded-2xl bg-[#0F071D] flex items-center justify-center overflow-hidden">
+                <img 
+                  src="/naturalslogo.png" 
+                  alt="Naturals" 
+                  className="w-10 h-10 object-contain invert"
+                />
+              </div>
+            </div>
+            <div>
+              <h4 className="text-lg font-black italic tracking-tighter text-white">@naturalssalon</h4>
+              <div className="flex items-center gap-2 mt-1">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400">Live Neural Link</span>
+              </div>
+            </div>
+          </div>
+          
+          <a 
+            href="https://www.instagram.com/naturalssalon/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:border-naturals-purple transition-all group relative z-10"
+          >
+            <ExternalLink className="w-5 h-5 text-white/40 group-hover:text-white" />
+          </a>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-1">
+            <div className="flex items-center gap-2 text-[10px] font-bold text-white/20 uppercase tracking-widest">
+              <Users className="w-3 h-3" /> Followers
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-xl font-black italic tabular-nums text-white">
+                {metrics.followers.toLocaleString()}
+              </span>
+              <span className="text-[10px] font-black text-emerald-400">+{Math.floor(Math.random() * 40)} today</span>
+            </div>
+          </div>
+          
+          <div className="p-4 rounded-2xl bg-white/5 border border-white/5 space-y-1">
+            <div className="flex items-center gap-2 text-[10px] font-bold text-white/20 uppercase tracking-widest">
+              <Sparkles className="w-3 h-3" /> Monthly Reach
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-xl font-black italic tabular-nums text-white">
+                {(metrics.reach / 1000).toFixed(1)}K
+              </span>
+              <span className="text-[10px] font-black text-emerald-400">↑ 12%</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-5 rounded-2xl bg-white/5 border border-white/5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2 text-[10px] font-bold text-white/20 uppercase tracking-widest">
+              <Activity className="w-3 h-3" /> Engagement Velocity
+            </div>
+            <span className="text-xs font-black text-naturals-purple italic tabular-nums">{metrics.engagement}%</span>
+          </div>
+          <div className="h-2 bg-black/40 rounded-full overflow-hidden p-[1px]">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: '42%' }}
+              className="h-full bg-gradient-to-r from-pink-500 to-naturals-purple rounded-full shadow-[0_0_15px_rgba(219,39,119,0.3)]"
+            />
+          </div>
+          <div className="flex justify-between mt-3">
+             <div className="flex items-center gap-2">
+                <Heart className="w-3 h-3 text-pink-500 fill-pink-500" />
+                <span className="text-[10px] font-black text-white/40 tabular-nums">12.4K Avg Likes</span>
+             </div>
+             <div className="flex items-center gap-2">
+                <Share2 className="w-3 h-3 text-indigo-400" />
+                <span className="text-[10px] font-black text-white/40 tabular-nums">1.2K Avg Shares</span>
+             </div>
+          </div>
+        </div>
+      </div>
+    </GlassCard>
   );
 }
 

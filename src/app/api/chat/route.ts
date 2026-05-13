@@ -180,18 +180,13 @@ export async function POST(req: Request) {
       {
         type: 'function',
         function: {
-          name: 'update_preferences',
-          description: "Update a customer's preferences.",
+          name: 'get_consultation_requests',
+          description: "Get meeting/consultation requests for a specific customer or email.",
           parameters: {
             type: 'object',
-            properties: {
-              targetCustomerId: { type: 'string', description: 'ID of the customer to update' },
-              hairwash_preference: { type: 'string', enum: ['Before SPA', 'After SPA', 'Both', 'None'] },
-              water_temperature: { type: 'string', enum: ['Cold', 'Lukewarm', 'Warm', 'Hot'] },
-              scalp_massage_intensity: { type: 'string', enum: ['Light', 'Medium', 'Strong', 'None'] },
-              conversation_level: { type: 'string', enum: ['Quiet Professional', 'Friendly Chat', 'No Preference'] },
-              preferred_hairstyle: { type: 'string' },
-              special_instructions: { type: 'string' }
+            properties: { 
+              email: { type: 'string', description: 'Customer email' },
+              phone: { type: 'string', description: 'Customer phone' }
             }
           }
         }
@@ -204,6 +199,7 @@ ROLE: ${userRole} | USER: ${userName || 'Unknown'} | TODAY: ${new Date().toISOSt
 STRICT TOOL USAGE RULES:
 - get_stylist_appointments → ONLY call when user explicitly asks to see a stylist's schedule or timetable.
 - get_customer_appointments → ONLY call when user asks to see THEIR OWN appointments.
+- get_consultation_requests → Call when user asks about "meetings", "consultations", or "requests they raised".
 - book_appointment → ONLY call after user confirms a specific service, date AND time.
 - cancel_appointment → ONLY call after user explicitly confirms cancellation with "yes" or "confirm".
 - search_customer → ONLY for STYLIST/ADMIN roles searching by name.
@@ -403,6 +399,16 @@ ${preferencesContext}`;
         const tableHeader = "| Time | Service | Customer | Date | Status |\n| :--- | :--- | :--- | :--- | :--- |\n";
         const tableRows = data?.map(a => `| ${a.start_time} | ${(a.service as any)?.name || 'Standard Salon Service'} | ${userRole === 'CUSTOMER' ? 'Hidden' : (a.customer as any)?.full_name || 'Walk-in'} | ${a.appointment_date} | ${a.status} |`).join('\n');
         return NextResponse.json({ text: `### Schedule for ${stylist.full_name}\n\n${tableHeader}${tableRows}` });
+      } else if (toolCall.function.name === 'get_consultation_requests') {
+        let query = supabaseAdmin.from('consultation_requests').select('*');
+        if (args.email) query = query.eq('email', args.email);
+        if (args.phone) query = query.eq('phone', args.phone);
+        
+        const { data } = await query.order('created_at', { ascending: false }).limit(5);
+        if (!data || data.length === 0) return NextResponse.json({ text: "No consultation requests found for your details." });
+        
+        const list = data.map(r => `- **${r.service_name}** requested on ${new Date(r.created_at).toLocaleDateString()} | Status: **${r.status.toUpperCase()}**`).join('\n');
+        return NextResponse.json({ text: `I found your consultation requests:\n\n${list}\n\nOur team will contact you soon for these!` });
       }
     }
 

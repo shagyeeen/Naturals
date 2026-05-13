@@ -11,7 +11,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 export type UserRole = 'franchise_owner' | 'admin' | 'stylist' | 'customer'
 export type Gender = 'male' | 'female' | 'other'
-export type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled'
+export type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'skipped'
 export type PaymentStatus = 'pending' | 'paid' | 'refunded'
 export type DiscountType = 'percentage' | 'flat'
 export type HairwashTiming = 'Before SPA' | 'After SPA' | 'Both'

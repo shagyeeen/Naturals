@@ -130,6 +130,50 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
       }
 
+      // Fetch skipped or recently reassigned appointments
+      if (userRole === 'customer' && customerProfile?.id) {
+        try {
+          const { data: activeAppts } = await supabase
+            .from('appointments')
+            .select('*, service:service_id(name), stylist:stylist_id(full_name)')
+            .eq('customer_id', customerProfile.id)
+            .in('status', ['skipped', 'pending', 'confirmed']);
+
+          if (activeAppts && activeAppts.length > 0) {
+            activeAppts.forEach((appt: any) => {
+              if (appt.status === 'skipped') {
+                notes.unshift({
+                  id: `skip-${appt.id}`,
+                  title: 'Stylist Skipped',
+                  message: `Your session for "${appt.service?.name}" was skipped by the stylist. We are reassigning you now!`,
+                  time: 'Alert',
+                  type: 'urgent'
+                });
+              } else if (appt.status === 'pending' || appt.status === 'confirmed') {
+                // Check if it was recently updated (within last 24h) and has a stylist
+                const updatedAt = new Date(appt.updated_at || appt.created_at);
+                const now = new Date();
+                const isRecent = (now.getTime() - updatedAt.getTime()) < (1000 * 60 * 60 * 24);
+                
+                if (isRecent && appt.stylist) {
+                   // We don't have the "old" status easily, but we can assume if it's confirmed/pending and recent, it might be a reassignment or new booking
+                   // To be precise, we'd need a notification table, but for now we'll show it if it's confirmed
+                   notes.unshift({
+                     id: `reassign-${appt.id}`,
+                     title: 'Appointment Updated',
+                     message: `Your "${appt.service?.name}" session is now with ${appt.stylist.full_name}.`,
+                     time: 'Recently',
+                     type: 'info'
+                   });
+                }
+              }
+            });
+          }
+        } catch (e) {
+          console.error("Failed to fetch appt notifications:", e);
+        }
+      }
+
       const dismissed = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('dismissed_notifications') || '[]') : [];
       const filteredNotes = notes.filter(n => !dismissed.includes(n.id.toString()));
       setNotifications(filteredNotes);
@@ -138,7 +182,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (!loading && user) {
       generateNotifications();
     }
-  }, [upcomingCount, user, loading]);
+
+    // Set up real-time listener for skipped appointments
+    let channel: any;
+    if (userRole === 'customer' && customerProfile?.id) {
+      channel = supabase
+        .channel('skipped_appointments')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'appointments',
+            filter: `customer_id=eq.${customerProfile.id}`
+          },
+          (payload) => {
+            if (payload.new.status === 'skipped' || payload.new.status === 'confirmed' || payload.new.status === 'pending') {
+              generateNotifications();
+            }
+          }
+        )
+        .subscribe();
+    }
+
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, [upcomingCount, user, loading, customerProfile]);
 
   useEffect(() => {
     const savedBranch = localStorage.getItem('selectedBranch');

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase, Customer, Stylist, Admin, FranchiseOwner, Appointment, Service } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { motion, AnimatePresence } from "framer-motion";
-import { UserPlus, Search, Edit, Trash2, Eye, X, Briefcase, Users, UserCheck, Scissors, Calendar, Sparkles, ChevronDown, ArrowUpDown, Filter, Plus, Zap } from "lucide-react";
+import { UserPlus, Search, Edit, Trash2, Eye, X, Briefcase, Users, UserCheck, Scissors, Calendar, Sparkles, ChevronDown, ArrowUpDown, Filter, Plus, Zap, AlertCircle } from "lucide-react";
 
 // Modular Hooks
 import { useAdminCustomers } from "@/modules/admin/customers/hooks";
@@ -202,7 +202,6 @@ export default function StaffDashboard() {
     appointmentDate: '',
     appointmentStartTime: '',
     appointmentEndTime: '',
-    appointmentEndTime: '',
     appointmentStatus: 'pending',
     offerTitle: '',
     offerDescription: '',
@@ -217,6 +216,9 @@ export default function StaffDashboard() {
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [myStylistId, setMyStylistId] = useState<string | null>(null);
+  const [isSkipModalOpen, setIsSkipModalOpen] = useState(false);
+  const [skippingId, setSkippingId] = useState<string | null>(null);
+  const [skipReason, setSkipReason] = useState("");
 
   const [myFranchiseOwnerId, setMyFranchiseOwnerId] = useState<string | undefined>(undefined);
 
@@ -285,6 +287,25 @@ export default function StaffDashboard() {
   const updateAppointmentStatus = async (id: string, status: string) => {
     await supabase.from('appointments').update({ status }).eq('id', id);
     fetchAppointments();
+  };
+
+  const handleSkip = async () => {
+    if (!skippingId) return;
+    await supabase.from('appointments').update({ 
+      status: 'skipped',
+      skip_reason: skipReason || "Unspecified"
+    }).eq('id', skippingId);
+    fetchAppointments();
+    setIsSkipModalOpen(false);
+    setSkippingId(null);
+    setSkipReason("");
+    alert('Appointment marked as skipped. Admin will reassign soon.');
+  };
+
+  const handleReassign = (appt: any) => {
+    handleEdit('appointment' as any, appt);
+    // Automatically set status to pending for reassignment
+    setFormData(prev => ({ ...prev, appointmentStatus: 'pending' }));
   };
 
   useEffect(() => {
@@ -640,7 +661,7 @@ export default function StaffDashboard() {
             <div className="relative z-10">
               <p className="text-[9px] font-black text-deep-grape/30 uppercase tracking-[0.3em] mb-1">{isAdmin ? "Network" : "Branch"} Base</p>
               <h4 className="text-3xl font-black text-deep-grape italic tracking-tighter tabular-nums">
-                {isAdmin ? metrics.customers : metrics.stylists}
+                {isAdmin ? (metrics as any).customers : (metrics as any).stylists}
               </h4>
               <p className="text-[8px] font-bold text-naturals-purple uppercase tracking-widest mt-2 flex items-center gap-1">
                 <div className="w-1 h-1 bg-naturals-purple rounded-full" /> {isAdmin ? "Registered Customers" : "Active Specialists"}
@@ -731,17 +752,25 @@ export default function StaffDashboard() {
             if (isStylist) return ['customers', 'appointments', 'meetings', 'skipped'].includes(tab);
             return false;
           })
-          .map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab as any)}
-              className={`px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${
-                activeTab === tab ? 'bg-white text-deep-grape shadow-md' : 'text-deep-grape/40 hover:text-deep-grape'
-              }`}
-            >
-              {tab === 'meetings' ? 'Meeting Requests' : tab}
-            </button>
-          ))}
+          .map((tab) => {
+            const skippedCount = appointments.filter(a => a.status === 'skipped').length;
+            return (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab as any)}
+                className={`px-4 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all relative ${
+                  activeTab === tab ? 'bg-white text-deep-grape shadow-md' : 'text-deep-grape/40 hover:text-deep-grape'
+                }`}
+              >
+                {tab === 'meetings' ? 'Meeting Requests' : tab}
+                {tab === 'skipped' && skippedCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[8px] font-black text-white shadow-lg shadow-red-500/20 animate-pulse">
+                    {skippedCount}
+                  </span>
+                )}
+              </button>
+            );
+          })}
       </div>
 
       <div className="relative">
@@ -973,11 +1002,31 @@ export default function StaffDashboard() {
                     a.status === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-200' :
                     a.status === 'cancelled' ? 'bg-red-50 text-red-600 border-red-200' :
                     a.status === 'completed' ? 'bg-naturals-purple/5 text-naturals-purple border-naturals-purple/20' :
+                    a.status === 'skipped' ? 'bg-rose-50 text-rose-600 border-rose-200 animate-pulse' :
                     'bg-warm-grey text-deep-grape/40 border-black/5'
                   }`}>
                     {a.status}
                   </span>
                   <div className="flex items-center gap-1 ml-2">
+                    {isStylist && a.status === 'confirmed' && (
+                      <button 
+                        onClick={() => {
+                          setSkippingId(a.id);
+                          setIsSkipModalOpen(true);
+                        }}
+                        className="px-3 py-1.5 bg-rose-500 text-white text-[8px] font-black uppercase tracking-widest rounded-lg hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20"
+                      >
+                        Skip
+                      </button>
+                    )}
+                    {isAdmin && a.status === 'skipped' && (
+                      <button 
+                        onClick={() => handleReassign(a)}
+                        className="px-3 py-1.5 bg-naturals-purple text-white text-[8px] font-black uppercase tracking-widest rounded-lg hover:bg-deep-grape transition-all shadow-lg shadow-naturals-purple/20"
+                      >
+                        Reassign
+                      </button>
+                    )}
                     <button onClick={() => handleEdit('appointment' as any, a)} className="p-2 hover:bg-naturals-purple/10 rounded-xl transition-all group">
                       <Edit className="w-3.5 h-3.5 text-naturals-purple/60 group-hover:text-naturals-purple" />
                     </button>
@@ -1033,7 +1082,7 @@ export default function StaffDashboard() {
                     <p className="text-[10px] font-black text-naturals-purple italic">{o.discount_type === 'percentage' ? `${o.discount_value}% OFF` : `₹${o.discount_value} OFF`}</p>
                     <p className="text-[8px] font-bold text-deep-grape/30 uppercase">{(o as any).service?.name || 'All Services'}</p>
                   </div>
-                  <p className="text-[10px] font-black text-deep-grape/60">{o.expiry_date ? new Date(o.expiry_date).toLocaleDateString() : 'Never'}</p>
+                  <p className="text-[10px] font-black text-deep-grape/60">{o.valid_until ? new Date(o.valid_until).toLocaleDateString() : 'Never'}</p>
                   <div className="flex items-center gap-2">
                     <div className={`w-1.5 h-1.5 rounded-full ${o.is_active ? 'bg-green-500' : 'bg-red-400'}`} />
                     <span className="text-[9px] font-black uppercase tracking-widest text-deep-grape/40">
@@ -1789,6 +1838,7 @@ export default function StaffDashboard() {
                         <option value="confirmed">Confirmed</option>
                         <option value="cancelled">Cancelled</option>
                         <option value="completed">Completed</option>
+                        <option value="skipped">Skipped</option>
                       </select>
                     </div>
                   </div>
@@ -1813,6 +1863,50 @@ export default function StaffDashboard() {
                 )}
               </button>
             </form>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Skip Reason Modal */}
+      {isSkipModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+          <div className="absolute inset-0 bg-deep-grape/40 backdrop-blur-md" onClick={() => setIsSkipModalOpen(false)} />
+          <div className="w-full max-w-sm bg-white rounded-[2.5rem] p-8 shadow-2xl relative z-10 border border-black/5 text-center">
+            <div className="w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertCircle className="w-8 h-8 text-rose-500" />
+            </div>
+            <h3 className="text-3xl font-black text-deep-grape italic tracking-tighter mb-2">Skip Appointment?</h3>
+            <p className="text-deep-grape/40 font-black uppercase text-[10px] tracking-[0.2em] mb-6">Provide a reason for the admin.</p>
+            
+            <div className="space-y-2 mb-8">
+              {["Emergency", "Equipment Failure", "Product Out of Stock", "Stylist Unavailable", "Other"].map(reason => (
+                <button
+                  key={reason}
+                  onClick={() => setSkipReason(reason)}
+                  className={`w-full py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+                    skipReason === reason 
+                      ? "bg-rose-500 text-white border-rose-500" 
+                      : "bg-warm-grey/50 text-deep-grape/40 border-black/5"
+                  }`}
+                >
+                  {reason}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setIsSkipModalOpen(false)}
+                className="flex-1 py-4 border-2 border-black/5 text-deep-grape font-black text-[10px] uppercase tracking-widest rounded-xl"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSkip}
+                className="flex-1 py-4 bg-rose-500 text-white font-black text-[10px] uppercase tracking-widest rounded-xl shadow-xl shadow-rose-500/20"
+              >
+                Confirm Skip
+              </button>
             </div>
           </div>
         </div>

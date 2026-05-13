@@ -40,6 +40,11 @@ export default function AppointmentsPage() {
   const [reviewText, setReviewText] = useState("");
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [cancelModalId, setCancelModalId] = useState<string | null>(null);
+  const [skipReason, setSkipReason] = useState("");
+  const [isReassignModalOpen, setReassignModalOpen] = useState(false);
+  const [reassignAppt, setReassignAppt] = useState<Appointment | null>(null);
+  const [availableStylists, setAvailableStylists] = useState<any[]>([]);
+  const [loadingStylists, setLoadingStylists] = useState(false);
 
   useEffect(() => {
     if (customerProfile?.id || profile?.id) {
@@ -73,7 +78,9 @@ export default function AppointmentsPage() {
           )
         `);
 
-      if (isStylist && profile?.id) {
+      if (isAdmin) {
+        // Admins see all appointments
+      } else if (isStylist && profile?.id) {
         // We need to get the stylist record ID (not the profile/user ID)
         const { data: stylistData } = await supabase
           .from('stylists')
@@ -123,19 +130,112 @@ export default function AppointmentsPage() {
       setCancellingId(id);
       const { error } = await supabase
         .from('appointments')
-        .update({ status: 'cancelled' })
+        .update({ 
+          status: 'skipped',
+          skip_reason: skipReason || "Unspecified"
+        })
         .eq('id', id);
 
       if (error) throw error;
       
       // Success feedback
-      setAppointments(prev => prev.map(a => a.id === id ? { ...a, status: 'cancelled' as AppointmentStatus } : a));
+      setAppointments(prev => prev.map(a => a.id === id ? { ...a, status: 'skipped' as AppointmentStatus, skip_reason: skipReason } : a));
       setCancelModalId(null);
+      setSkipReason("");
     } catch (error: any) {
       console.error("Error cancelling appointment:", error);
       alert(`Failed to cancel appointment: ${error.message || "Unknown error"}`);
     } finally {
       setCancellingId(null);
+    }
+  };
+
+  const fetchAvailableStylists = async (appt: Appointment) => {
+    try {
+      setLoadingStylists(true);
+      
+      // 1. Fetch all active stylists
+      const { data: allStylists, error: stylistsError } = await supabase
+        .from('stylists')
+        .select('*')
+        .eq('is_active', true);
+
+      if (stylistsError) throw stylistsError;
+
+      // 2. Fetch all appointments for that date to check for overlaps
+      const { data: dateAppts, error: apptsError } = await supabase
+        .from('appointments')
+        .select('stylist_id, start_time, end_time')
+        .eq('appointment_date', appt.appointment_date)
+        .neq('status', 'cancelled')
+        .neq('status', 'skipped');
+
+      if (apptsError) throw apptsError;
+
+      // 3. Filter stylists who are free during the appt time
+      const freeStylists = allStylists.filter(stylist => {
+        const hasOverlap = dateAppts?.some(a => {
+          if (a.stylist_id !== stylist.id) return false;
+          
+          // Overlap logic: (start1 < end2) AND (end1 > start2)
+          return (appt.start_time < a.end_time) && (appt.end_time > a.start_time);
+        });
+        return !hasOverlap;
+      });
+
+      setAvailableStylists(freeStylists);
+    } catch (error) {
+      console.error("Error fetching available stylists:", error);
+    } finally {
+      setLoadingStylists(false);
+    }
+  };
+
+  const performReassign = async (stylistId: string) => {
+    if (!reassignAppt) return;
+    
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('appointments')
+        .update({ 
+          stylist_id: stylistId,
+          status: 'confirmed' 
+        })
+        .eq('id', reassignAppt.id);
+
+      if (error) throw error;
+      
+      setReassignModalOpen(false);
+      setReassignAppt(null);
+      fetchAppointments();
+      alert("Appointment successfully reassigned and confirmed!");
+    } catch (error: any) {
+      console.error("Error performing reassignment:", error);
+      alert(`Failed to reassign: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReassign = async (id: string) => {
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('appointments')
+        .update({ status: 'pending' })
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      // Success feedback
+      setAppointments(prev => prev.map(a => a.id === id ? { ...a, status: 'pending' as AppointmentStatus } : a));
+      alert("Appointment reset to Pending. You can now assign a new stylist in the Admin Dashboard.");
+    } catch (error: any) {
+      console.error("Error reassigning appointment:", error);
+      alert(`Failed to reassign: ${error.message || "Unknown error"}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -179,8 +279,9 @@ export default function AppointmentsPage() {
     switch (status) {
       case 'confirmed': return "bg-blue-500/10 text-blue-500 border-blue-500/20";
       case 'completed': return "bg-green-500/10 text-green-500 border-green-500/20";
-      case 'cancelled': return "bg-red-500/10 text-red-500 border-red-500/20";
+      case 'skipped': return "bg-rose-500/10 text-rose-500 border-rose-500/20 animate-pulse";
       case 'pending': return "bg-amber-500/10 text-amber-500 border-amber-500/20";
+      case 'cancelled': return "bg-red-500/10 text-red-500 border-red-500/20";
       default: return "bg-gray-500/10 text-gray-500 border-gray-500/20";
     }
   };
@@ -191,6 +292,7 @@ export default function AppointmentsPage() {
       case 'completed': return <CheckCircle2 className="w-3 h-3" />;
       case 'cancelled': return <XCircle className="w-3 h-3" />;
       case 'pending': return <AlertCircle className="w-3 h-3" />;
+      case 'skipped': return <AlertCircle className="w-3 h-3 text-rose-500" />;
       default: return null;
     }
   };
@@ -204,10 +306,12 @@ export default function AppointmentsPage() {
             <HistoryIcon className="w-3 h-3" /> Visit History & Schedule
           </div>
           <h1 className="text-4xl font-black text-deep-grape mb-2 italic tracking-tighter">
-            {isStylist ? "Staff Appointments" : "My Appointments"}
+            {isAdmin ? "Appointments" : isStylist ? "Staff Appointments" : "My Appointments"}
           </h1>
           <p className="text-deep-grape/40 font-bold uppercase text-xs tracking-widest">
-            {isStylist ? "Manage your daily queue and upcoming service sessions." : "Manage your upcoming sessions and review past beauty journeys."}
+            {isAdmin ? "Oversee and manage all salon service sessions." : 
+             isStylist ? "Manage your daily queue and upcoming service sessions." : 
+             "Manage your upcoming sessions and review past beauty journeys."}
           </p>
         </div>
 
@@ -231,9 +335,8 @@ export default function AppointmentsPage() {
         </div>
       </div>
 
-      {/* Tabs / Filters */}
       <div className="flex items-center gap-2 bg-warm-grey/50 p-1.5 rounded-[1.5rem] border border-naturals-purple/5 w-fit">
-        {(["confirmed", "completed", "cancelled"] as const).map((tab) => (
+        {(["confirmed", "completed", "skipped"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setFilter(tab)}
@@ -280,10 +383,16 @@ export default function AppointmentsPage() {
                       {getStatusIcon(appt.status)}
                       {appt.status}
                     </span>
-                    <span className="text-[10px] font-black text-deep-grape/20 uppercase tracking-widest">
-                      ID: {appt.id.split('-')[0]}
-                    </span>
                   </div>
+
+                  {appt.status === 'skipped' && (
+                    <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+                      <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest leading-relaxed">
+                        Stylist Skipped the Appointment. We'll Assign you As Soon As Possible.
+                      </p>
+                    </div>
+                  )}
 
                   <h3 className="text-xl font-black text-deep-grape italic mb-1 group-hover:text-naturals-purple transition-colors line-clamp-2">
                     {appt.appointment_services && appt.appointment_services.length > 0
@@ -386,9 +495,21 @@ export default function AppointmentsPage() {
                     <button 
                       onClick={() => setCancelModalId(appt.id)}
                       disabled={cancellingId === appt.id}
-                      className="flex-1 py-3 bg-red-500/10 text-red-500 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-red-500 hover:text-white transition-all disabled:opacity-50"
+                      className="flex-1 py-3 bg-rose-500/10 text-rose-500 font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-rose-500 hover:text-white transition-all disabled:opacity-50"
                     >
-                      {cancellingId === appt.id ? "CANCELLING..." : "Cancel"}
+                      {cancellingId === appt.id ? "SKIPPING..." : "Skip"}
+                    </button>
+                  )}
+                  {isAdmin && appt.status === 'skipped' && (
+                    <button 
+                      onClick={() => {
+                        setReassignAppt(appt);
+                        setReassignModalOpen(true);
+                        fetchAvailableStylists(appt);
+                      }}
+                      className="flex-1 py-3 bg-naturals-purple text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:scale-105 transition-transform"
+                    >
+                      Reassign
                     </button>
                   )}
                   {appt.status !== 'completed' && appt.status !== 'cancelled' && (
@@ -444,11 +565,30 @@ export default function AppointmentsPage() {
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="w-full max-w-sm bg-white rounded-[2.5rem] p-8 shadow-2xl relative z-10 border border-black/5 text-center"
             >
-              <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <AlertCircle className="w-8 h-8 text-red-500" />
+              <div className="w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <AlertCircle className="w-8 h-8 text-rose-500" />
               </div>
-              <h3 className="text-3xl font-black text-deep-grape italic tracking-tighter mb-2">Cancel Appointment?</h3>
-              <p className="text-deep-grape/40 font-black uppercase text-[10px] tracking-[0.2em] mb-10">This action cannot be undone.</p>
+              <h3 className="text-3xl font-black text-deep-grape italic tracking-tighter mb-2">Skip Appointment?</h3>
+              <p className="text-deep-grape/40 font-black uppercase text-[10px] tracking-[0.2em] mb-6">This will move your slot for reassignment.</p>
+              
+              <div className="space-y-3 mb-10">
+                <p className="text-[8px] font-black uppercase tracking-widest text-deep-grape/30 text-left ml-2">Reason for skip</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {["Emergency", "Scheduling Conflict", "Personal Reasons", "Other"].map(reason => (
+                    <button
+                      key={reason}
+                      onClick={() => setSkipReason(reason)}
+                      className={`py-2 px-3 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${
+                        skipReason === reason 
+                          ? "bg-rose-500 text-white border-rose-500 shadow-lg shadow-rose-500/20" 
+                          : "bg-warm-grey/50 text-deep-grape/40 border-black/5 hover:border-rose-500/30"
+                      }`}
+                    >
+                      {reason}
+                    </button>
+                  ))}
+                </div>
+              </div>
               
               <div className="flex gap-4">
                 <button 
@@ -460,9 +600,9 @@ export default function AppointmentsPage() {
                 <button 
                   onClick={() => handleCancel(cancelModalId)}
                   disabled={cancellingId === cancelModalId}
-                  className="flex-1 py-4 bg-red-500 text-white font-black text-[10px] uppercase tracking-[0.3em] rounded-xl shadow-xl shadow-red-500/20 hover:scale-[1.02] transition-transform disabled:opacity-50"
+                  className="flex-1 py-4 bg-rose-500 text-white font-black text-[10px] uppercase tracking-[0.3em] rounded-xl shadow-xl shadow-rose-500/20 hover:scale-[1.02] transition-transform disabled:opacity-50"
                 >
-                  {cancellingId === cancelModalId ? "CANCELLING..." : "YES, CANCEL"}
+                  {cancellingId === cancelModalId ? "SKIPPING..." : "YES, SKIP"}
                 </button>
               </div>
             </motion.div>
@@ -654,6 +794,107 @@ export default function AppointmentsPage() {
                   className="w-full py-4 bg-deep-grape text-white font-black text-[10px] uppercase tracking-[0.3em] rounded-xl transition-all hover:bg-naturals-purple shadow-lg"
                 >
                   Close Details
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      {/* Reassign Modal */}
+      <AnimatePresence>
+        {isReassignModalOpen && reassignAppt && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-deep-grape/40 backdrop-blur-md" 
+              onClick={() => setReassignModalOpen(false)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="w-full max-w-lg bg-white rounded-[2.5rem] p-10 shadow-2xl relative z-10 border border-black/5"
+            >
+              <div className="flex justify-between items-center mb-8 pb-6 border-b border-black/5">
+                <div>
+                  <h3 className="text-3xl font-black text-deep-grape italic tracking-tighter mb-0.5">Select New Stylist</h3>
+                  <p className="text-[9px] font-black uppercase tracking-[0.2em] text-naturals-purple/60">Available for {reassignAppt.start_time.slice(0, 5)} slot</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[8px] font-black uppercase tracking-widest text-rose-500/40 mb-1">Skip Reason</p>
+                  <p className="text-[10px] font-black text-rose-500 italic">"{reassignAppt.skip_reason || 'No reason provided'}"</p>
+                </div>
+                <button 
+                  onClick={() => setReassignModalOpen(false)} 
+                  className="w-10 h-10 bg-warm-grey/50 rounded-xl flex items-center justify-center hover:bg-red-500 hover:text-white transition-all group shrink-0"
+                >
+                  <XCircle className="w-5 h-5 text-deep-grape/40 group-hover:text-white transition-colors" />
+                </button>
+              </div>
+
+              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                {loadingStylists ? (
+                  <div className="py-20 text-center">
+                    <RefreshCw className="w-8 h-8 text-naturals-purple animate-spin mx-auto mb-4" />
+                    <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-widest">Scanning Specialist Rosters...</p>
+                  </div>
+                ) : availableStylists.length > 0 ? (
+                  availableStylists
+                    .sort((a, b) => (b.experience_years || 0) - (a.experience_years || 0)) // Sort by experience for best match
+                    .map((stylist, idx) => {
+                      const isBestMatch = idx === 0 && stylist.experience_years > 5;
+                      return (
+                        <button
+                          key={stylist.id}
+                          onClick={() => performReassign(stylist.id)}
+                          className={`w-full flex items-center justify-between p-5 border rounded-2xl transition-all group relative overflow-hidden ${
+                            isBestMatch 
+                              ? "bg-naturals-purple/[0.03] border-naturals-purple/20 hover:bg-naturals-purple/5 shadow-lg shadow-naturals-purple/5" 
+                              : "bg-warm-grey/30 border-black/5 hover:bg-naturals-purple/5"
+                          }`}
+                        >
+                          {isBestMatch && (
+                            <div className="absolute top-0 left-0 bg-naturals-purple text-white text-[7px] font-black uppercase tracking-widest px-3 py-1 rounded-br-xl flex items-center gap-1 shadow-lg">
+                              <Sparkles className="w-2 h-2" /> Best Match
+                            </div>
+                          )}
+                          <div className="flex items-center gap-4">
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black shadow-sm transition-all ${
+                              isBestMatch ? "bg-naturals-purple text-white" : "bg-white border border-black/5 text-naturals-purple"
+                            }`}>
+                              {stylist.full_name.substring(0, 2).toUpperCase()}
+                            </div>
+                            <div className="text-left">
+                              <p className="text-xs font-black text-deep-grape italic">{stylist.full_name}</p>
+                              <p className="text-[8px] font-black text-naturals-purple uppercase tracking-widest">{stylist.specialty || 'Master Stylist'}</p>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-1">
+                            <div className="flex items-center gap-1">
+                              <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                              <span className="text-[10px] font-black text-deep-grape">{stylist.experience_years} YRS</span>
+                            </div>
+                            <span className="text-[8px] font-black text-green-500 uppercase tracking-widest bg-green-500/10 px-2 py-0.5 rounded-md">Available</span>
+                          </div>
+                        </button>
+                      );
+                    })
+                ) : (
+                  <div className="py-20 text-center">
+                    <AlertCircle className="w-8 h-8 text-deep-grape/10 mx-auto mb-4" />
+                    <p className="text-[10px] font-black text-deep-grape/30 uppercase tracking-widest">No specialists free for this slot</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-black/5">
+                <button 
+                  onClick={() => setReassignModalOpen(false)}
+                  className="w-full py-4 bg-deep-grape text-white font-black text-[10px] uppercase tracking-[0.3em] rounded-xl transition-all hover:bg-naturals-purple shadow-lg"
+                >
+                  Cancel Reassignment
                 </button>
               </div>
             </motion.div>
