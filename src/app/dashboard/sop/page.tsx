@@ -53,6 +53,15 @@ export default function ProtocolAccreditation() {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [optimizationProgress, setOptimizationProgress] = useState(0);
   const [optimizationLog, setOptimizationLog] = useState<string[]>([]);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  
+  const [isAuditingProficiency, setIsAuditingProficiency] = useState(false);
+  const [proficiencyMetrics, setProficiencyMetrics] = useState({
+    precision: 0,
+    ergonomics: 0,
+    speed: 0
+  });
   
   // Real-time workflow data
   const [liveQueue, setLiveQueue] = useState<any[]>([]);
@@ -136,10 +145,32 @@ export default function ProtocolAccreditation() {
           const shuffled = [...activeStaff].sort(() => Math.random() - 0.5);
           setActiveStaff(shuffled);
           setIsOptimizing(false);
-          alert("Distribution Optimized: Staff reallocated to maximize throughput.");
+          setToastMessage("Distribution Optimized: Staff reallocated to maximize throughput.");
+          setShowSuccessToast(true);
+          setTimeout(() => setShowSuccessToast(false), 5000);
         }, 800);
       }
     }, 1000);
+  };
+
+  const startProficiencyAudit = () => {
+    setIsAuditingProficiency(true);
+    let count = 0;
+    const interval = setInterval(() => {
+      if (count < 100) {
+        setProficiencyMetrics({
+          precision: 85 + Math.random() * 10,
+          ergonomics: 78 + Math.random() * 15,
+          speed: 92 + Math.random() * 5
+        });
+        count++;
+      } else {
+        clearInterval(interval);
+        setIsAuditingProficiency(false);
+        setToastMessage("Audit Complete: Proficiency verified at 94.2% precision.");
+        setShowSuccessToast(true);
+      }
+    }, 100);
   };
 
   return (
@@ -239,7 +270,11 @@ export default function ProtocolAccreditation() {
                       title="Structural Molecular Restoration"
                       subtitle="Mastery of high-density chemical bonding, thermal mitigation strategies, and autonomous diagnostic mapping."
                       tags={["DEMAND SPIKE", "PROFICIENCY TEST PENDING"]}
-                      onAction={() => alert("Initializing Neural Proficiency Test Interface...")}
+                      onAction={() => {
+                        setToastMessage("Initializing Neural Proficiency Test Interface...");
+                        setShowSuccessToast(true);
+                        setTimeout(() => setShowSuccessToast(false), 5000);
+                      }}
                       actionLabel="START TEST"
                     />
 
@@ -275,28 +310,97 @@ export default function ProtocolAccreditation() {
                 </div>
               </motion.div>
             )}
-
             {activeTab === "audit" && (
               <motion.div 
                 key="audit-view" 
                 initial={{ opacity: 0, scale: 0.98 }} 
                 animate={{ opacity: 1, scale: 1 }} 
                 exit={{ opacity: 0, scale: 1.02 }}
-                className="bg-white rounded-[2.5rem] p-20 text-center border border-black/5 shadow-sm relative overflow-hidden"
+                className="bg-white rounded-[2.5rem] p-12 text-center border border-black/5 shadow-sm relative overflow-hidden min-h-[500px] flex flex-col items-center justify-center"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-naturals-purple/5 to-transparent" />
-                <div className="relative z-10">
-                  <div className="w-20 h-20 bg-lavender rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner">
-                    <Video className="w-10 h-10 text-naturals-purple animate-pulse" />
+                
+                {isAuditingProficiency ? (
+                  <div className="relative z-10 w-full max-w-2xl space-y-8">
+                    {/* Simulated Camera Feed */}
+                    <div className="relative aspect-video bg-[#0A0514] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl">
+                      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-40 mix-blend-overlay grayscale" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#0A0514] to-transparent opacity-60" />
+                      
+                      {/* Scanning Lines */}
+                      <motion.div 
+                        className="absolute inset-x-0 h-0.5 bg-naturals-purple shadow-[0_0_15px_rgba(142,62,150,0.8)] z-20"
+                        animate={{ top: ['0%', '100%', '0%'] }}
+                        transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+                      />
+
+                      {/* AI Markers */}
+                      <div className="absolute inset-0 z-10 p-8">
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                              <span className="text-[10px] font-black text-white uppercase tracking-[0.2em]">REC • 1080P</span>
+                            </div>
+                            <p className="text-[8px] font-bold text-white/40 uppercase tracking-widest">ISO 400 • F/2.8 • 1/60</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-[10px] font-black text-naturals-purple uppercase tracking-widest">Neural Stream v4.2</p>
+                            <p className="text-[14px] font-black text-white italic">OPERATOR_391</p>
+                          </div>
+                        </div>
+                        
+                        {/* Center Focus */}
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <div className="w-48 h-48 border border-white/10 rounded-full flex items-center justify-center">
+                            <div className="w-32 h-32 border border-white/20 rounded-full flex items-center justify-center">
+                              <div className="w-16 h-16 border-2 border-naturals-purple/40 rounded-full" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Live Telemetry */}
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="bg-white/5 border border-black/5 p-4 rounded-2xl">
+                        <p className="text-[8px] font-black text-deep-grape/30 uppercase tracking-widest mb-1">Precision</p>
+                        <p className="text-xl font-black text-naturals-purple italic">{proficiencyMetrics.precision.toFixed(1)}%</p>
+                      </div>
+                      <div className="bg-white/5 border border-black/5 p-4 rounded-2xl">
+                        <p className="text-[8px] font-black text-deep-grape/30 uppercase tracking-widest mb-1">Ergonomics</p>
+                        <p className="text-xl font-black text-deep-grape italic">{proficiencyMetrics.ergonomics.toFixed(1)}%</p>
+                      </div>
+                      <div className="bg-white/5 border border-black/5 p-4 rounded-2xl">
+                        <p className="text-[8px] font-black text-deep-grape/30 uppercase tracking-widest mb-1">Speed Index</p>
+                        <p className="text-xl font-black text-deep-grape italic">{proficiencyMetrics.speed.toFixed(1)}x</p>
+                      </div>
+                    </div>
+
+                    <button 
+                      onClick={() => setIsAuditingProficiency(false)}
+                      className="px-8 py-3 bg-red-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-red-600 transition-all"
+                    >
+                      Terminate Audit
+                    </button>
                   </div>
-                  <h2 className="text-3xl font-black italic tracking-tighter text-deep-grape">Remote Audit Hub</h2>
-                  <p className="text-deep-grape/40 font-bold uppercase tracking-[0.3em] text-[10px] mt-4 max-w-md mx-auto leading-relaxed">
-                    Connecting to regional live stream network... Autonomous SOP validation engaged.
-                  </p>
-                  <button className="mt-12 px-10 py-4 bg-deep-grape text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-naturals-purple transition-all shadow-2xl">
-                    Initialize Neural Stream
-                  </button>
-                </div>
+                ) : (
+                  <div className="relative z-10">
+                    <div className="w-20 h-20 bg-lavender rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-inner">
+                      <Video className="w-10 h-10 text-naturals-purple animate-pulse" />
+                    </div>
+                    <h2 className="text-3xl font-black italic tracking-tighter text-deep-grape">Proficiency Audit Interface</h2>
+                    <p className="text-deep-grape/40 font-bold uppercase tracking-[0.3em] text-[10px] mt-4 max-w-md mx-auto leading-relaxed">
+                      Initialize visual monitoring for technical proficiency assessment. AI will audit movement precision, ergonomics, and speed.
+                    </p>
+                    <button 
+                      onClick={startProficiencyAudit}
+                      className="mt-12 px-10 py-4 bg-deep-grape text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-naturals-purple transition-all shadow-2xl"
+                    >
+                      Initialize Interface
+                    </button>
+                  </div>
+                )}
               </motion.div>
             )}
 
@@ -616,7 +720,7 @@ export default function ProtocolAccreditation() {
                                     </div>
                                   </div>
                                   <div className="pt-3 border-t border-black/5">
-                                    <p className="text-[8px] font-black text-deep-grape/30 uppercase tracking-widest mb-1">Current Service</p>
+                                    <span className="text-[8px] font-black text-deep-grape/30 uppercase tracking-widest block mb-1">Current Service</span>
                                     <p className="text-[10px] font-bold text-deep-grape italic">Active Engagement</p>
                                   </div>
                                 </div>
@@ -711,6 +815,34 @@ export default function ProtocolAccreditation() {
                 )}
               </AnimatePresence>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* --- Custom In-App Toast --- */}
+      <AnimatePresence>
+        {showSuccessToast && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-12 left-1/2 -translate-x-1/2 z-[200] w-full max-w-md px-6"
+          >
+            <div className="bg-deep-grape/95 backdrop-blur-2xl border border-white/10 p-6 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex items-center gap-6">
+              <div className="w-12 h-12 rounded-2xl bg-green-500/20 border border-green-500/30 flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(34,197,94,0.2)]">
+                <CheckCircle2 className="w-6 h-6 text-green-500" />
+              </div>
+              <div className="flex-1">
+                <p className="text-[10px] font-black text-green-500 uppercase tracking-[0.2em] mb-1">System Intelligence</p>
+                <p className="text-sm font-bold text-white leading-relaxed">{toastMessage}</p>
+              </div>
+              <button 
+                onClick={() => setShowSuccessToast(false)}
+                className="p-2 hover:bg-white/10 rounded-xl transition-all"
+              >
+                <X className="w-4 h-4 text-white/40" />
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

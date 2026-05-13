@@ -306,12 +306,10 @@ export default function AppointmentsPage() {
             <HistoryIcon className="w-3 h-3" /> Visit History & Schedule
           </div>
           <h1 className="text-4xl font-black text-deep-grape mb-2 italic tracking-tighter">
-            {isAdmin ? "Appointments" : isStylist ? "Staff Appointments" : "My Appointments"}
+            {(isAdmin || isFranchiseOwner) ? "Appointments" : isStylist ? "Staff Appointments" : "My Appointments"}
           </h1>
           <p className="text-deep-grape/40 font-bold uppercase text-xs tracking-widest">
-            {isAdmin ? "Oversee and manage all salon service sessions." : 
-             isStylist ? "Manage your daily queue and upcoming service sessions." : 
-             "Manage your upcoming sessions and review past beauty journeys."}
+            {(isAdmin || isFranchiseOwner) ? "Monitor and manage regional service schedules and operational throughput." : isStylist ? "Manage your daily queue and upcoming service sessions." : "Manage your upcoming sessions and review past beauty journeys."}
           </p>
         </div>
 

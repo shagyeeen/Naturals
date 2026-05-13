@@ -1,30 +1,52 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { BookOpen, Video, Target, Trophy, PlayCircle, Lock, CheckCircle, ChevronRight, Star, ShieldCheck, Activity } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  BookOpen, 
+  Video, 
+  Target, 
+  Trophy, 
+  PlayCircle, 
+  Lock, 
+  CheckCircle, 
+  ChevronRight, 
+  Star, 
+  ShieldCheck, 
+  Activity, 
+  X, 
+  CheckCircle2 
+} from "lucide-react";
 
 export default function TrainingAcademy() {
   const [activeCourse, setActiveCourse] = useState("Keratin Mastery");
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setShowSuccessToast(true);
+    setTimeout(() => setShowSuccessToast(false), 5000);
+  };
 
   const handleStartVideo = () => {
     setIsPlaying(true);
-    alert(`Streaming Tutorial: ${activeCourse}. Session audit logged for Employee ID: ST-2401.`);
+    showToast(`Streaming Tutorial: ${activeCourse}. Session audit logged for Employee ID: ST-2401.`);
     setTimeout(() => setIsPlaying(false), 2000);
   };
 
   const handleSimulateTest = () => {
-    alert("AI Skill Simulation Initializing... Analytical diagnostics scanning technique...");
+    showToast("AI Skill Simulation Initializing... Analytical diagnostics scanning technique...");
     setTimeout(() => {
-      alert("Simulation Result: 88% Compliance in 'Heat Protection Protocol'. Data synchronized with Performance Dashboard.");
+      showToast("Simulation Result: 88% Compliance in 'Heat Protection Protocol'. Data synchronized with Performance Dashboard.");
     }, 1500);
   };
 
   const handleCameraSetup = () => {
-    alert("Initializing Visual Assessment Interface for Manual Proficiency Audit...");
+    showToast("Initializing Visual Assessment Interface for Manual Proficiency Audit...");
     setTimeout(() => {
-      alert("Interface Synchronized. Objective assessment of 'Sectioning Precision' is now active.");
+      showToast("Interface Synchronized. Objective assessment of 'Sectioning Precision' is now active.");
     }, 1200);
   };
 
@@ -77,7 +99,7 @@ export default function TrainingAcademy() {
                       <h3 className="font-black text-sm uppercase tracking-wider mb-1 text-deep-grape line-through decoration-naturals-purple decoration-2">Foundational Chromatic Theory</h3>
                       <p className="text-[10px] font-black uppercase tracking-widest text-deep-grape/40">Audit Score: 92% • Valid Through Q4 2026</p>
                     </div>
-                    <button onClick={() => alert("Decrypting archived certification data...")} className="text-naturals-purple text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">Re-Audit</button>
+                    <button onClick={() => showToast("Decrypting archived certification data...")} className="text-naturals-purple text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">Re-Audit</button>
                   </div>
                </div>
 
@@ -157,7 +179,7 @@ export default function TrainingAcademy() {
                  { n: 'CX Optimization', c: 'bg-deep-grape text-white', icon: '❤️' },
                  { n: 'Sterility Protocols', c: 'bg-deep-grape text-white', icon: '✨' },
                ].map((badge, i) => (
-                 <div key={i} onClick={() => alert(`Accreditation ID: NAT-ACC-${1000 + i}. Compliance Certified.`)} className="flex flex-col items-center justify-center p-6 bg-warm-grey/30 rounded-[2rem] border border-black/5 text-center group cursor-pointer hover:bg-white hover:shadow-2xl transition-all">
+                 <div key={i} onClick={() => showToast(`Accreditation ID: NAT-ACC-${1000 + i}. Compliance Certified.`)} className="flex flex-col items-center justify-center p-6 bg-warm-grey/30 rounded-[2rem] border border-black/5 text-center group cursor-pointer hover:bg-white hover:shadow-2xl transition-all">
                     <div className="mb-4 transform group-hover:scale-110 transition-transform">
                       <div className={`w-14 h-14 rounded-2xl ${badge.c} flex items-center justify-center text-xl shadow-lg font-black`}>
                         {badge.icon}
@@ -167,7 +189,7 @@ export default function TrainingAcademy() {
                  </div>
                ))}
             </div>
-            <button onClick={() => alert("Synchronizing Personnel Ledger across 500+ Nodes...")} className="w-full mt-10 py-4 text-[10px] font-black uppercase tracking-[0.25em] bg-warm-grey/50 rounded-xl hover:bg-deep-grape hover:text-white transition-all cursor-pointer">
+            <button onClick={() => showToast("Synchronizing Personnel Ledger across 500+ Nodes...")} className="w-full mt-10 py-4 text-[10px] font-black uppercase tracking-[0.25em] bg-warm-grey/50 rounded-xl hover:bg-deep-grape hover:text-white transition-all cursor-pointer">
               Franchise Authority Rank
             </button>
           </div>
@@ -189,8 +211,35 @@ export default function TrainingAcademy() {
             </div>
           </div>
         </div>
-
       </div>
+
+      {/* --- Custom In-App Toast --- */}
+      <AnimatePresence>
+        {showSuccessToast && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-12 left-1/2 -translate-x-1/2 z-[200] w-full max-w-md px-6"
+          >
+            <div className="bg-deep-grape/95 backdrop-blur-2xl border border-white/10 p-6 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex items-center gap-6">
+              <div className="w-12 h-12 rounded-2xl bg-green-500/20 border border-green-500/30 flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(34,197,94,0.2)]">
+                <CheckCircle2 className="w-6 h-6 text-green-500" />
+              </div>
+              <div className="flex-1 text-left">
+                <p className="text-[10px] font-black text-green-500 uppercase tracking-[0.2em] mb-1">Academy Intelligence</p>
+                <p className="text-sm font-bold text-white leading-relaxed">{toastMessage}</p>
+              </div>
+              <button 
+                onClick={() => setShowSuccessToast(false)}
+                className="p-2 hover:bg-white/10 rounded-xl transition-all"
+              >
+                <X className="w-4 h-4 text-white/40" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
