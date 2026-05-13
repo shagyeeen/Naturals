@@ -176,6 +176,7 @@ export interface Appointment {
   payment_status: PaymentStatus
   rating?: number
   feedback?: string
+  skip_reason?: string
   created_at: string
   updated_at: string
   // joined relations

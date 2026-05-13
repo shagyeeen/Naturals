@@ -21,13 +21,14 @@ import {
   CreditCard,
   MessageSquare,
   History as HistoryIcon,
-  Search
+  Search,
+  Sparkles
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { autoCompleteAppointments } from "@/modules/customer/booking/service";
 
 export default function AppointmentsPage() {
-  const { profile, customerProfile, isStylist, isAdmin, loading: authLoading } = useAuth();
+  const { profile, customerProfile, isStylist, isAdmin, isFranchiseOwner, isManager, loading: authLoading } = useAuth();
   const router = useRouter();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
