@@ -42,10 +42,10 @@ const sidebarLinks = [
   { name: "My Appointment", href: "/dashboard/appointments", icon: History, roles: ["customer"] },
   { name: "Beauty Passport", href: "/dashboard/passport", icon: Target, roles: ["customer"] },
   { name: "Meeting Requests", href: "/dashboard/meeting-requests", icon: CalendarCheck, roles: ["admin", "manager", "franchise_owner", "stylist"] },
-  { name: "SOP Audit", href: "/dashboard/sop", icon: ShieldCheck, roles: ["admin", "manager"] },
+  { name: "SOP Audit", href: "/dashboard/sop", icon: ShieldCheck, roles: ["admin", "manager", "franchise_owner"] },
   { name: "Feedbacks", href: "/dashboard/feedbacks", icon: MessageSquareQuote, roles: ["admin", "franchise_owner"] },
   { name: "Appointments", href: "/dashboard/appointments", icon: CalendarCheck, roles: ["stylist", "admin"] },
-  { name: "Trend Engine", href: "/dashboard/trends", icon: LineChart, roles: ["admin", "manager"] },
+  { name: "Trend Engine", href: "/dashboard/trends", icon: LineChart, roles: ["admin", "manager", "franchise_owner"] },
   { name: "Academy", href: "/dashboard/academy", icon: BookOpen, roles: ["admin"] },
 ];
 
