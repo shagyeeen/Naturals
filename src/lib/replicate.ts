@@ -4,8 +4,8 @@ const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
 });
 
-// The 'Option 1' model is the best for reliable, high-fidelity hair editing (SD 1.5 core)
-const HAIR_EDIT_MODEL = "stability-ai/stable-diffusion";
+// Rock-stable SD 1.5 for guaranteed compatibility and high-fidelity results
+const HAIR_EDIT_MODEL = "stability-ai/stable-diffusion:ac732df83cea06e1628d05d762cd67756fdf16416f2b1d316499834164990928";
 
 export async function generateReplicateHairChange(base64Image: string, stylePrompt: string) {
   try {

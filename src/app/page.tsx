@@ -34,6 +34,8 @@ export default function LandingPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [offers, setOffers] = useState<(Offer & { service?: { name: string } })[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>("Hair");
   const [searchQuery, setSearchQuery] = useState("");
   const [viewingService, setViewingService] = useState<Service | null>(null);
@@ -111,20 +113,20 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-3 gap-8">
             <FeatureCard 
-              img="/features/ai-diagnosis.png"
+              img="/features/ai-diagnosis.png?v=1"
               title="Visual AI Diagnosis"
               desc="Our proprietary machine vision analyzes your hair and skin to recommend precise chemical treatments and styles."
               icon={<Sparkles className="w-6 h-6" />}
             />
             <FeatureCard 
-              img="/features/beauty-journey.png"
+              img="/features/beauty-journey.png?v=1"
               title="Personalized Journey"
               desc="Every visit is tracked. Every preference saved. Experience a service that evolves with your lifestyle and needs."
               icon={<Clock className="w-6 h-6" />}
               delay={0.2}
             />
             <FeatureCard 
-              img="/features/beauty-passport.png"
+              img="/features/beauty-passport.png?v=1"
               title="Digital Passport"
               desc="Access your persistent beauty ID across any Naturals branch. Your profile follows you, ensuring consistency."
               icon={<ShieldCheck className="w-6 h-6" />}
@@ -221,7 +223,7 @@ export default function LandingPage() {
                   >
                     {/* Dynamic Service Image */}
                     <Image 
-                      src={`/services/${service.id}.png`} 
+                      src={`/services/${service.id}.png?v=1`} 
                       alt={service.name} 
                       fill 
                       sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -291,7 +293,7 @@ export default function LandingPage() {
                 {/* Image Banner Section */}
                 <div className="relative w-full md:w-[45%] h-72 md:h-auto min-h-[400px]">
                    <Image 
-                     src={`/services/${viewingService.id}.png`} 
+                     src={`/services/${viewingService.id}.png?v=1`} 
                      alt={viewingService.name} 
                      fill 
                      sizes="(max-width: 768px) 100vw, 45vw"
@@ -410,29 +412,32 @@ function HeroCarousel() {
   const [current, setCurrent] = useState(0);
   const slides = [
     {
-      image: "/offers/hair.png",
-      title: "AI HAIR\nTRANSFORMATION",
-      desc: "Experience the pinnacle of hair precision with our AI-driven scalp analysis and restoration styles.",
-      badge: "₹500 OFF",
-      theme: "from-deep-grape/95",
-      btnColor: "bg-naturals-purple"
-    },
-    {
-      image: "/offers/skin.png",
-      title: "ELITE RADIANCE\nTREATMENT",
-      desc: "Our premium AI-mapped facial therapy designed for immediate luminosity and cellular skin health.",
+      image: "/offers/banner2.jpg?v=1",
+      // banner2: Woman with glowing long brown hair — beauty/hair treatment
+      tag: "Beauty Treatment",
+      title: "RADIANT HAIR\n& BEAUTY",
+      desc: "AI-powered scalp and skin diagnostics — restore shine, volume, and health with personalised care.",
       badge: "30% DISCOUNT",
-      theme: "from-orange-950/95",
-      btnColor: "bg-orange-600"
+      btnColor: "bg-rose-600",
     },
     {
-      image: "/offers/bridal.png",
+      image: "/offers/banner3.jpg?v=1",
+      // banner3: Couple in bridal attire — bridal styling
+      tag: "Bridal Collection",
       title: "BRIDAL SIGNATURE\nGLOW",
-      desc: "Transform your bridal journey with an elite experience curated by our master aesthetic stylists.",
+      desc: "Make a statement on your special day — elite bridal styling curated by our aesthetic maestros.",
       badge: "ELITE ACCESS",
-      theme: "from-[#2F0137]/95",
-      btnColor: "bg-[#8E3E96]"
-    }
+      btnColor: "bg-[#8E3E96]",
+    },
+    {
+      image: "/offers/banner1.jpg?v=1",
+      // banner1: Styled woman in purple/satin — hair & fashion shoot
+      tag: "Hair Expertise",
+      title: "EXPERT HAIR\nSTYLING",
+      desc: "From precision cuts to bold transformations — crafted by Naturals' master stylists for your perfect look.",
+      badge: "₹500 OFF",
+      btnColor: "bg-naturals-purple",
+    },
   ];
 
   useEffect(() => {
@@ -447,91 +452,104 @@ function HeroCarousel() {
       <AnimatePresence mode="wait">
         <motion.div
           key={current}
-          initial={{ opacity: 0, scale: 1.1 }}
+          initial={{ opacity: 0, scale: 1.05 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
           className="absolute inset-0"
         >
-          <Image 
-            src={slides[current].image} 
-            alt="Offer Banner" 
-            fill 
+          <Image
+            src={slides[current].image}
+            alt="Offer Banner"
+            fill
             sizes="100vw"
-            className="object-cover"
+            className="object-cover object-top"
             priority
           />
-          {/* Top Gradient for Navbar Visibility */}
-          <div className="absolute inset-0 bg-gradient-to-b from-naturals-purple/60 via-transparent to-transparent h-1/3" />
-          
-          <div className={`absolute inset-0 bg-gradient-to-t ${slides[current].theme} via-transparent to-transparent`} />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent" />
+
+          {/* Subtle top vignette for navbar readability only */}
+          <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-black/50 to-transparent pointer-events-none" />
+
+          {/* Strong bottom gradient — this is where the text lives */}
+          <div className="absolute bottom-0 left-0 right-0 h-[52%] bg-gradient-to-t from-black/95 via-black/60 to-transparent pointer-events-none" />
         </motion.div>
       </AnimatePresence>
 
-      <div className="relative z-10 h-full max-w-7xl mx-auto px-6 flex flex-col justify-center">
+      {/* Text — anchored to bottom-left, inside the dark gradient zone */}
+      <div className="relative z-10 h-full flex flex-col justify-end px-8 md:px-16 pb-28 max-w-3xl">
         <AnimatePresence mode="wait">
           <motion.div
             key={current}
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 50 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="max-w-3xl"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.7, delay: 0.15 }}
           >
-            <h2 className="text-5xl md:text-6xl lg:text-7xl font-black italic text-white mb-6 tracking-tighter leading-[0.9] whitespace-pre-line">
+            {/* Category Tag */}
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-md mb-5">
+              <span className="text-[9px] font-black uppercase tracking-[0.25em] text-white/80">
+                {slides[current].tag}
+              </span>
+            </div>
+
+            {/* Title */}
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-black italic text-white mb-4 tracking-tighter leading-[1] whitespace-pre-line drop-shadow-2xl">
               {slides[current].title}
             </h2>
-            
-            <p className="text-sm md:text-base text-white/60 font-bold uppercase tracking-widest max-w-lg mb-10 leading-relaxed">
+
+            {/* Desc */}
+            <p className="text-[11px] md:text-xs text-white/60 font-bold uppercase tracking-widest max-w-md mb-8 leading-relaxed">
               {slides[current].desc}
             </p>
-            
-            <div className="flex flex-col sm:flex-row items-center gap-8">
-              <Link 
-                href="/login" 
-                className={`px-10 py-5 ${slides[current].btnColor} text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-4`}
+
+            {/* CTA Row */}
+            <div className="flex flex-wrap items-center gap-6">
+              <Link
+                href="/login"
+                className={`px-8 py-4 ${slides[current].btnColor} text-white rounded-[2rem] font-black text-[10px] uppercase tracking-[0.2em] shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-3`}
               >
                 Claim This Offer <ArrowRight className="w-4 h-4" />
               </Link>
-              
-              <div className="flex flex-col gap-1">
-                 <span className="text-[9px] font-black uppercase text-white/30 tracking-widest">Exclusive Reward</span>
-                 <span className="text-xl font-black text-white">{slides[current].badge}</span>
+
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[8px] font-black uppercase text-white/30 tracking-widest">Exclusive Reward</span>
+                <span className="text-lg font-black text-white tracking-tight">{slides[current].badge}</span>
               </div>
             </div>
           </motion.div>
         </AnimatePresence>
-
-        {/* Progress Indicators - Centered */}
-        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex gap-4">
-          {slides.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrent(i)}
-              className="group relative h-1 w-16 bg-white/20 rounded-full overflow-hidden transition-all hover:bg-white/40"
-            >
-              {current === i && (
-                <motion.div 
-                  initial={{ x: "-100%" }}
-                  animate={{ x: "0%" }}
-                  transition={{ duration: 7, ease: "linear" }}
-                  className="absolute inset-0 bg-white"
-                />
-              )}
-            </button>
-          ))}
-        </div>
       </div>
 
-      {/* Floating Scroll Indicator */}
-      <div className="absolute bottom-10 right-10 flex items-center gap-4 text-white/20">
-         <span className="text-[10px] font-black uppercase tracking-[0.5em]">Discover More</span>
-         <div className="w-px h-12 bg-white/20" />
+      {/* Progress dots — bottom center */}
+      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10 flex gap-3">
+        {slides.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setCurrent(i)}
+            className="group relative h-1 w-14 bg-white/20 rounded-full overflow-hidden transition-all hover:bg-white/40"
+          >
+            {current === i && (
+              <motion.div
+                initial={{ x: "-100%" }}
+                animate={{ x: "0%" }}
+                transition={{ duration: 7, ease: "linear" }}
+                className="absolute inset-0 bg-white"
+              />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Scroll hint */}
+      <div className="absolute bottom-10 right-10 z-10 flex items-center gap-3 text-white/20">
+        <span className="text-[9px] font-black uppercase tracking-[0.5em]">Discover More</span>
+        <div className="w-px h-10 bg-white/20" />
       </div>
     </div>
   );
 }
+
+
 
 function FeatureCard({ img, title, desc, icon, delay = 0 }: { img: string, title: string, desc: string, icon: React.ReactNode, delay?: number }) {
   return (
