@@ -460,7 +460,7 @@ export default function BookingPage() {
                     {/* Background Image with Overlay */}
                     <div className="absolute inset-0 z-0">
                       <img 
-                        src={service.image_url || '/placeholder-service.jpg'} 
+                        src={service.image_url ? (service.image_url.startsWith('http') ? service.image_url : (service.image_url.startsWith('/') ? service.image_url : `/${service.image_url}`).replace('/public/', '/')) : '/placeholder-service.jpg'} 
                         alt={service.name}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                       />
