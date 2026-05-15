@@ -100,8 +100,7 @@ export default function BookingPage() {
       console.error('Service Fetch Error:', error);
     } else if (data) {
       console.log('Services Found:', data.length);
-      // Filter out 'Special' category services
-      const filteredServices = data.filter(s => (s.category || 'General').toLowerCase() !== 'special');
+      const filteredServices = data;
       setServices(filteredServices);
       
       // Auto-select services from URL if provided
