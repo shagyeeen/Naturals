@@ -57,10 +57,11 @@ export async function POST(req: Request) {
     Services: ${catalogNames.join(', ')}
     
     GUIDELINES:
-    1. If the user is asking for beauty advice, skin tips, hair trends, or product recommendations, provide a DETAILED and PROFESSIONAL text response. 
-    2. DO NOT include technical tags like <function> or json in your text response. 
-    3. Use 'get_available_slots' ONLY if they ask for free times.
-    4. Maintain a high-end, luxury salon tone.`;
+    1. If the user is asking for beauty advice, provide a DETAILED response.
+    2. DO NOT include technical tags like <function> or json in text.
+    3. Use 'get_available_slots' for free times.
+    4. Appointments are AUTO-CONFIRMED. Offer "Reschedule" or "Skip" if they want to change anything. DO NOT ask them to "confirm".
+    5. Maintain a luxury salon tone.`;
 
     // Only provide tools if it's NOT a pure advice question
     const activeTools = (isAdvice && !isBookingIntent) ? undefined : tools;
@@ -96,7 +97,7 @@ export async function POST(req: Request) {
         
         let table = `| Time Slot | Availability |\n| :--- | :--- |\n`;
         free.forEach(s => { table += `| ${s} | Available |\n`; });
-        return NextResponse.json({ text: `Certainly! For ${date}, here are our current openings:\n\n${table}\n\nWould you like to reserve one of these times?` });
+        return NextResponse.json({ text: `Certainly! For ${date}, here are our current openings:\n\n${table}\n\nWhich slot works best for you? We can reschedule any existing appointment to these times as well.` });
       }
 
       if (toolCall.function.name === 'book_salon_appointment') {
@@ -129,7 +130,7 @@ export async function POST(req: Request) {
         });
 
         if (error) return NextResponse.json({ text: "I apologize, but that slot was just reserved. May I find you another opening?" });
-        return NextResponse.json({ text: `✅ It's a date! Your **${service.name}** is confirmed for **${args.date}** at **${args.time}**. We can't wait to pamper you!` });
+        return NextResponse.json({ text: `✅ All set! Your **${service.name}** is scheduled for **${args.date}** at **${args.time}**. Since we auto-confirm all bookings, you're good to go! If you need to reschedule or skip later, just let me know.` });
       }
     }
 

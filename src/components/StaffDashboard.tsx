@@ -1011,15 +1011,23 @@ export default function StaffDashboard() {
                   </span>
                   <div className="flex items-center gap-1 ml-2">
                     {isStylist && a.status === 'confirmed' && (
-                      <button 
-                        onClick={() => {
-                          setSkippingId(a.id);
-                          setIsSkipModalOpen(true);
-                        }}
-                        className="px-3 py-1.5 bg-rose-500 text-white text-[8px] font-black uppercase tracking-widest rounded-lg hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20"
-                      >
-                        Skip
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button 
+                          onClick={() => handleEdit('appointment' as any, a)}
+                          className="px-3 py-1.5 bg-naturals-purple/10 text-naturals-purple text-[8px] font-black uppercase tracking-widest rounded-lg hover:bg-naturals-purple hover:text-white transition-all border border-naturals-purple/20"
+                        >
+                          Reschedule
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setSkippingId(a.id);
+                            setIsSkipModalOpen(true);
+                          }}
+                          className="px-3 py-1.5 bg-rose-500 text-white text-[8px] font-black uppercase tracking-widest rounded-lg hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20"
+                        >
+                          Skip & Query
+                        </button>
+                      </div>
                     )}
                     {isAdmin && a.status === 'skipped' && (
                       <button 

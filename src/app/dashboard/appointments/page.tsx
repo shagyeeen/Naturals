@@ -400,7 +400,7 @@ export default function AppointmentsPage() {
                     </span>
                   </div>
 
-                  {appt.status === 'skipped' && (
+                  {appt.status === 'skipped' && !isStylist && (
                     <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-start gap-3">
                       <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
                       <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest leading-relaxed">

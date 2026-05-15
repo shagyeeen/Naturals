@@ -256,16 +256,8 @@ export default function ImageAnalysisPage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-4xl font-black text-deep-grape uppercase tracking-tighter"
           >
-            Deep <span className="text-naturals-purple">Vision</span> Analysis
+            Beauty <span className="text-naturals-purple">Analysis</span>
           </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-deep-grape/40 text-sm font-medium mt-2 max-w-xl"
-          >
-            Professional Llama 4 Scout diagnostic for Face and Hair.
-          </motion.p>
         </div>
 
         <div className="flex items-center gap-3">
