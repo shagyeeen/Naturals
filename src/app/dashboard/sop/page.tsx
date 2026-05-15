@@ -39,7 +39,8 @@ import {
   Maximize2,
   Volume2,
   MapPin,
-  Play
+  Play,
+  Bell
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { CustomDropdown } from "@/components/ui/CustomDropdown";
@@ -268,6 +269,74 @@ export default function StaffCheck() {
     }
   };
 
+  const handleSendReminders = async () => {
+    try {
+      setToastMessage("Fetching today's appointments...");
+      setShowSuccessToast(true);
+
+      const today = new Date().toISOString().split('T')[0];
+      const { data: appointments, error } = await supabase
+        .from('appointments')
+        .select(`
+          id,
+          start_time,
+          customer:customers(full_name, email),
+          service:services(name)
+        `)
+        .eq('appointment_date', today)
+        .eq('status', 'confirmed');
+
+      if (error) throw error;
+      if (!appointments || appointments.length === 0) {
+        setToastMessage("No appointments found for today.");
+        return;
+      }
+
+      setToastMessage(`Sending ${appointments.length} reminders...`);
+
+      const promises = appointments.map(async (apt: any) => {
+        // Handle Supabase returning related records as arrays
+        const customer = Array.isArray(apt.customer) ? apt.customer[0] : apt.customer;
+        const service = Array.isArray(apt.service) ? apt.service[0] : apt.service;
+
+        if (!customer?.email) return;
+
+        const formatTime = (time: string) => {
+          const [h, m] = time.split(':');
+          const hr = parseInt(h);
+          return `${hr % 12 || 12}:${m} ${hr >= 12 ? 'PM' : 'AM'}`;
+        };
+
+        return fetch("/api/send-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            to: customer.email,
+            subject: "📅 Reminder: Your Appointment Today at Naturals",
+            html: `
+              <div style="font-family: sans-serif; padding: 40px; color: #2F0137; border: 1px solid #eee; border-radius: 20px;">
+                <h1 style="color: #8E3E96; font-style: italic;">Naturals Salon</h1>
+                <h2>Hi ${customer.full_name},</h2>
+                <p>Friendly reminder that you have an appointment with us <strong>TODAY</strong>!</p>
+                <div style="background: #f9f9f9; padding: 20px; border-radius: 10px; margin: 20px 0;">
+                  <p><strong>Service:</strong> ${service?.name}</p>
+                  <p><strong>Time:</strong> ${formatTime(apt.start_time)}</p>
+                </div>
+                <p>We look forward to seeing you. If you're running late, please let us know!</p>
+              </div>
+            `
+          })
+        });
+      });
+
+      await Promise.all(promises);
+      setToastMessage("All today's reminders sent successfully! ✨");
+    } catch (err: any) {
+      console.error("Reminder Error:", err);
+      setToastMessage("Failed to send reminders: " + err.message);
+    }
+  };
+
   return (
     <div className="w-full space-y-8 animate-in fade-in duration-700">
       {/* Decorative background elements */}
@@ -453,6 +522,13 @@ export default function StaffCheck() {
                           Analyze Footage
                         </>
                       )}
+                    </button>
+                    <button 
+                      onClick={handleSendReminders}
+                      className="flex items-center gap-2 px-6 py-3 bg-white text-naturals-purple border border-naturals-purple/20 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-naturals-purple/5 transition-all shadow-sm"
+                    >
+                      <Bell className="w-4 h-4" />
+                      Sync Reminders
                     </button>
                     <button className="p-3 bg-warm-grey rounded-xl border border-black/5 hover:bg-black/5 transition-all">
                       <RefreshCw className="w-4 h-4 text-naturals-purple" />

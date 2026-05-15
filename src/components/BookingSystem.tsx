@@ -162,6 +162,46 @@ export default function BookingPage() {
     setLoading(false);
   };
 
+  const sendBookingEmail = async (email: string, details: { date: string, time: string, service: string, stylist: string }) => {
+    try {
+      await fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: email,
+          subject: "✨ Appointment Confirmed - Naturals Salon",
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 20px; overflow: hidden; background: #fff;">
+              <div style="background: #8E3E96; padding: 40px; text-align: center; color: white;">
+                <h1 style="margin: 0; font-style: italic;">Naturals Salon</h1>
+                <p style="margin-top: 10px; opacity: 0.8; letter-spacing: 2px; text-transform: uppercase; font-size: 10px; font-weight: bold;">Confirmation Revealed</p>
+              </div>
+              <div style="padding: 40px; color: #2F0137;">
+                <h2 style="margin-top: 0; font-style: italic;">Hello Beautiful,</h2>
+                <p>Your salon session has been successfully booked. We've synchronized your beauty passport with our specialists.</p>
+                
+                <div style="background: #f9f9f9; padding: 25px; border-radius: 15px; margin: 30px 0; border: 1px solid #f0f0f0;">
+                  <p style="margin: 10px 0; font-size: 14px;"><strong>SERVICE:</strong> ${details.service}</p>
+                  <p style="margin: 10px 0; font-size: 14px;"><strong>SPECIALIST:</strong> ${details.stylist}</p>
+                  <p style="margin: 10px 0; font-size: 14px;"><strong>DATE:</strong> ${new Date(details.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+                  <p style="margin: 10px 0; font-size: 14px;"><strong>TIME:</strong> ${details.time}</p>
+                </div>
+
+                <p style="font-size: 13px; color: #666; line-height: 1.6;">Please arrive 5 minutes before your session. If you need to reschedule, please do so via your dashboard.</p>
+                
+                <div style="margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px; font-size: 11px; color: #999; text-align: center; text-transform: uppercase; letter-spacing: 1px;">
+                  <p>© 2026 Naturals Salon & Spa. All rights reserved.</p>
+                </div>
+              </div>
+            </div>
+          `
+        })
+      });
+    } catch (err) {
+      console.error("Failed to send confirmation email:", err);
+    }
+  };
+
   const handleBooking = async () => {
     if (!selectedStylist || selectedServices.length === 0 || !selectedSlot) {
       alert("Operational Error: Specialist, Services, and Slot must be verified.");
@@ -232,6 +272,17 @@ export default function BookingPage() {
       }
 
       console.log('Appointment Successfully Registered with Multiple Services.');
+      
+      // Trigger Email Notification
+      if (customerProfile.email) {
+        sendBookingEmail(customerProfile.email, {
+          date: selectedDate,
+          time: formatTime(selectedSlot.start_time),
+          service: serviceNames,
+          stylist: selectedStylist.full_name
+        });
+      }
+
       setSuccess(true);
       if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
       setTimeout(() => setSuccess(false), 3000);
