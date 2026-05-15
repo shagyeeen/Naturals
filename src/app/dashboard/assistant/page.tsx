@@ -282,7 +282,7 @@ export default function NeuralAssistantPage() {
     }
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch('/api/assistant-v2', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -346,8 +346,16 @@ export default function NeuralAssistantPage() {
                 </div>
             </div>
             
-            <div className="hidden sm:flex gap-4 relative z-10">
-               <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-colors cursor-pointer" onClick={() => startAssistant()}>
+            <div className="flex gap-4 relative z-10">
+               {speakingIdx !== null && (
+                 <button 
+                  onClick={stopSpeech}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500 text-white font-black text-[10px] uppercase tracking-widest shadow-lg shadow-red-500/20 hover:scale-105 transition-all"
+                 >
+                    <Square className="w-3 h-3 fill-current" /> Stop Audio
+                 </button>
+               )}
+               <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-white/40 hover:text-white transition-colors cursor-pointer" onClick={() => { stopSpeech(); startAssistant(); }}>
                   <RotateCcw className="w-5 h-5" />
                </div>
             </div>
