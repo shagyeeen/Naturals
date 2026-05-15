@@ -104,14 +104,18 @@ export default function BookingPage() {
       const filteredServices = data.filter(s => (s.category || 'General').toLowerCase() !== 'special');
       setServices(filteredServices);
       
-      // Auto-select service from URL if provided
-      if (preSelectedServiceName) {
-        const preSelected = filteredServices.find(s => s.name.toUpperCase() === preSelectedServiceName.toUpperCase());
-        if (preSelected) {
-          console.log('[Booking] Auto-selecting service:', preSelected.name);
-          setSelectedServices([preSelected]);
-          if (preSelected.category) {
-            setServiceCategory(preSelected.category);
+      // Auto-select services from URL if provided
+      const preSelectedServicesStr = searchParams.get('services') || searchParams.get('service');
+      
+      if (preSelectedServicesStr) {
+        const serviceNames = preSelectedServicesStr.split(',').map(s => s.trim().toUpperCase());
+        const preSelected = filteredServices.filter(s => serviceNames.includes(s.name.toUpperCase()));
+        
+        if (preSelected.length > 0) {
+          console.log('[Booking] Auto-selecting services:', preSelected.map(s => s.name));
+          setSelectedServices(preSelected);
+          if (preSelected[0].category) {
+            setServiceCategory(preSelected[0].category);
           }
         }
       } else if (filteredServices.length > 0 && serviceCategory === 'All') {

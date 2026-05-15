@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, CheckCircle2 } from "lucide-react";
 
+
 interface Option {
   value: string;
   label: string;
@@ -49,7 +50,7 @@ export function CustomDropdown({
           {label}
         </p>
       )}
-      
+
       <button
         type="button"
         onClick={toggleDropdown}
@@ -58,22 +59,21 @@ export function CustomDropdown({
         <span className={selectedOption?.color || "text-deep-grape"}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
-        <ChevronDown 
-          className={`${slim ? 'w-3 h-3' : 'w-4 h-4'} transition-transform duration-300 text-deep-grape/30 ${
-            isOpen ? 'rotate-180 text-naturals-purple' : ''
-          }`} 
+        <ChevronDown
+          className={`${slim ? 'w-3 h-3' : 'w-4 h-4'} transition-transform duration-300 text-deep-grape/30 ${isOpen ? 'rotate-180 text-naturals-purple' : ''
+            }`}
         />
       </button>
 
       <AnimatePresence>
         {isOpen && (
           <>
-            <div 
-              className="fixed inset-0 z-[60]" 
+            <div
+              className="fixed inset-0 z-[60]"
               onClick={() => {
                 setIsOpen(false);
                 if (onOpenChange) onOpenChange(false);
-              }} 
+              }}
             />
             <motion.div
               initial={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -91,9 +91,8 @@ export function CustomDropdown({
                       setIsOpen(false);
                       if (onOpenChange) onOpenChange(false);
                     }}
-                    className={`w-full ${slim ? 'p-2 rounded-lg' : 'p-3 rounded-xl'} text-[10px] font-black uppercase tracking-widest text-left transition-all flex items-center justify-between group hover:bg-naturals-purple/10 ${
-                      opt.color || "text-deep-grape/70"
-                    } ${value === opt.value ? 'bg-naturals-purple/5' : ''}`}
+                    className={`w-full ${slim ? 'p-2 rounded-lg' : 'p-3 rounded-xl'} text-[10px] font-black uppercase tracking-widest text-left transition-all flex items-center justify-between group hover:bg-naturals-purple/10 ${opt.color || "text-deep-grape/70"
+                      } ${value === opt.value ? 'bg-naturals-purple/5' : ''}`}
                   >
                     {opt.label}
                     {value === opt.value && <CheckCircle2 className="w-3.5 h-3.5" />}

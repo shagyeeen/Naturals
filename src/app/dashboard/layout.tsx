@@ -35,6 +35,7 @@ import Image from "next/image";
 const sidebarLinks = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard, roles: ["admin", "manager", "franchise_owner", "stylist", "customer"] },
   { name: "AI Assistance", href: "/dashboard/assistant", icon: Bot, roles: ["admin", "manager", "franchise_owner", "stylist", "customer"] },
+  { name: "Image Analysis", href: "/dashboard/image-analysis", icon: Sparkles, roles: ["admin", "manager", "franchise_owner", "stylist", "customer"] },
   { name: "Book Appointment", href: "/dashboard/booking", icon: Calendar, roles: ["customer"] },
   { name: "Schedule Meeting", href: "/dashboard/meeting", icon: CalendarCheck, roles: ["customer"] },
   { name: "Raise Query", href: "/dashboard/queries", icon: Activity, roles: ["admin", "manager", "franchise_owner", "stylist", "customer"] },
