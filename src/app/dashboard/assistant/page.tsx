@@ -222,11 +222,13 @@ export default function NeuralAssistantPage() {
     // Cancel previous speech before starting new one to avoid overlap
     stopSpeech();
 
-    // Clean markdown and minimize sentence pauses for a more continuous flow
+    // Clean markdown, technical tags, and minimize sentence pauses
     const cleanText = text
+      .replace(/<function[\s\S]*?<\/function>/g, '') // Strip function tags
+      .replace(/\{[\s\S]*?\}/g, '')                   // Strip JSON blocks
       .replace(/[#*`_~]/g, '')
-      .replace(/\.(?=\s|$)/g, ' ') // Replace periods followed by space/end with space to reduce pause
-      .replace(/\n+/g, ' ')        // Replace newlines with spaces
+      .replace(/\.(?=\s|$)/g, ' ') 
+      .replace(/\n+/g, ' ')        
       .trim();
 
     const utterance = new SpeechSynthesisUtterance(cleanText);

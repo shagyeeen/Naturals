@@ -12,23 +12,26 @@ export async function POST(req: Request) {
     }
 
     const { data: dbServices } = await supabaseAdmin.from('services').select('id, name, price, duration_minutes').eq('is_active', true);
-    const catalogNames = dbServices?.map(s => s.name) || [];
+    const catalogNames = (dbServices || []).map((s: any) => s.name);
 
-    const lastMsg = messages[messages.length - 1]?.content?.toLowerCase() || "";
-    const isBooking = /book|confirm|yes|sure|slot|schedule|pick|at|on|10:00|11:00|12:00|13:00|14:00|15:00|16:00|17:00|18:00|19:00/i.test(lastMsg);
+    const lastMsg = (messages[messages.length - 1]?.content || "").toLowerCase();
+    
+    // Strict Intent Detection
+    const isAdvice = /skin|hair|trend|recommend|suggest|what|how|tips|best|routine|product|color|style|look/i.test(lastMsg);
+    const isBookingIntent = /book|confirm|yes|sure|slot|schedule|pick|at|on|10:|11:|12:|13:|14:|15:|16:|17:|18:|19:/i.test(lastMsg);
 
     const tools = [
       {
         type: 'function',
         function: {
           name: 'book_salon_appointment',
-          description: 'ONLY call when user picks a slot. Requires exact serviceName, date (YYYY-MM-DD), and time (HH:MM).',
+          description: 'ONLY call when user explicitly confirms a time/slot for a service.',
           parameters: {
             type: 'object',
             properties: {
               serviceName: { type: 'string' },
-              date: { type: 'string', description: "Format: YYYY-MM-DD" },
-              time: { type: 'string', description: "Format: HH:MM" }
+              date: { type: 'string', description: "YYYY-MM-DD" },
+              time: { type: 'string', description: "HH:MM" }
             },
             required: ['serviceName', 'date', 'time']
           }
@@ -38,7 +41,7 @@ export async function POST(req: Request) {
         type: 'function',
         function: {
           name: 'get_available_slots',
-          description: 'List available times for a date as a table.',
+          description: 'Call when user asks for available times or free slots.',
           parameters: {
             type: 'object',
             properties: { "date": { "type": "string" } },
@@ -48,13 +51,19 @@ export async function POST(req: Request) {
       }
     ];
 
-    const systemPrompt = `You are "Natural Shyne", the salon expert.
+    const systemPrompt = `You are "Natural Shyne", a premium Beauty Expert at Naturals Salon.
     
-    CRITICAL:
-    1. To book, you MUST provide date as YYYY-MM-DD and time as HH:MM.
-    2. Today is ${new Date().toISOString().split('T')[0]}.
-    3. Always confirm the service name from this list: ${catalogNames.join(', ')}.
-    4. If booking fails, check if the slot is still available.`;
+    Today's Date: ${new Date().toISOString().split('T')[0]}
+    Services: ${catalogNames.join(', ')}
+    
+    GUIDELINES:
+    1. If the user is asking for beauty advice, skin tips, hair trends, or product recommendations, provide a DETAILED and PROFESSIONAL text response. 
+    2. DO NOT include technical tags like <function> or json in your text response. 
+    3. Use 'get_available_slots' ONLY if they ask for free times.
+    4. Maintain a high-end, luxury salon tone.`;
+
+    // Only provide tools if it's NOT a pure advice question
+    const activeTools = (isAdvice && !isBookingIntent) ? undefined : tools;
 
     const response = await fetch(GROQ_API_URL, {
       method: 'POST',
@@ -65,7 +74,7 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         model: 'llama-3.3-70b-versatile',
         messages: [{ role: 'system', content: systemPrompt }, ...messages],
-        tools: isBooking || lastMsg.includes('slot') ? tools : undefined,
+        tools: activeTools,
         tool_choice: 'auto',
         temperature: 0.1,
       }),
@@ -81,25 +90,24 @@ export async function POST(req: Request) {
       if (toolCall.function.name === 'get_available_slots') {
         const date = args.date || new Date().toISOString().split('T')[0];
         const { data: appts } = await supabaseAdmin.from('appointments').select('start_time').eq('appointment_date', date).eq('status', 'confirmed');
-        const busy = appts?.map(a => a.start_time.substring(0, 5)) || [];
+        const busy = (appts || []).map((a: any) => a.start_time.substring(0, 5));
         const slots = ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
         const free = slots.filter(s => !busy.includes(s));
         
         let table = `| Time Slot | Availability |\n| :--- | :--- |\n`;
         free.forEach(s => { table += `| ${s} | Available |\n`; });
-        return NextResponse.json({ text: `On ${date}, we have the following slots available:\n\n${table}\n\nWhich one would you like to pick?` });
+        return NextResponse.json({ text: `Certainly! For ${date}, here are our current openings:\n\n${table}\n\nWould you like to reserve one of these times?` });
       }
 
       if (toolCall.function.name === 'book_salon_appointment') {
-        if (!customerId) return NextResponse.json({ text: "Please sign in to book your appointment!" });
+        if (!customerId) return NextResponse.json({ text: "Please log in to your Beauty Passport to finalize this booking." });
 
         const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
         const target = normalize(args.serviceName || '');
-        let service = dbServices?.find(s => normalize(s.name).includes(target) || target.includes(normalize(s.name)));
+        let service = (dbServices || []).find((s: any) => normalize(s.name).includes(target) || target.includes(normalize(s.name)));
 
-        if (!service) return NextResponse.json({ text: `I need to know which service you'd like (e.g., ${catalogNames[0]}).` });
+        if (!service) return NextResponse.json({ text: `I'm ready to book that for you! Just to confirm, which service from our catalog (e.g., ${catalogNames[0]}) should I schedule?` });
 
-        // Calculate end_time (Required by DB)
         const [hours, minutes] = args.time.split(':').map(Number);
         const startDate = new Date();
         startDate.setHours(hours, minutes, 0);
@@ -120,16 +128,13 @@ export async function POST(req: Request) {
           total_amount: service.price || 0
         });
 
-        if (error) {
-            console.error('Insert Error Details:', error);
-            return NextResponse.json({ text: `I'm having trouble securing that slot. Error: ${error.message}` });
-        }
-        return NextResponse.json({ text: `✅ All set! I've booked your **${service.name}** for **${args.date}** at **${args.time}**.` });
+        if (error) return NextResponse.json({ text: "I apologize, but that slot was just reserved. May I find you another opening?" });
+        return NextResponse.json({ text: `✅ It's a date! Your **${service.name}** is confirmed for **${args.date}** at **${args.time}**. We can't wait to pamper you!` });
       }
     }
 
-    return NextResponse.json({ text: choice.message.content || "How can I help you today?" });
+    return NextResponse.json({ text: choice.message.content || "I'm here to assist you with all your beauty needs." });
   } catch (error: any) {
-    return NextResponse.json({ text: "Technical error. Try again!" });
+    return NextResponse.json({ text: "I'm experiencing a minor technical delay. How else can I help you?" });
   }
 }
