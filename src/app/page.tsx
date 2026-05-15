@@ -222,8 +222,11 @@ export default function LandingPage() {
                     className="relative aspect-[4/3] rounded-[2.5rem] overflow-hidden group cursor-pointer shadow-xl border border-black/5"
                   >
                     {/* Dynamic Service Image */}
+                    {/* Dynamic Service Image */}
                     <Image 
-                      src={((service.image_url?.startsWith('public/') ? service.image_url.replace('public/', '/') : service.image_url) || `/services/${service.id}.png`) + "?v=1"} 
+                      src={((service.image_url?.toLowerCase().startsWith('public/services/') || service.image_url?.toLowerCase().startsWith('/services/')) 
+                        ? service.image_url.toLowerCase().replace('public/services/', '/Services/').replace('/services/', '/Services/') 
+                        : service.image_url) || `/Services/${service.id}.png?v=1`} 
                       alt={service.name} 
                       fill 
                       sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -293,7 +296,9 @@ export default function LandingPage() {
                 {/* Image Banner Section */}
                 <div className="relative w-full md:w-[45%] h-72 md:h-auto min-h-[400px]">
                    <Image 
-                     src={((viewingService.image_url?.startsWith('public/') ? viewingService.image_url.replace('public/', '/') : viewingService.image_url) || `/services/${viewingService.id}.png`) + "?v=1"} 
+                     src={((viewingService.image_url?.toLowerCase().startsWith('public/services/') || viewingService.image_url?.toLowerCase().startsWith('/services/')) 
+                       ? viewingService.image_url.toLowerCase().replace('public/services/', '/Services/').replace('/services/', '/Services/') 
+                       : viewingService.image_url) || `/Services/${viewingService.id}.png?v=1`} 
                      alt={viewingService.name} 
                      fill 
                      sizes="(max-width: 768px) 100vw, 45vw"
