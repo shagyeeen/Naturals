@@ -27,7 +27,8 @@ import {
   ChevronDown,
   X,
   Search,
-  MessageSquareQuote
+  MessageSquareQuote,
+  ShoppingBag
 } from "lucide-react";
 import { Tooltip } from "@/components/Tooltip";
 import Image from "next/image";
@@ -47,6 +48,7 @@ const sidebarLinks = [
   { name: "Customer Reviews", href: "/dashboard/feedbacks", icon: MessageSquareQuote, roles: ["admin", "franchise_owner"] },
   { name: "Appointments", href: "/dashboard/appointments", icon: CalendarCheck, roles: ["stylist", "admin", "manager", "franchise_owner"] },
   { name: "Trend Insights", href: "/dashboard/trends", icon: LineChart, roles: ["admin", "manager", "franchise_owner"] },
+  { name: "Bae Store", href: "/dashboard/bae", icon: "/bae-icon.png", roles: ["customer"] },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -371,7 +373,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     : "text-deep-grape/60 hover:bg-warm-grey hover:text-deep-grape"
                 }`}
               >
-                <link.icon className={`w-5 h-5 shrink-0 ${isActive ? "text-white" : "group-hover:text-naturals-purple transition-colors"}`} />
+                <div className="w-7 h-7 flex items-center justify-center shrink-0">
+                  {typeof link.icon === 'string' ? (
+                    <Image 
+                      src={link.icon} 
+                      alt={link.name} 
+                      width={28} 
+                      height={28} 
+                      className={`object-contain ${isActive ? 'brightness-0 invert' : 'group-hover:opacity-100 transition-all duration-300 group-hover:scale-110'}`}
+                    />
+                  ) : (
+                    <link.icon className={`w-5 h-5 ${isActive ? "text-white" : "group-hover:text-naturals-purple transition-colors"}`} />
+                  )}
+                </div>
                 {isSidebarOpen && <span className="whitespace-nowrap text-[11px] font-black uppercase tracking-widest">{link.name}</span>}
                 {link.name === "My Appointment" && upcomingCount > 0 && (
                   <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-black text-white shadow-lg shadow-red-500/20 animate-in zoom-in duration-300">
