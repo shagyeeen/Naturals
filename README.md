@@ -117,7 +117,7 @@ Create a `.env.local` file in the root directory with the following variables:
 
 **Intelligence Layer (AI Engine)**
 - `GROQ_API_KEY`: Enterprise AI processing key for SOP analysis.
-- `REPLICATE_API_TOKEN`: AI model execution token for trend listening.
+- `HUGGINGFACE_API_KEY`: AI model execution token for Face tracking.
 
 ### Execution
 To initialize the development server and activate the platform:
