@@ -31,42 +31,42 @@ const SPECIAL_SERVICES = [
     name: 'Bridal Makeup (Women)',
     description: 'Elite consultation and full trial session for your special day.',
     price: '₹20,000',
-    image: '/services/45f02079-0f21-464d-9877-9a7fe5182654.png'
+    image: '/services/45f02079-0f21-464d-9877-9a7fe5182654.png?v=1'
   },
   {
     id: '74a587dd-0a3b-4533-bdf5-12e10a9cecc2',
     name: 'Bridal Makeup (Men)',
     description: 'Signature groom grooming and facial architecture mapping.',
     price: '₹15,000',
-    image: '/services/74a587dd-0a3b-4533-bdf5-12e10a9cecc2.png'
+    image: '/services/74a587dd-0a3b-4533-bdf5-12e10a9cecc2.png?v=1'
   },
   {
     id: '633893e2-23f6-4f0c-98b7-565a4edc8a14',
     name: 'Bridal Combo (Bride & Groom)',
     description: 'The ultimate couple package for synchronized aesthetic perfection.',
     price: '₹30,000',
-    image: '/services/633893e2-23f6-4f0c-98b7-565a4edc8a14.png'
+    image: '/services/633893e2-23f6-4f0c-98b7-565a4edc8a14.png?v=1'
   },
   {
     id: 'ef7a8f50-0aa8-4b91-a33c-5ab600fbfc42',
     name: 'Hairdo (Women)',
     description: 'Intricate architectural hairstyling for high-profile events.',
     price: '₹15,000',
-    image: '/services/ef7a8f50-0aa8-4b91-a33c-5ab600fbfc42.png'
+    image: '/services/ef7a8f50-0aa8-4b91-a33c-5ab600fbfc42.png?v=1'
   },
   {
     id: '241aa8d1-5e47-4d9f-80b9-3de762eb776a',
     name: 'Hairdo (Men)',
     description: 'Precision sculpture and high-fashion grooming for grooms.',
     price: '₹10,000',
-    image: '/services/241aa8d1-5e47-4d9f-80b9-3de762eb776a.png'
+    image: '/services/241aa8d1-5e47-4d9f-80b9-3de762eb776a.png?v=1'
   },
   {
     id: 'b90a8431-d32c-47d2-b0ee-6ee97112eeae',
     name: 'Hairdo Combo (Bride & Groom)',
     description: 'Coordinated event hairstyling for the perfect visual harmony.',
     price: '₹20,000',
-    image: '/services/b90a8431-d32c-47d2-b0ee-6ee97112eeae.png'
+    image: '/services/b90a8431-d32c-47d2-b0ee-6ee97112eeae.png?v=1'
   }
 ];
 
@@ -243,8 +243,14 @@ export default function MeetingPage() {
                     
                     <div className="p-10 space-y-8">
                        <div className="flex gap-6">
-                          <div className="w-24 h-24 rounded-2xl overflow-hidden shrink-0 border border-black/5">
-                             <img src={selectedService.image} alt={selectedService.name} className="w-full h-full object-cover" />
+                          <div className="w-24 h-24 rounded-2xl overflow-hidden shrink-0 border border-black/5 relative">
+                             <Image 
+                               src={selectedService.image} 
+                               alt={selectedService.name} 
+                               fill
+                               sizes="96px"
+                               className="object-cover" 
+                             />
                           </div>
                           <div>
                              <h4 className="text-xl font-black text-deep-grape italic uppercase tracking-tighter leading-tight mb-2">{selectedService.name}</h4>

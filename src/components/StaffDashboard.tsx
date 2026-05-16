@@ -374,7 +374,10 @@ export default function StaffDashboard() {
       offerExpiryDate: data.expiry_date || '',
       offerServiceId: data.service_id || '',
       offerIsActive: data.is_active ?? true,
-      preferences: data.ai_hairstyle_analysis?.questionnaire_results || {},
+      preferences: {
+        ...(data.ai_hairstyle_analysis?.questionnaire_results || {}),
+        image_url: data.image_url || ''
+      },
     });
     setShowModal(true);
   };
@@ -470,6 +473,7 @@ export default function StaffDashboard() {
         duration_minutes: parseInt(formData.serviceDuration || '60'),
         price: parseFloat(formData.servicePrice || '0'),
         is_active: formData.serviceIsActive,
+        image_url: (formData.preferences as any)?.image_url || null,
       };
     } else if (modalType === 'add-offer' || (modalType === 'edit' && activeTab === 'offers')) {
       table = 'offers';
@@ -1407,6 +1411,20 @@ export default function StaffDashboard() {
                         {formData.serviceIsActive ? 'ACTIVE' : 'HIDDEN'}
                       </button>
                     </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Image URL</label>
+                    <input
+                      type="text"
+                      placeholder="/services/filename.png"
+                      value={formData.preferences?.image_url || ''}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        preferences: { ...formData.preferences, image_url: e.target.value } 
+                      })}
+                      className="w-full bg-warm-grey/40 border border-naturals-purple/20 rounded-2xl py-3 px-6 text-deep-grape text-sm font-bold focus:bg-white focus:border-naturals-purple transition-all outline-none"
+                    />
                   </div>
                 </div>
               ) : (modalType === 'add-offer' || (modalType === 'edit' && activeTab === 'offers')) ? (

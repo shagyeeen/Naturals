@@ -31,9 +31,20 @@ The system maintains high standards of data integrity and operational security.
 - **Onboarding Logic**: The onboarding process is role-conditional. Staff members and franchise owners bypass customer-specific service questionnaires, focusing only on professional identity and branch location configuration.
 - **Data Protection**: All communications and data transactions are secured using industry-standard protocols and Supabase Row-Level Security (RLS) policies.
 
-### 5. AI SOP Engine and Trend Intelligence
-- **Autonomous Audit**: Provides real-time protocol enforcement and action recognition to maintain brand standards across the network.
-- **Predictive Analytics**: Combines broad social trend listening with localized salon data to predict upcoming regional beauty trends.
+### 5. AI SOP Engine and CCTV Surveillance
+- **Autonomous Audit**: Provides real-time protocol enforcement and action recognition to maintain brand standards.
+- **Vision-Powered Monitoring**: Integrated CCTV analysis using **Llama 3.2 Vision** via Groq to detect salon occupancy, crowd levels, and operational status.
+- **Time-Aware Analysis**: Intelligent day/night detection to provide contextual salon status reports.
+
+### 6. Automated Communication & Notification System
+- **Email Automation**: Integrated **Resend** infrastructure for instant appointment confirmations and staff reminders.
+- **Smart Reminders**: One-click daily briefing system that summarizes appointment lists and sends them directly to staff members.
+- **Delivery Monitoring**: Advanced logging system to track email delivery success and failure in real-time.
+
+### 7. Bae - The Beauty Store (Retail Integration)
+- **Digital Catalog**: A premium, minimalist product showcase for the Bae brand.
+- **Curated Inventory**: Featuring elite brands like Plix, Lakme, Maybelline, and Mars.
+- **Experience-First Retail**: Catalog-focused design optimized for physical store footfall conversion.
 
 ## System Architecture
 
