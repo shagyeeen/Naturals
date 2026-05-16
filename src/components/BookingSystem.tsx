@@ -461,8 +461,8 @@ export default function BookingPage() {
                     <div className="absolute inset-0 z-0">
                       <img 
                         src={((service.image_url?.toLowerCase().startsWith('public/services/') || service.image_url?.toLowerCase().startsWith('/services/')) 
-                          ? service.image_url.toLowerCase().replace('public/services/', '/services/').replace('/services/', '/services/') 
-                          : service.image_url) || `/services/${service.id}.png?v=1`} 
+                          ? service.image_url.toLowerCase().replace('public/services/', '/Services/').replace('/services/', '/Services/') 
+                          : service.image_url) || `/Services/${service.id}.png?v=1`} 
                         alt={service.name}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                       />

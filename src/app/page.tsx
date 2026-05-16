@@ -225,8 +225,8 @@ export default function LandingPage() {
                     {/* Dynamic Service Image */}
                     <Image 
                       src={((service.image_url?.toLowerCase().startsWith('public/services/') || service.image_url?.toLowerCase().startsWith('/services/')) 
-                        ? service.image_url.toLowerCase().replace('public/services/', '/services/').replace('/services/', '/services/') 
-                        : service.image_url) || `/services/${service.id}.png?v=1`} 
+                        ? service.image_url.toLowerCase().replace('public/services/', '/Services/').replace('/services/', '/Services/') 
+                        : service.image_url) || `/Services/${service.id}.png?v=1`} 
                       alt={service.name} 
                       fill 
                       sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -297,8 +297,8 @@ export default function LandingPage() {
                 <div className="relative w-full md:w-[45%] h-72 md:h-auto min-h-[400px]">
                    <Image 
                      src={((viewingService.image_url?.toLowerCase().startsWith('public/services/') || viewingService.image_url?.toLowerCase().startsWith('/services/')) 
-                       ? viewingService.image_url.toLowerCase().replace('public/services/', '/services/').replace('/services/', '/services/') 
-                       : viewingService.image_url) || `/services/${viewingService.id}.png?v=1`} 
+                       ? viewingService.image_url.toLowerCase().replace('public/services/', '/Services/').replace('/services/', '/Services/') 
+                       : viewingService.image_url) || `/Services/${viewingService.id}.png?v=1`} 
                      alt={viewingService.name} 
                      fill 
                      sizes="(max-width: 768px) 100vw, 45vw"

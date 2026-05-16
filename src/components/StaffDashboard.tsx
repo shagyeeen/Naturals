@@ -1417,7 +1417,7 @@ export default function StaffDashboard() {
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-deep-grape/40 ml-2">Image URL</label>
                     <input
                       type="text"
-                      placeholder="/services/filename.png"
+                      placeholder="/Services/filename.png"
                       value={formData.preferences?.image_url || ''}
                       onChange={(e) => setFormData({ 
                         ...formData, 
